@@ -1,4 +1,4 @@
-import junit.framework.TestCase;
+import ch.hsr.maloney.core.Demo;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

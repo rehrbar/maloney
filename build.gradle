@@ -1,9 +1,15 @@
 group 'ch.hsr.maloney'
 version '1.0-SNAPSHOT'
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.13'
+    distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
+
 apply plugin: 'java'
 
-sourceCompatibility = 1.5
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenCentral()

@@ -6,6 +6,6 @@ import ch.hsr.maloney.core.Demo;
  */
 public class Start {
     public static void main(String []args){
-        System.out.println(Demo.HelloWorld());
+        System.out.println(Demo.helloWorld());
     }
 }

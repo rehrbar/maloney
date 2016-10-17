@@ -1,6 +1,8 @@
 group 'ch.hsr.maloney'
 version '1.0-SNAPSHOT'
 
+// Allows to setup gradle wrapper with gradle itself. Run: gradle wrapper
+// Files added should be committed to source control (seems to be best practice).
 task wrapper(type: Wrapper) {
     gradleVersion = '2.13'
     distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
@@ -16,5 +18,13 @@ repositories {
 }
 
 dependencies {
+    compile files('sleuthkit/bindings/java/dist/Tsk_DataModel.jar'){
+        builtBy 'tsk-dist-SQLite' // Automatically build TSK first
+    }
     testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+// Adding ant build commands and prefixing them with 'tsk-'
+ant.importBuild('sleuthkit/bindings/java/build.xml') { antTargetName ->
+    'tsk-' + antTargetName
 }

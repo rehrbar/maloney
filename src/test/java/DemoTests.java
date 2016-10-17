@@ -9,7 +9,12 @@ import static org.junit.Assert.assertEquals;
 public class DemoTests {
 
     @Test
-    public void HelloWorldTest(){
-        assertEquals("Hello World!", Demo.HelloWorld());
+    public void helloWorldTest(){
+        assertEquals("Hello World!", Demo.helloWorld());
+    }
+
+    @Test
+    public void tskTest() {
+        assertEquals("Name.Something", Demo.testTsk());
     }
 }

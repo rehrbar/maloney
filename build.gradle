@@ -22,6 +22,13 @@ dependencies {
         builtBy 'tsk-dist-SQLite' // Automatically build TSK first
     }
     testCompile group: 'junit', name: 'junit', version: '4.11'
+
+    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.8.11.2'
+    compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
+}
+
+test {
+    systemProperty "java.library.path", file("..\\lib")
 }
 
 // Adding ant build commands and prefixing them with 'tsk-'

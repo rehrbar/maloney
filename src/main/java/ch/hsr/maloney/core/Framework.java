@@ -48,10 +48,9 @@ public class Framework implements EventObserver {
 
         registeredJobs.forEach((job -> {
             if(job.getRequiredEvents().isEmpty()){
-
+                //TODO enqueue Jobs in JobProcessor
             }
         }));
-        //TODO job processor enqueue new event
     }
 
     public void register(Job job){

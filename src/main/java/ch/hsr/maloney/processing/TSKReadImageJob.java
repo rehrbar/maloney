@@ -14,12 +14,12 @@ import java.util.logging.Logger;
 /**
  * Created by olive_000 on 01.11.2016.
  */
-public class TSKAdapter implements Job {
-    LinkedList<Event> producedEvents;
+public class TSKReadImageJob implements Job {
+    LinkedList<String> producedEvents;
 
-    public TSKAdapter(){
+    public TSKReadImageJob(){
         this.producedEvents = new LinkedList<>();
-        this.producedEvents.add(new Event("newFile",this.getJobName(), ""));
+        this.producedEvents.add("newFile");
     }
 
     public void readImage(String imagePath){
@@ -67,23 +67,23 @@ public class TSKAdapter implements Job {
 
     @Override
     public List<Event> run(Context ctx, Event evt) {
-        readImage(""); //TODO read path from ctx
+        readImage(""); //TODO read path parameters
         return null;
     }
 
     @Override
-    public List<Event> getRequiredEvents() {
+    public List<String> getRequiredEvents() {
         return null;
     }
 
     @Override
-    public List<Event> getProducedEvents() {
+    public List<String> getProducedEvents() {
         return producedEvents;
     }
 
     @Override
     public String getJobName() {
-        return "TSKAdapter";
+        return "TSKReadImageJob";
     }
 
     @Override

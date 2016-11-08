@@ -1,4 +1,4 @@
-import ch.hsr.maloney.processing.TSKAdapter;
+import ch.hsr.maloney.processing.TSKReadImageJob;
 import org.junit.Test;
 
 import java.nio.file.Files;
@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 /**
  * Created by olive_000 on 01.11.2016.
  */
-public class TSKAdapterTest {
+public class TSKReadImageJobTest {
     @Test
     public void simpleTest(){
         final String IMAGE_PATH = "..\\images\\autopsy-demo-disk.dd";
@@ -24,8 +24,8 @@ public class TSKAdapterTest {
         System.loadLibrary("libvhdi");
         System.loadLibrary("libtsk_jni");
 
-        TSKAdapter tskAdapter = new TSKAdapter();
+        TSKReadImageJob tskReadImageJob = new TSKReadImageJob();
 
-        tskAdapter.readImage(IMAGE_PATH );
+        tskReadImageJob.readImage(IMAGE_PATH );
     }
 }

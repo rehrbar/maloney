@@ -1,6 +1,7 @@
 package ch.hsr.maloney.storage;
 
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,7 +24,7 @@ public class FileAttributes {
         DateChanged = dateChanged;
         DateCreated = dateCreated;
         DateAccessed = dateAccessed;
-        this.artifacts = artifacts;
+        this.artifacts = new LinkedList<>(artifacts);
     }
 
     public String getFileName() {

@@ -1,21 +1,22 @@
 package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.util.Event;
-import javafx.beans.Observable;
+
+import java.util.Observable;
 
 /**
  * Created by olive_000 on 25.10.2016.
  */
-public interface JobProcessor extends Observable {
+public abstract class JobProcessor extends Observable {
     /**
      * Starts the Processing Jobs
      */
-    void start();
+    abstract void start();
 
     /**
      * Stops the Processing of Jobs
      */
-    void stop();
+    abstract void stop();
 
     /**
      * Adds a Job to be executed with the specified Event.
@@ -23,5 +24,5 @@ public interface JobProcessor extends Observable {
      * @param job       Job to be executed.
      * @param event     Event which has to be forwarded to Job.
      */
-    void enqueue(Job job, Event event);
+    abstract void enqueue(Job job, Event event);
 }

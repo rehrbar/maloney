@@ -1,7 +1,7 @@
 package ch.hsr.maloney.processing;
 
-import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.Context;
+import ch.hsr.maloney.util.Event;
 import org.sleuthkit.datamodel.*;
 
 import java.util.ArrayList;

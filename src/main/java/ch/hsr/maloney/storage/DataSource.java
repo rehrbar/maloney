@@ -24,5 +24,5 @@ public interface DataSource<T> {
      *
      * @param path      Path of the file to add to the DataSource
      */
-    void addFile(String path);
+    UUID addFile(String path);
 }

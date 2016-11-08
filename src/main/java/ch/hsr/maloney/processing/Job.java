@@ -32,14 +32,14 @@ public interface Job {
      *
      * @return  List of Events which this Job requires before execution
      */
-    List<Event> getRequiredEvents();
+    List<String> getRequiredEvents();
 
     /**
      * A List of Events which this Job creates when it is executed
      *
      * @return  List of Events which this Job produces after execution
      */
-    List<Event> getProducedEvents();
+    List<String> getProducedEvents();
 
     /**
      * Getter for Name of this Job.

@@ -1,5 +1,7 @@
 package ch.hsr.maloney.storage;
 
+import java.util.UUID;
+
 /**
  * Created by olive_000 on 01.11.2016.
  */
@@ -15,7 +17,7 @@ public interface DataSource<T> {
      * @param fileID    Unique ID of file to get
      * @return          Specified File
      */
-    T getFile(String fileID);
+    T getFile(UUID fileID);
 
     /**
      * Adds a new File to the DataSource

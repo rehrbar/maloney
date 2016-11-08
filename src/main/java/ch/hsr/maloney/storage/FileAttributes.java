@@ -8,18 +8,18 @@ import java.util.UUID;
  * Created by olive_000 on 07.11.2016.
  */
 public class FileAttributes {
-    private String FileName;
-    private String FIlePath;
-    private UUID FileId;
+    private String fileName;
+    private String filePath;
+    private UUID fileId;
     private Date DateChanged;
     private Date DateCreated;
     private Date DateAccessed;
     private List<Artifact> artifacts;
 
-    public FileAttributes(String fileName, String FIlePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, List<Artifact> artifacts) {
-        FileName = fileName;
-        this.FIlePath = FIlePath;
-        FileId = fileId;
+    public FileAttributes(String fileName, String filePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, List<Artifact> artifacts) {
+        this.fileName = fileName;
+        this.filePath = filePath;
+        this.fileId = fileId;
         DateChanged = dateChanged;
         DateCreated = dateCreated;
         DateAccessed = dateAccessed;
@@ -27,15 +27,15 @@ public class FileAttributes {
     }
 
     public String getFileName() {
-        return FileName;
+        return fileName;
     }
 
-    public String getFIlePath() {
-        return FIlePath;
+    public String getFilePath() {
+        return filePath;
     }
 
     public UUID getFileId() {
-        return FileId;
+        return fileId;
     }
 
     public Date getDateChanged() {

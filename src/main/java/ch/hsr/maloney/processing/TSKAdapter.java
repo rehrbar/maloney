@@ -1,5 +1,7 @@
-package ch.hsr.maloney.core;
+package ch.hsr.maloney.processing;
 
+import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.Context;
 import org.sleuthkit.datamodel.*;
 
 import java.util.ArrayList;
@@ -13,6 +15,13 @@ import java.util.logging.Logger;
  * Created by olive_000 on 01.11.2016.
  */
 public class TSKAdapter implements Job {
+    LinkedList<Event> producedEvents;
+
+    public TSKAdapter(){
+        this.producedEvents = new LinkedList<>();
+        this.producedEvents.add(new Event("newFile",this.getJobName(), ""));
+    }
+
     public void readImage(String imagePath){
 
         try {
@@ -69,7 +78,7 @@ public class TSKAdapter implements Job {
 
     @Override
     public List<Event> getProducedEvents() {
-        return new LinkedList<Event>(new Event("newFile",this.getJobName(),null));
+        return producedEvents;
     }
 
     @Override

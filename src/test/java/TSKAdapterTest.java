@@ -1,4 +1,4 @@
-import ch.hsr.maloney.core.TSKAdapter;
+import ch.hsr.maloney.processing.TSKAdapter;
 import org.junit.Test;
 
 import java.nio.file.Files;

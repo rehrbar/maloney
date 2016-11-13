@@ -1,3 +1,5 @@
+package TSK;
+
 import ch.hsr.maloney.processing.TSKReadImageJob;
 import org.junit.Test;
 

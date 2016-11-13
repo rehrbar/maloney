@@ -1,3 +1,5 @@
+package TSK;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.sleuthkit.datamodel.Examples.Sample;

@@ -29,6 +29,7 @@ dependencies {
 
 test {
     systemProperty "java.library.path", file("..\\lib")
+    exclude "TSK/**"
 }
 
 // Adding ant build commands and prefixing them with 'tsk-'

@@ -9,7 +9,7 @@ import static org.junit.Assert.assertEquals;
 public class DemoTests {
 
     @Test
-    public void helloWorldTest(){
+    public void helloWorldTest() {
         assertEquals("Hello World!", Demo.helloWorld());
     }
 

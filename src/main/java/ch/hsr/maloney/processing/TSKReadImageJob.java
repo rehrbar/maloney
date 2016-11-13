@@ -15,11 +15,12 @@ import java.util.logging.Logger;
  * Created by olive_000 on 01.11.2016.
  */
 public class TSKReadImageJob implements Job {
-    LinkedList<String> producedEvents;
+    LinkedList<String> producedEvents = new LinkedList<>();
+    LinkedList<String> requiredEvents = new LinkedList<>();
 
     public TSKReadImageJob(){
-        this.producedEvents = new LinkedList<>();
         this.producedEvents.add("newFile");
+        this.requiredEvents.add("newDiskImage");
     }
 
     public void readImage(String imagePath){
@@ -73,7 +74,7 @@ public class TSKReadImageJob implements Job {
 
     @Override
     public List<String> getRequiredEvents() {
-        return null;
+        return requiredEvents;
     }
 
     @Override

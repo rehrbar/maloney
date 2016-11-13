@@ -7,6 +7,7 @@ import org.sleuthkit.datamodel.BlackboardArtifact;
  * Created by r1ehrbar on 17.10.2016.
  */
 public class Demo {
+    // TODO remove this superlfuent class.
     public static String helloWorld(){
         return "Hello World!";
     }

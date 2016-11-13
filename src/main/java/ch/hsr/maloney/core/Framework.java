@@ -44,7 +44,7 @@ public class Framework implements EventObserver {
 
     public void startWithDisk(String fileName){
         UUID uuid = context.getDataSource().addFile(fileName);
-        Event event = new Event("newImage","Framework", uuid);
+        Event event = new Event("newDiskImage","ch.hsr.maloney.core", uuid);
 
         registeredJobs.forEach((job -> {
             if(job.getRequiredEvents().isEmpty()){

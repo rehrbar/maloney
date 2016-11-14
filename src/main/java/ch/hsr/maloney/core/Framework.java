@@ -8,6 +8,7 @@ import ch.hsr.maloney.storage.SimpleMetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.EventObserver;
+import ch.hsr.maloney.util.Log4jLogger;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class Framework implements EventObserver {
         this.context = new Context(
                 simpleMetadataStore,
                 null, //TODO Implement adn add Progress Tracker
-                null, //TODO Implement and add Logger
+                new Log4jLogger(),
                 new PlainSource(simpleMetadataStore)
         );
     }

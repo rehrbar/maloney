@@ -2,6 +2,8 @@ package ch.hsr.maloney.storage.es;
 
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
+import ch.hsr.maloney.util.Context;
+import ch.hsr.maloney.util.Logger;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.get.GetResponse;
@@ -20,26 +22,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 /**
  * ElasticSearch metadata store.
  */
 public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
-    protected final ObjectMapper mapper;
-    protected TransportClient client;
-    protected String indexName = "maloney";
-    protected static final String fileAttributeTypeName = "fileAttribute";
+    final ObjectMapper mapper;
+    final Logger logger;
+    TransportClient client;
+    String indexName = "maloney";
+    static final String fileAttributeTypeName = "fileAttribute";
 
     /**
      * Creates a new Instance of MetadataStore with ElasticSearch as backend.
+     *
      * @throws UnknownHostException
      */
-    public MetadataStore() throws UnknownHostException {
+    public MetadataStore(Logger logger) throws UnknownHostException {
+        this.logger = logger;
         // TODO pass configuration to transportclient for cluster name and node.
         // TODO crete index if it does not exist.
         client = new PreBuiltTransportClient(Settings.EMPTY)
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
+        logger.logInfo("Connected nodes: " + String.join(", ", client.connectedNodes()
+                .stream().map(node -> node.getName()).collect(Collectors.toList())));
         mapper = new ObjectMapper();
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
@@ -50,8 +58,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         try {
             return mapper.readValue(response.getSourceAsBytes(), FileAttributes.class);
         } catch (IOException e) {
-            e.printStackTrace();
-            // TODO log this exception
+            logger.logError("Could not parse FileAttributes retrieved from elasticsearch.", e);
         }
         return null;
     }
@@ -92,8 +99,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
             UUID.fromString(response.getId());
         } catch (IOException e) {
-            e.printStackTrace();
-            // TODO log this
+            logger.logError("Could not index file attributes into ElasticSearch.", e);
         }
     }
 
@@ -110,7 +116,9 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         client.prepareUpdate(indexName, fileAttributeTypeName, fileId.toString())
                 .setScript(new Script("if (ctx._source.containsKey(\\\"artifacts\\\")) {ctx._source.artifacts += artifact;} else {ctx._source.artifacts = [artifact]}",
                         ScriptService.ScriptType.INLINE,
-                        null, new HashMap<String, Artifact>(){{put("artifact", artifact);}}))
+                        null, new HashMap<String, Artifact>() {{
+                    put("artifact", artifact);
+                }}))
                 .get();
     }
 

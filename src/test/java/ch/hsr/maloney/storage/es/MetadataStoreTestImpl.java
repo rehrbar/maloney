@@ -1,5 +1,6 @@
 package ch.hsr.maloney.storage.es;
 
+import ch.hsr.maloney.util.Log4jLogger;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -9,20 +10,19 @@ import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataStore {
     public MetadataStoreTestImpl() throws UnknownHostException {
-        super();
+        super(new Log4jLogger());
     }
 
     public void clearIndex() {
         try {
-            System.out.println("Deleting index...");
+            logger.logInfo("Deleting index...");
             client.admin().indices().delete(new DeleteIndexRequest(indexName)).actionGet();
 
         } catch (Exception e) {
-            System.out.println("Could not delete index.");
+            logger.logWarn("Could not delete index.", e);
         }
     }
 
@@ -69,7 +69,7 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
         );
         BulkResponse bulkResponse = bulk.get();
         bulkResponse.forEach(bulkItemResponse -> {
-            System.out.println(String.format("-> Added document: %s (%s)", bulkItemResponse.getId(), bulkItemResponse.getResponse().getResult()));
+            this.logger.logInfo(String.format("-> Added document: %s (%s)", bulkItemResponse.getId(), bulkItemResponse.getResponse().getResult()));
             generatedIds.add(bulkItemResponse.getId());
         });
         return generatedIds;

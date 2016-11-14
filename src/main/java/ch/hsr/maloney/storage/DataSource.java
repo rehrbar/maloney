@@ -33,6 +33,7 @@ public interface DataSource {
      * Adds a new File to the DataSource
      *
      * @param path      Path of the file to add to the DataSource
+     * @param parentId  UUID of the parent, null if there is none (e.g. root image)
      */
-    UUID addFile(String path);
+    UUID addFile(String path, UUID parentId);
 }

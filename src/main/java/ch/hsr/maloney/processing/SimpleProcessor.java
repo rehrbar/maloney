@@ -12,7 +12,7 @@ import java.util.Map;
  * Created by olive_000 on 08.11.2016.
  */
 public class SimpleProcessor extends JobProcessor {
-    private Map<Job, Event> queue;
+    private Map<Job, Event> queue; //TODO replace Map with Dictionary
     private Context ctx;
 
     public SimpleProcessor(Context ctx) {
@@ -27,7 +27,6 @@ public class SimpleProcessor extends JobProcessor {
         List<Job> removeWhenDone = new LinkedList<>();
         while(!queue.isEmpty()){
             queue.forEach((job, event) -> {
-                // TODO Check first if the job actually requires this event.
                 if (job.canRun(ctx, event)){
                     job.run(ctx, event);
                     removeWhenDone.add(job);

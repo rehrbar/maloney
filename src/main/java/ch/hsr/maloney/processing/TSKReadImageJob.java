@@ -1,64 +1,27 @@
 package ch.hsr.maloney.processing;
 
+import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import org.sleuthkit.datamodel.*;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Created by olive_000 on 01.11.2016.
  */
 public class TSKReadImageJob implements Job {
-    LinkedList<String> producedEvents = new LinkedList<>();
-    LinkedList<String> requiredEvents = new LinkedList<>();
+    private LinkedList<String> producedEvents = new LinkedList<>();
+    private LinkedList<String> requiredEvents = new LinkedList<>();
 
     public TSKReadImageJob(){
         this.producedEvents.add("newFile");
-        this.requiredEvents.add("newDiskImage");
-    }
-
-    public void readImage(String imagePath){
-
-        try {
-            SleuthkitCase sk = SleuthkitCase.newCase(imagePath + ".db");
-
-            // initialize the case with an image
-            String timezone = "";
-            SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
-            ArrayList<String> paths = new ArrayList<>();
-            paths.add(imagePath);
-            try {
-                process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
-            } catch (TskDataException ex) {
-                Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
-            }
-            process.commit();
-
-            // print out all the images found, and their children
-            List<Image> images = sk.getImages();
-            for (Image image : images) {
-                System.out.println("Found image: " + image.getName());
-                System.out.println("There are " + image.getChildren().size() + " children.");
-                for (Content content : image.getChildren()) {
-                    System.out.println('"' + content.getName() + '"' + " is a child of " + image.getName());
-                }
-            }
-
-            // print out all .txt files found
-            List<AbstractFile> files = sk.findAllFilesWhere("LOWER(name) LIKE LOWER('%.txt')");
-            for (AbstractFile file : files) {
-                System.out.println("Found text file: " + file.getName());
-            }
-
-        } catch (TskCoreException e) {
-            System.out.println("Exception caught: " + e.getMessage());
-        }
+        this.requiredEvents.add("newImage");
     }
 
     @Override
@@ -68,8 +31,78 @@ public class TSKReadImageJob implements Job {
 
     @Override
     public List<Event> run(Context ctx, Event evt) {
-        readImage(""); //TODO read path parameters
-        return null;
+        java.io.File file = ctx.getDataSource().getFile(evt.getFileUuid());
+        final String IMAGE_PATH = file.getAbsolutePath();
+        List<Event> events = new LinkedList<>();
+
+        try {
+            //TODO how to manage the TSK DB
+            // where should we put it?
+            // delete it afterwards?
+            SleuthkitCase sk;
+            try{
+                if(!Files.exists(Paths.get(IMAGE_PATH + ".db"))){
+                    SleuthkitCase.newCase(IMAGE_PATH + ".db");
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            sk = SleuthkitCase.openCase(IMAGE_PATH + ".db");
+
+            // initialize the case with an image
+            String timezone = "";
+            SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
+            ArrayList<String> paths = new ArrayList<>();
+            paths.add(IMAGE_PATH);
+            try {
+                process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
+            } catch (TskDataException ex) {
+                ctx.getLogger().logError(this.getJobName() + ": Could not add image " + IMAGE_PATH, ex);
+            }
+            process.commit();
+
+            // add all files found inside the image to the MetaDataStore
+            List<Image> images = sk.getImages();
+            for (Image image : images) {
+                ctx.getLogger().logInfo(this.getJobName() + ": Found image " + image.getName());
+                ctx.getLogger().logInfo(this.getJobName() + ": There are " + image.getChildren().size() + " children.");
+            }
+
+            // push all files into MetaDataStore
+            sk.findAllFilesWhere("1=1").forEach(abstractFile -> {
+                pushToMetaDataStore(ctx, evt, events, abstractFile);
+            });
+        } catch (TskCoreException e) {
+            ctx.getLogger().logFatal(this.getJobName() + ": Failed with Exception", e);
+        }
+
+        //TODO create and return events
+        return events;
+    }
+
+    private void pushToMetaDataStore(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
+        //TODO add to DataSource
+        UUID uuid = UUID.randomUUID();
+        try {
+            ctx.getMetadataStore().addFileAttributes(
+                    new FileAttributes( //TODO add crated, edited, changed etc. stamps
+                            abstractFile.getName(),
+                            abstractFile.getUniquePath(),
+                            uuid,
+                            null,
+                            null,
+                            null,
+                            null,
+                            evt.getFileUuid()
+                    )
+            );
+        } catch (TskCoreException e) {
+            ctx.getLogger().logError(
+                    this.getJobName() + ": Couldn't read Unique Path from file " + abstractFile.getName(), e
+            );
+        }
+        events.add(new Event("fileAdded",this.getJobName(),uuid));
+        ctx.getLogger().logInfo(this.getJobName() + ": Added \"" + abstractFile.getName() + "\" to MetaDataStore");
     }
 
     @Override

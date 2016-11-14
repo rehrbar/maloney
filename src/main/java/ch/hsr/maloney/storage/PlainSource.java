@@ -1,7 +1,5 @@
 package ch.hsr.maloney.storage;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Date;
@@ -35,9 +33,9 @@ public class PlainSource implements DataSource {
     }
 
     @Override
-    public UUID addFile(String path) {
+    public UUID addFile(String path, UUID parentId) {
         UUID uuid = UUID.randomUUID();
-        metadataStore.addFileAttributes(new FileAttributes("image",path,uuid,new Date(),new Date(),new Date(), null));
+        metadataStore.addFileAttributes(new FileAttributes("image",path,uuid,new Date(),new Date(),new Date(), null, parentId));
         return uuid;
     }
 }

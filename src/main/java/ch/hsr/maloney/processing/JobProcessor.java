@@ -11,12 +11,12 @@ public abstract class JobProcessor extends Observable {
     /**
      * Starts the Processing Jobs
      */
-    abstract void start();
+    public abstract void start();
 
     /**
      * Stops the Processing of Jobs
      */
-    abstract void stop();
+    public abstract void stop();
 
     /**
      * Adds a Job to be executed with the specified Event.
@@ -24,5 +24,5 @@ public abstract class JobProcessor extends Observable {
      * @param job       Job to be executed.
      * @param event     Event which has to be forwarded to Job.
      */
-    abstract void enqueue(Job job, Event event);
+    public abstract void enqueue(Job job, Event event);
 }

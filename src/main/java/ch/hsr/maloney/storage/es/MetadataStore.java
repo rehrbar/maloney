@@ -95,6 +95,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     public FileAttributes getFileAttributes(UUID fileID) {
         GetResponse response = client.prepareGet(indexName, fileAttributeTypeName, fileID.toString()).get();
         try {
+            // TODO update artifacts within FileAttributes
             return mapper.readValue(response.getSourceAsBytes(), FileAttributes.class);
         } catch (IOException e) {
             logger.logError("Could not parse FileAttributes retrieved from elasticsearch.", e);
@@ -128,8 +129,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public List<Artifact> getArtifacts(UUID fileId) {
-        // TODO Remove this method, because this is not really useful. All Artifacts are sored together as file.
-        // See following method call.!
+        // TODO Implement this method correctly with searchers.
         return this.getFileAttributes(fileId).getArtifacts();
     }
 

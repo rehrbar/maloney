@@ -6,6 +6,9 @@ task wrapper(type: Wrapper) {
 }
 
 apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = "ch.hsr.maloney.maloney_cli.Start"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

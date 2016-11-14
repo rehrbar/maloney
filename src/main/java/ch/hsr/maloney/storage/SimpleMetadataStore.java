@@ -19,7 +19,6 @@ public class SimpleMetadataStore implements MetadataStore{
 
     @Override
     public void addFileAttributes(FileAttributes fileAttributes) {
-        //TODO change signature so that caller does not need to know FileAttributes
         uuidFileAttributesMap.put(fileAttributes.getFileId(), fileAttributes);
     }
 

@@ -7,6 +7,9 @@ import ch.hsr.maloney.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
@@ -20,10 +23,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -38,6 +38,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     TransportClient client;
     String indexName = "maloney";
     static final String fileAttributeTypeName = "fileAttribute";
+    static final String artifactTypeName = "artifact";
 
     /**
      * Creates a new Instance of MetadataStore with ElasticSearch as backend.
@@ -52,8 +53,42 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
         logger.logInfo("Connected nodes: " + String.join(", ", client.connectedNodes()
                 .stream().map(node -> node.getName()).collect(Collectors.toList())));
+        updateMapping(false);
         mapper = new ObjectMapper();
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+    }
+
+    void updateMapping(boolean force) {
+        // https://www.elastic.co/guide/en/elasticsearch/guide/current/_finding_exact_values.html
+        boolean wasCreated = false;
+        IndicesExistsResponse existsResponse = client.admin().indices().prepareExists(indexName).get();
+        if(!existsResponse.isExists()){
+            client.admin().indices().prepareCreate(indexName).get();
+        }
+        if(wasCreated || force){
+            // Index has to be created to work.
+
+            try {
+                XContentBuilder mapping = jsonBuilder()
+                        .startObject()
+                        .startObject(artifactTypeName)
+                        .startObject("properties")
+                        .startObject("fileId")
+                        .field("type","string")
+                        .field("index", "not_analyzed")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject();
+
+                PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
+                        .setType(artifactTypeName)
+                        .setSource(mapping).get();
+                logger.logDebug("Update mapping ack? " + putMappingResponse.isAcknowledged());
+            } catch (IOException e) {
+                logger.logError("Could not update mapping.", e);
+            }
+        }
     }
 
     @Override
@@ -72,36 +107,20 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         // TODO Replace fileId type to generic one: Need to support external file identifier, i.e. sleuthkit file id
         // TODO Provide file identifier as argument.
         try {
-            // Mapper would be an easy job, but it cannot handle artifacts as well.
-            // TODO Define artifacts as nested type or store them in a separate type.
-            // Objects in arrays are not well supported. Relations will be lost.
-            byte[] json = mapper.writeValueAsBytes(fileAttributes);
-//            XContentBuilder builder = jsonBuilder()
-//                    .startObject()
-//                    .field("fileName", fileAttributes.getFileName())
-//                    .field("filePath", fileAttributes.getFilePath())<
-//                    .field("fileId", fileAttributes.getFileId())
-//                    .field("dateCreated", fileAttributes.getDateCreated())
-//                    .field("dateChanged", fileAttributes.getDateChanged())
-//                    .field("dateAccessed", fileAttributes.getDateAccessed())
-//                    .array("artifacts", fileAttributes.getArtifacts().stream().map(art -> {
-//                        try {
-//                            return jsonBuilder().startObject()
-//                                    .field("originator", art.getOriginator())
-//                                    .field("value", art.getValue()) // TODO convert any object to str
-//                                    .field("type", art.getType())
-//                                    .endObject().string();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                        return null;
-//                    }).filter(p -> {System.out.println(p); return p != null;}).toArray())
-//                    .endObject();
-            IndexResponse response = client.prepareIndex(this.indexName, fileAttributeTypeName, fileAttributes.getFileId().toString())
-                    .setSource(json)
+            XContentBuilder builder = jsonBuilder()
+                    .startObject()
+                    .field("fileName", fileAttributes.getFileName())
+                    .field("filePath", fileAttributes.getFilePath())
+                    .field("fileId", fileAttributes.getFileId())
+                    .field("dateCreated", fileAttributes.getDateCreated())
+                    .field("dateChanged", fileAttributes.getDateChanged())
+                    .field("dateAccessed", fileAttributes.getDateAccessed())
+                    .endObject();
+            client.prepareIndex(this.indexName, fileAttributeTypeName, fileAttributes.getFileId().toString())
+                    .setSource(builder)
                     .get();
 
-            UUID.fromString(response.getId());
+            addArtifacts(fileAttributes.getFileId(), fileAttributes.getArtifacts());
         } catch (IOException e) {
             logger.logError("Could not index file attributes into ElasticSearch.", e);
         }
@@ -116,26 +135,30 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public void addArtifact(UUID fileId, Artifact artifact) {
-        try {
-            final String json = mapper.writeValueAsString(artifact);
-            // TODO fix cast errors while inserting another artifact
-            logger.logDebug(String.format("Adding artifact to %s: %s", fileId.toString(), json));
-            client.prepareUpdate(indexName, fileAttributeTypeName, fileId.toString())
-                    .setScript(new Script("if (ctx._source.containsKey(\"artifacts\")) {ctx._source.artifacts += params.artifact;} else {ctx._source.artifacts = [null] + params.artifact;}",
-                            ScriptService.ScriptType.INLINE,
-                            null, new HashMap<String, String>() {{
-                        put("artifact", json);
-                    }}))
-                    .get();
-        } catch (JsonProcessingException e) {
-            logger.logError("Could not add artifact to file.", e);
-        }
+        addArtifacts(fileId, new LinkedList<Artifact>() {{
+            push(artifact);
+        }});
     }
 
     @Override
     public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
+        BulkRequestBuilder bulk = client.prepareBulk();
         // TODO improve through bulk update.
-        artifacts.forEach(a -> addArtifact(fileId, a));
+        artifacts.forEach(artifact -> {
+            try {
+                XContentBuilder builder = jsonBuilder().startObject()
+                        .field("fileId", fileId.toString())
+                        .field("originator", artifact.getOriginator())
+                        .field("value", mapper.writeValueAsString(artifact.getValue())) // TODO convert any object to str
+                        .field("type", artifact.getType())
+                        .endObject();
+                logger.logDebug(String.format("Adding artifact to: %s", fileId.toString(), builder.string()));
+                bulk.add(client.prepareIndex(indexName, artifactTypeName).setSource(builder));
+            } catch (IOException e) {
+                logger.logError("Could not add artifact for file.", e);
+            }
+        });
+        bulk.get();
     }
 
 }

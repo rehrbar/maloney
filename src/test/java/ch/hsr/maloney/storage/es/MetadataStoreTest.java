@@ -50,7 +50,7 @@ public class MetadataStoreTest {
         FileAttributes attributes = es.getFileAttributes(UUID.fromString("f99f4262-7b84-440a-b650-ccdd30940511"));
         Assert.assertEquals("cmd.exe", attributes.getFileName());
         Assert.assertEquals("C:\\Windows\\", attributes.getFilePath());
-        Assert.assertEquals("da37863e-aa7d-11e6-80f5-76304dec7eb7", attributes.getFileId().toString());
+        Assert.assertEquals("f99f4262-7b84-440a-b650-ccdd30940511", attributes.getFileId().toString());
     }
 
     @Test
@@ -58,19 +58,33 @@ public class MetadataStoreTest {
         Artifact art = new Artifact("test","SGVsbG8gd29ybGQh","base64");
         UUID fileId = UUID.fromString("f99f4262-7b84-440a-b650-ccdd30940511");
         es.addArtifact(fileId, art);
-        String result = es.dumpFileAttributeSource(fileId);
+        String result = es.dumpArtifactSource(fileId);
+        System.out.printf("-> source: %s", result);
         Assert.assertTrue(result.contains("SGVsbG8gd29ybGQh"));
     }
 
     @Test
-    public void addMultipleArtifactTest(){
+    public void addArtifactToExistingTest(){
+        Artifact art = new Artifact("test","the answer is 42!","content");
+        UUID fileId = UUID.fromString("2db50b31-8927-4833-8bb1-0ec9150c12c3");
+        es.addArtifact(fileId, art);
+        String result = es.dumpArtifactSource(fileId);
+        System.out.printf("-> source: %s", result);
+        Assert.assertTrue(result.contains("the answer is 42!")); // new value
+        Assert.assertTrue(result.contains("bm90ZXBhZC5leGU=")); // old value
+
+    }
+
+    @Test
+    public void addArtifactsTest(){
         List<Artifact> artifacts = new LinkedList<Artifact>(){{
             push( new Artifact("test","SGVsbG8gd29ybGQh","base64"));
             push(new Artifact("test","86fb269d190d2c85f6e0468ceca42a20","md5"));
         }};
         UUID fileId = UUID.fromString("f99f4262-7b84-440a-b650-ccdd30940511");
         es.addArtifacts(fileId, artifacts);
-        String result = es.dumpFileAttributeSource(fileId);
+        String result = es.dumpArtifactSource(fileId);
+        System.out.printf("-> source: %s", result);
         Assert.assertTrue(result.contains("base64"));
         Assert.assertTrue(result.contains("SGVsbG8gd29ybGQh"));
         Assert.assertTrue(result.contains("md5"));

@@ -30,7 +30,7 @@ public class FileAttributes {
         this.dateChanged = dateChanged;
         this.dateCreated = dateCreated;
         this.dateAccessed = dateAccessed;
-        if(artifacts ==  null){
+        if(artifacts !=  null){
             this.artifacts.addAll(artifacts);
         }
     }

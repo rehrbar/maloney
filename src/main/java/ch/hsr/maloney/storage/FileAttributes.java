@@ -12,19 +12,25 @@ public class FileAttributes {
     private String fileName;
     private String filePath;
     private UUID fileId;
-    private Date DateChanged;
-    private Date DateCreated;
-    private Date DateAccessed;
-    private List<Artifact> artifacts;
+    private Date dateChanged;
+    private Date dateCreated;
+    private Date dateAccessed;
+    private List<Artifact> artifacts = new LinkedList<>();
+
+    public FileAttributes(){
+        // Keep for deserialization.
+    }
 
     public FileAttributes(String fileName, String filePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, List<Artifact> artifacts) {
         this.fileName = fileName;
         this.filePath = filePath;
         this.fileId = fileId;
-        DateChanged = dateChanged;
-        DateCreated = dateCreated;
-        DateAccessed = dateAccessed;
-        this.artifacts = new LinkedList<>(artifacts);
+        this.dateChanged = dateChanged;
+        this.dateCreated = dateCreated;
+        this.dateAccessed = dateAccessed;
+        if(artifacts ==  null){
+            this.artifacts.addAll(artifacts);
+        }
     }
 
     public String getFileName() {
@@ -40,26 +46,18 @@ public class FileAttributes {
     }
 
     public Date getDateChanged() {
-        return DateChanged;
+        return dateChanged;
     }
 
     public Date getDateCreated() {
-        return DateCreated;
+        return dateCreated;
     }
 
     public Date getDateAccessed() {
-        return DateAccessed;
+        return dateAccessed;
     }
 
     public List<Artifact> getArtifacts() {
         return artifacts;
-    }
-
-    public void addArtifact(Artifact artifact){
-        artifacts.add(artifact);
-    }
-
-    public void removeArtifact(Artifact artifact){
-        artifacts.remove(artifact);
     }
 }

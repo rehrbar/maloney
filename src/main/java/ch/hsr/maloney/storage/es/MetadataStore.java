@@ -4,6 +4,7 @@ import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Logger;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.get.GetResponse;
@@ -11,6 +12,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
@@ -23,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 
 /**
@@ -43,7 +47,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     public MetadataStore(Logger logger) throws UnknownHostException {
         this.logger = logger;
         // TODO pass configuration to transportclient for cluster name and node.
-        // TODO crete index if it does not exist.
+        // TODO create index if it does not exist.
         client = new PreBuiltTransportClient(Settings.EMPTY)
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
         logger.logInfo("Connected nodes: " + String.join(", ", client.connectedNodes()
@@ -75,7 +79,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 //            XContentBuilder builder = jsonBuilder()
 //                    .startObject()
 //                    .field("fileName", fileAttributes.getFileName())
-//                    .field("filePath", fileAttributes.getFilePath())
+//                    .field("filePath", fileAttributes.getFilePath())<
 //                    .field("fileId", fileAttributes.getFileId())
 //                    .field("dateCreated", fileAttributes.getDateCreated())
 //                    .field("dateChanged", fileAttributes.getDateChanged())
@@ -112,21 +116,26 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public void addArtifact(UUID fileId, Artifact artifact) {
-        // TODO verify if value can be added as object or needs to be converted to json.
-        client.prepareUpdate(indexName, fileAttributeTypeName, fileId.toString())
-                .setScript(new Script("if (ctx._source.containsKey(\\\"artifacts\\\")) {ctx._source.artifacts += artifact;} else {ctx._source.artifacts = [artifact]}",
-                        ScriptService.ScriptType.INLINE,
-                        null, new HashMap<String, Artifact>() {{
-                    put("artifact", artifact);
-                }}))
-                .get();
+        try {
+            final String json = mapper.writeValueAsString(artifact);
+            // TODO fix cast errors while inserting another artifact
+            logger.logDebug(String.format("Adding artifact to %s: %s", fileId.toString(), json));
+            client.prepareUpdate(indexName, fileAttributeTypeName, fileId.toString())
+                    .setScript(new Script("if (ctx._source.containsKey(\"artifacts\")) {ctx._source.artifacts += params.artifact;} else {ctx._source.artifacts = [null] + params.artifact;}",
+                            ScriptService.ScriptType.INLINE,
+                            null, new HashMap<String, String>() {{
+                        put("artifact", json);
+                    }}))
+                    .get();
+        } catch (JsonProcessingException e) {
+            logger.logError("Could not add artifact to file.", e);
+        }
     }
 
     @Override
-    public void addArtifacts(Map<UUID, Artifact> uuidArtifactMap) {
-        // TODO This doesn't look like how it's intended to work. Only one artifact per UUID can be added,
-        // another artifact with the same UUID replaces the artifact added before.
-        throw new UnsupportedOperationException();
+    public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
+        // TODO improve through bulk update.
+        artifacts.forEach(a -> addArtifact(fileId, a));
     }
 
 }

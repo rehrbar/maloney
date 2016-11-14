@@ -10,6 +10,7 @@ import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataStore {
     public MetadataStoreTestImpl() throws UnknownHostException {
@@ -41,7 +42,7 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                 .setSource(
                         "fileName", "notepad.exe",
                         "filePath", "C:\\Windows\\",
-                        "fileId", "1337",
+                        "fileId", "da37863e-aa7d-11e6-80f5-76304dec7eb7",
                         "dateChanged", new Date(1436471820000L),
                         "dateCreated", new Date(1473823035000L),
                         "dateAccessed", new Date(1473823035000L)
@@ -51,7 +52,7 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                 .setSource(
                         "fileName", "cmd.exe",
                         "filePath", "C:\\Windows\\",
-                        "fileId", "5544",
+                        "fileId", "da37863e-aa7d-11e6-80f5-76304dec7eb7",
                         "dateChanged", new Date(1436471820000L),
                         "dateCreated", new Date(1473823035000L),
                         "dateAccessed", new Date(1473823035000L)
@@ -61,7 +62,7 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                 .setSource(
                         "fileName", "java.exe",
                         "filePath", "C:\\Program Files\\Java\\jre1.8.0_92\\bin",
-                        "fileId", "1338",
+                        "fileId", "da378a62-aa7d-11e6-80f5-76304dec7eb7",
                         "dateChanged", new Date(1473440417000L),
                         "dateCreated", new Date(1473440417000L),
                         "dateAccessed", new Date(1473440417000L)
@@ -73,5 +74,9 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
             generatedIds.add(bulkItemResponse.getId());
         });
         return generatedIds;
+    }
+
+    public String dumpFileAttributeSource(UUID id){
+        return client.prepareGet(indexName, fileAttributeTypeName, id.toString()).get().getSourceAsString();
     }
 }

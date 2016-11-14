@@ -46,11 +46,34 @@ public class MetadataStoreTest {
 
     @Test
     public void getFileAttributesTest(){
-        // TODO add default constructor and setters to FileAttributes.
         FileAttributes attributes = es.getFileAttributes(UUID.fromString("f99f4262-7b84-440a-b650-ccdd30940511"));
         Assert.assertEquals("cmd.exe", attributes.getFileName());
         Assert.assertEquals("C:\\Windows\\", attributes.getFilePath());
-        Assert.assertEquals("5544", attributes.getFileId());
+        Assert.assertEquals("da37863e-aa7d-11e6-80f5-76304dec7eb7", attributes.getFileId().toString());
+    }
+
+    @Test
+    public void addSingleArtifactTest(){
+        Artifact art = new Artifact("test","SGVsbG8gd29ybGQh","base64");
+        UUID fileId = UUID.fromString("f99f4262-7b84-440a-b650-ccdd30940511");
+        es.addArtifact(fileId, art);
+        String result = es.dumpFileAttributeSource(fileId);
+        Assert.assertTrue(result.contains("SGVsbG8gd29ybGQh"));
+    }
+
+    @Test
+    public void addMultipleArtifactTest(){
+        List<Artifact> artifacts = new LinkedList<Artifact>(){{
+            push( new Artifact("test","SGVsbG8gd29ybGQh","base64"));
+            push(new Artifact("test","86fb269d190d2c85f6e0468ceca42a20","md5"));
+        }};
+        UUID fileId = UUID.fromString("f99f4262-7b84-440a-b650-ccdd30940511");
+        es.addArtifacts(fileId, artifacts);
+        String result = es.dumpFileAttributeSource(fileId);
+        Assert.assertTrue(result.contains("base64"));
+        Assert.assertTrue(result.contains("SGVsbG8gd29ybGQh"));
+        Assert.assertTrue(result.contains("md5"));
+        Assert.assertTrue(result.contains("86fb269d190d2c85f6e0468ceca42a20"));
     }
 }
 

@@ -12,6 +12,7 @@ public class FileAttributes {
     private String fileName;
     private String filePath;
     private UUID fileId;
+    private UUID parentId;
     private Date dateChanged;
     private Date dateCreated;
     private Date dateAccessed;
@@ -21,10 +22,11 @@ public class FileAttributes {
         // Keep for deserialization.
     }
 
-    public FileAttributes(String fileName, String filePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, List<Artifact> artifacts) {
+    public FileAttributes(String fileName, String filePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, List<Artifact> artifacts, UUID parentId) {
         this.fileName = fileName;
         this.filePath = filePath;
         this.fileId = fileId;
+        this.parentId = parentId;
         this.dateChanged = dateChanged;
         this.dateCreated = dateCreated;
         this.dateAccessed = dateAccessed;

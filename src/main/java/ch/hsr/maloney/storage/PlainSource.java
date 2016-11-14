@@ -1,13 +1,14 @@
 package ch.hsr.maloney.storage;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.Date;
 import java.util.UUID;
 
 /**
  * Created by olive_000 on 08.11.2016.
  */
-public class PlainSource implements DataSource<File> {
+public class PlainSource implements DataSource {
     MetadataStore metadataStore;
 
     public PlainSource(MetadataStore metadataStore) {
@@ -26,9 +27,15 @@ public class PlainSource implements DataSource<File> {
     }
 
     @Override
-    public UUID addFile(String path) {
+    public FileInputStream getFileStream(UUID fileID) {
+        //TODO get as FileStream
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public UUID addFile(String path, UUID parentId) {
         UUID uuid = UUID.randomUUID();
-        metadataStore.addFileAttributes(new FileAttributes("image",path,uuid,new Date(),new Date(),new Date(), null));
+        metadataStore.addFileAttributes(new FileAttributes("image",path,uuid,new Date(),new Date(),new Date(), null, parentId));
         return uuid;
     }
 }

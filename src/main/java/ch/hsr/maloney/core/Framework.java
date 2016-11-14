@@ -11,9 +11,8 @@ import ch.hsr.maloney.util.EventObserver;
 import ch.hsr.maloney.util.Log4jLogger;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.List;
-import java.util.Observable;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by olive_000 on 25.10.2016.
@@ -21,12 +20,14 @@ import java.util.UUID;
 public class Framework implements EventObserver {
     private JobProcessor jobProcessor;
     private Context context;
-    private Object eventQueue; //TODO Better Queue with nice persistence
+    private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
     public Framework() {
-        this.jobProcessor = new SimpleProcessor(context);
         initializeContext();
+        this.registeredJobs = new LinkedList<>();
+        this.eventQueue = new ConcurrentLinkedQueue<>();
+        this.jobProcessor = new SimpleProcessor(context);
     }
 
     private void initializeContext(){
@@ -44,14 +45,15 @@ public class Framework implements EventObserver {
     }
 
     public void startWithDisk(String fileName){
-        UUID uuid = context.getDataSource().addFile(fileName);
+        UUID uuid = context.getDataSource().addFile(fileName, null);
         Event event = new Event("newDiskImage","ch.hsr.maloney.core", uuid);
 
         registeredJobs.forEach((job -> {
-            if(job.getRequiredEvents().isEmpty()){
-                //TODO enqueue Jobs in JobProcessor
-            }
+            //TODO check whether Job is interested in this event or not
+            jobProcessor.enqueue(job, event);
         }));
+
+        jobProcessor.start();
     }
 
     public void register(Job job){
@@ -75,6 +77,6 @@ public class Framework implements EventObserver {
 
     @Override
     public void update(Observable o, Event arg) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 }

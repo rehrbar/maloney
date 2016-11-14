@@ -28,7 +28,7 @@ public class SimpleProcessor extends JobProcessor {
         while(!queue.isEmpty()){
             queue.forEach((job, event) -> {
                 if (job.canRun(ctx, event)){
-                    job.run(ctx, event);
+                    job.run(ctx, event); //TODO notify framework about new Events
                     removeWhenDone.add(job);
                 }
             });

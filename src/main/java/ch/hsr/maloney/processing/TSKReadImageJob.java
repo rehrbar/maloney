@@ -69,7 +69,7 @@ public class TSKReadImageJob implements Job {
             }
 
             // push all files into MetaDataStore
-            sk.findAllFilesWhere("1=1").forEach(abstractFile -> {
+            sk.findAllFilesWhere("1=1").forEach(abstractFile -> { // Low-key SQL Injection
                 pushToMetaDataStore(ctx, evt, events, abstractFile);
             });
         } catch (TskCoreException e) {
@@ -81,8 +81,7 @@ public class TSKReadImageJob implements Job {
     }
 
     private void pushToMetaDataStore(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
-        //TODO add to DataSource
-        UUID uuid = UUID.randomUUID();
+        UUID uuid = UUID.randomUUID();//TODO add to DataSource
         try {
             ctx.getMetadataStore().addFileAttributes(
                     new FileAttributes( //TODO add crated, edited, changed etc. stamps

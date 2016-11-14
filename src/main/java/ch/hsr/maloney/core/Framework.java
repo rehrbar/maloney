@@ -8,7 +8,7 @@ import ch.hsr.maloney.storage.SimpleMetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.EventObserver;
-import ch.hsr.maloney.util.ToConsoleLogger;
+import ch.hsr.maloney.util.Log4jLogger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -33,8 +33,8 @@ public class Framework implements EventObserver {
         SimpleMetadataStore simpleMetadataStore = new SimpleMetadataStore();
         this.context = new Context(
                 simpleMetadataStore,
-                null, //TODO Implement and add Progress Tracker
-                new ToConsoleLogger(), //TODO better Logger
+                null, //TODO Implement adn add Progress Tracker
+                new Log4jLogger(),
                 new PlainSource(simpleMetadataStore)
         );
     }

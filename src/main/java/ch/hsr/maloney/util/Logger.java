@@ -27,6 +27,12 @@ public interface Logger {
     void logTrace(String msg);
 
     /**
+     * Log a debug message.
+     * @param msg   Debug message to be logged.
+     */
+    void logDebug(String msg);
+
+    /**
      * Log a Warning
      *
      * @param msg   Message for context

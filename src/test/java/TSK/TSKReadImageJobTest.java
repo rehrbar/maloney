@@ -37,6 +37,6 @@ public class TSKReadImageJobTest {
         MetadataStore metadataStore = new SimpleMetadataStore();
 
         tskReadImageJob.run(new Context(metadataStore , null, new ToConsoleLogger(), new PlainSource(metadataStore)),
-                new Event("newImage","Test", UUID.randomUUID()));
+                new Event("newDiskImage","Test", UUID.randomUUID()));
     }
 }

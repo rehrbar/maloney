@@ -21,7 +21,7 @@ public class TSKReadImageJob implements Job {
 
     public TSKReadImageJob(){
         this.producedEvents.add("newFile");
-        this.requiredEvents.add("newImage");
+        this.requiredEvents.add("newDiskImage");
     }
 
     @Override

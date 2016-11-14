@@ -62,4 +62,8 @@ public class FileAttributes {
     public List<Artifact> getArtifacts() {
         return artifacts;
     }
+
+    public UUID getParentId() {
+        return parentId;
+    }
 }

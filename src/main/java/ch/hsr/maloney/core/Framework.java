@@ -9,7 +9,6 @@ import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.EventObserver;
 import ch.hsr.maloney.util.Log4jLogger;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;

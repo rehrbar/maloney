@@ -6,7 +6,7 @@ package ch.hsr.maloney.util;
 public class ToConsoleLogger implements Logger {
     @Override
     public void logError(String msg, Exception ex) {
-
+        toConsole("ERROR: " + msg + " Exception: " + ex.getMessage());
     }
 
     @Override
@@ -17,6 +17,11 @@ public class ToConsoleLogger implements Logger {
     @Override
     public void logTrace(String msg) {
         toConsole(msg);
+    }
+
+    @Override
+    public void logDebug(String msg) {
+        toConsole("DEBUG: " + msg);
     }
 
     @Override

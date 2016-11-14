@@ -45,7 +45,8 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                         "fileId", "da37863e-aa7d-11e6-80f5-76304dec7eb7",
                         "dateChanged", new Date(1436471820000L),
                         "dateCreated", new Date(1473823035000L),
-                        "dateAccessed", new Date(1473823035000L)
+                        "dateAccessed", new Date(1473823035000L),
+                        "parentId", "dadec7c6-ad8c-4f80-b6da-379fceccd0fc"
                 )
         );
         bulk.add(client.prepareIndex(indexName, fileAttributeTypeName, "f99f4262-7b84-440a-b650-ccdd30940511")
@@ -55,7 +56,8 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                         "fileId", "da37863e-aa7d-11e6-80f5-76304dec7eb7",
                         "dateChanged", new Date(1436471820000L),
                         "dateCreated", new Date(1473823035000L),
-                        "dateAccessed", new Date(1473823035000L)
+                        "dateAccessed", new Date(1473823035000L),
+                        "parentId", "dadec7c6-ad8c-4f80-b6da-379fceccd0fc"
                 )
         );
         bulk.add(client.prepareIndex(indexName, fileAttributeTypeName, "683249b6-a3e1-41e2-bda5-74c6eab36681")
@@ -65,7 +67,8 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                         "fileId", "da378a62-aa7d-11e6-80f5-76304dec7eb7",
                         "dateChanged", new Date(1473440417000L),
                         "dateCreated", new Date(1473440417000L),
-                        "dateAccessed", new Date(1473440417000L)
+                        "dateAccessed", new Date(1473440417000L),
+                        "parentId", "dadec7c6-ad8c-4f80-b6da-379fceccd0fc"
                 )
         );
         BulkResponse bulkResponse = bulk.get();

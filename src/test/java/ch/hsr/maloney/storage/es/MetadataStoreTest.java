@@ -40,7 +40,8 @@ public class MetadataStoreTest {
                 new LinkedList<Artifact>(){{
                     add(new Artifact("test","SGVsbG8gd29ybGQh","base64"));
                     add(new Artifact("test","86fb269d190d2c85f6e0468ceca42a20","md5"));
-                }});
+                }},
+                UUID.fromString("dadec7c6-ad8c-4f80-b6da-379fceccd0fc"));
         es.addFileAttributes(attributes);
     }
 

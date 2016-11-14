@@ -74,6 +74,6 @@ public class Framework implements EventObserver {
 
     @Override
     public void update(Observable o, Event arg) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 }

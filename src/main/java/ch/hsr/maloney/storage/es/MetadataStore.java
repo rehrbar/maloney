@@ -2,28 +2,26 @@ package ch.hsr.maloney.storage.es;
 
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Logger;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -45,13 +43,13 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
      *
      * @throws UnknownHostException
      */
-    public MetadataStore(Logger logger) throws UnknownHostException {
-        this.logger = logger;
+    public MetadataStore() throws UnknownHostException {
+        this.logger = LogManager.getLogger("MetadataStore");
         // TODO pass configuration to transportclient for cluster name and node.
         // TODO create index if it does not exist.
         client = new PreBuiltTransportClient(Settings.EMPTY)
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
-        logger.logInfo("Connected nodes: " + String.join(", ", client.connectedNodes()
+        logger.info("Connected nodes: " + String.join(", ", client.connectedNodes()
                 .stream().map(node -> node.getName()).collect(Collectors.toList())));
         updateMapping(false);
         mapper = new ObjectMapper();
@@ -84,9 +82,9 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
                 PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
                         .setType(artifactTypeName)
                         .setSource(mapping).get();
-                logger.logDebug("Update mapping ack? " + putMappingResponse.isAcknowledged());
+                logger.debug("Update mapping ack? " + putMappingResponse.isAcknowledged());
             } catch (IOException e) {
-                logger.logError("Could not update mapping.", e);
+                logger.error("Could not update mapping.", e);
             }
         }
     }
@@ -98,7 +96,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
             // TODO update artifacts within FileAttributes
             return mapper.readValue(response.getSourceAsBytes(), FileAttributes.class);
         } catch (IOException e) {
-            logger.logError("Could not parse FileAttributes retrieved from elasticsearch.", e);
+            logger.error("Could not parse FileAttributes retrieved from elasticsearch.", e);
         }
         return null;
     }
@@ -123,7 +121,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
             addArtifacts(fileAttributes.getFileId(), fileAttributes.getArtifacts());
         } catch (IOException e) {
-            logger.logError("Could not index file attributes into ElasticSearch.", e);
+            logger.error("Could not index file attributes into ElasticSearch.", e);
         }
     }
 
@@ -155,10 +153,10 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
                         .field("value", mapper.writeValueAsString(artifact.getValue())) // TODO convert any object to str
                         .field("type", artifact.getType())
                         .endObject();
-                logger.logDebug(String.format("Adding artifact to: %s", fileId.toString(), builder.string()));
+                logger.debug(String.format("Adding artifact to: %s", fileId.toString(), builder.string()));
                 bulk.add(client.prepareIndex(indexName, artifactTypeName).setSource(builder));
             } catch (IOException e) {
-                logger.logError("Could not add artifact for file.", e);
+                logger.error("Could not add artifact for file.", e);
             }
         });
         bulk.get();

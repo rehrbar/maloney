@@ -9,13 +9,11 @@ import ch.hsr.maloney.storage.MetadataStore;
 public class Context {
     private MetadataStore metadataStore;
     private ProgressTracker progressTracker;
-    private Logger logger;
     private DataSource dataSource;
 
-    public Context(MetadataStore metadataStore, ProgressTracker progressTracker, Logger logger, ch.hsr.maloney.storage.DataSource dataSource) {
+    public Context(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource) {
         this.metadataStore = metadataStore;
         this.progressTracker = progressTracker;
-        this.logger = logger;
         this.dataSource = dataSource;
     }
 
@@ -25,10 +23,6 @@ public class Context {
 
     public ProgressTracker getProgressTracker() {
         return progressTracker;
-    }
-
-    public Logger getLogger() {
-        return logger;
     }
 
     public DataSource getDataSource() {

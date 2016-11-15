@@ -1,7 +1,7 @@
 package ch.hsr.maloney.storage;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.UUID;
 
 /**
@@ -27,7 +27,7 @@ public interface DataSource {
      * @param fileID    Unique ID of the file to get
      * @return          Specified File as Stream
      */
-    FileInputStream getFileStream(UUID fileID);
+    InputStream getFileStream(UUID fileID);
 
     /**
      * Adds a new File to the DataSource
@@ -35,5 +35,15 @@ public interface DataSource {
      * @param path      Path of the file to add to the DataSource
      * @param parentId  UUID of the parent, null if there is none (e.g. root image)
      */
+    // TODO replace with new addFile implementation
     UUID addFile(String path, UUID parentId);
+
+    /**
+     * Adds a new File to the DataSource
+     *
+     * @param parentId  UUID of the parent, null if there is none (e.g. root image)
+     * @param metadataExtractor Used to extract the metadata for the file to add.
+     * @param fileExtractor Used to exctract the file itself.
+     */
+    UUID addFile(UUID parentId, MetadataExtractor metadataExtractor, FileExtractor fileExtractor);
 }

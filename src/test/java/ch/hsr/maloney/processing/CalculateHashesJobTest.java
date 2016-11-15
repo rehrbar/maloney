@@ -140,6 +140,34 @@ public class CalculateHashesJobTest {
 
     @Test
     public void singleFileTest(){
+        Job job = new CalculateHashesJob();
+        Event evt = new Event("newFile","singleFileTest", tempFileUuid);
+
+        job.run(ctx, evt);
+
+        List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
+        assertTrue(createdArtifacts.size() == 2);
+    }
+/*
+    @Test
+    public void checkMD5Hash(){
+        final String zeroLengthMD5Hash = "d41d8cd98f00b204e9800998ecf8427e";
+
+        Job job = new CalculateHashesJob();
+        Event evt = new Event("newFile","singleFileTest", tempFileUuid);
+
+        job.run(ctx, evt);
+
+        List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
+        createdArtifacts.stream().filter(a -> a.getType().equals("MD5Hash")).forEach(a -> {
+            assertEquals(zeroLengthMD5Hash, a.getValue());
+        });
+    }
+
+    @Test
+    public void checkSHA1Hash(){
+        final String zeroLengthSHA1Hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
+
         Event evt;
 
         Job job = new CalculateHashesJob();
@@ -148,6 +176,9 @@ public class CalculateHashesJobTest {
         job.run(ctx, evt);
 
         List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
-        assertTrue(createdArtifacts.size() == 2);
+        createdArtifacts.stream().filter(a -> a.getType().equals("SHA1Hash")).forEach(a -> {
+            assertEquals(zeroLengthSHA1Hash, a.getValue());
+        });
     }
+*/
 }

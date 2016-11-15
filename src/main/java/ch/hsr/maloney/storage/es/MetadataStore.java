@@ -142,6 +142,9 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
+        if(artifacts == null || artifacts.size() == 0){
+            return;
+        }
         BulkRequestBuilder bulk = client.prepareBulk();
         // TODO improve through bulk update.
         artifacts.forEach(artifact -> {

@@ -3,13 +3,12 @@ package ch.hsr.maloney.core;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobProcessor;
 import ch.hsr.maloney.processing.SimpleProcessor;
+import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.storage.PlainSource;
 import ch.hsr.maloney.storage.SimpleMetadataStore;
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.EventObserver;
-import ch.hsr.maloney.util.Log4jLogger;
+import ch.hsr.maloney.util.*;
 
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -30,12 +29,19 @@ public class Framework implements EventObserver {
     }
 
     private void initializeContext(){
-        SimpleMetadataStore simpleMetadataStore = new SimpleMetadataStore();
+        Logger logger = new Log4jLogger();
+        MetadataStore metadataStore = null;
+        try {
+            metadataStore = new ch.hsr.maloney.storage.es.MetadataStore(new Log4jLogger());
+        } catch (UnknownHostException e) {
+            logger.logFatal("Elasticsearch host not found. Terminating...", e);
+            System.exit(0);
+        }
         this.context = new Context(
-                simpleMetadataStore,
+                metadataStore,
                 null, //TODO Implement adn add Progress Tracker
                 new Log4jLogger(),
-                new PlainSource(simpleMetadataStore)
+                new PlainSource(metadataStore)
         );
     }
 

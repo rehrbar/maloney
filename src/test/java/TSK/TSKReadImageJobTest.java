@@ -6,7 +6,6 @@ import ch.hsr.maloney.storage.PlainSource;
 import ch.hsr.maloney.storage.SimpleMetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.ToConsoleLogger;
 import org.junit.Test;
 
 import java.nio.file.Files;
@@ -36,7 +35,7 @@ public class TSKReadImageJobTest {
         TSKReadImageJob tskReadImageJob = new TSKReadImageJob();
         MetadataStore metadataStore = new SimpleMetadataStore();
 
-        tskReadImageJob.run(new Context(metadataStore , null, new ToConsoleLogger(), new PlainSource(metadataStore)),
+        tskReadImageJob.run(new Context(metadataStore , null, new PlainSource(metadataStore)),
                 new Event("newDiskImage","Test", UUID.randomUUID()));
     }
 }

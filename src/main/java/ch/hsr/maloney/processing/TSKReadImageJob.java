@@ -3,6 +3,8 @@ package ch.hsr.maloney.processing;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.sleuthkit.datamodel.*;
 
 import java.nio.file.Files;
@@ -18,8 +20,10 @@ import java.util.UUID;
 public class TSKReadImageJob implements Job {
     private LinkedList<String> producedEvents = new LinkedList<>();
     private LinkedList<String> requiredEvents = new LinkedList<>();
+    final Logger logger;
 
     public TSKReadImageJob(){
+        this.logger = LogManager.getLogger();
         this.producedEvents.add("newFile");
         this.requiredEvents.add("newDiskImage");
     }
@@ -57,15 +61,15 @@ public class TSKReadImageJob implements Job {
             try {
                 process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
             } catch (TskDataException ex) {
-                ctx.getLogger().logError(this.getJobName() + ": Could not add image " + IMAGE_PATH, ex);
+                logger.error("Could not add image " + IMAGE_PATH, ex);
             }
             process.commit();
 
             // add all files found inside the image to the MetaDataStore
             List<Image> images = sk.getImages();
             for (Image image : images) {
-                ctx.getLogger().logInfo(this.getJobName() + ": Found image " + image.getName());
-                ctx.getLogger().logInfo(this.getJobName() + ": There are " + image.getChildren().size() + " children.");
+                logger.info("Found image {}", image.getName());
+                logger.info("There are {} children.", image.getChildren().size());
             }
 
             // push all files into MetaDataStore
@@ -73,7 +77,7 @@ public class TSKReadImageJob implements Job {
                 pushToMetaDataStore(ctx, evt, events, abstractFile);
             });
         } catch (TskCoreException e) {
-            ctx.getLogger().logFatal(this.getJobName() + ": Failed with Exception", e);
+            logger.fatal("Failed to read image with sleuthkit.", e);
         }
 
         //TODO create and return events
@@ -96,12 +100,10 @@ public class TSKReadImageJob implements Job {
                     )
             );
         } catch (TskCoreException e) {
-            ctx.getLogger().logError(
-                    this.getJobName() + ": Couldn't read Unique Path from file " + abstractFile.getName(), e
-            );
+            logger.error(this.getJobName() + ": Couldn't read Unique Path from file " + abstractFile.getName(), e);
         }
         events.add(new Event("fileAdded",this.getJobName(),uuid));
-        ctx.getLogger().logInfo(this.getJobName() + ": Added \"" + abstractFile.getName() + "\" to MetaDataStore");
+        logger.info("Added \"{}\" to MetaDataStore", abstractFile.getName());
     }
 
     @Override

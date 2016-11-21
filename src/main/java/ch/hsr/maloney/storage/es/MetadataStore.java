@@ -40,7 +40,6 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     TransportClient client;
     String indexName = "maloney";
     static final String fileAttributeTypeName = "fileAttribute";
-    static final String artifactTypeName = "artifact";
 
     /**
      * Creates a new Instance of MetadataStore with ElasticSearch as backend.
@@ -101,7 +100,6 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     public FileAttributes getFileAttributes(UUID fileID) {
         GetResponse response = client.prepareGet(indexName, fileAttributeTypeName, fileID.toString()).get();
         try {
-            // TODO update artifacts within FileAttributes
             return mapper.readValue(response.getSourceAsBytes(), FileAttributes.class);
         } catch (IOException e) {
             logger.error("Could not parse FileAttributes retrieved from elasticsearch.", e);
@@ -111,8 +109,6 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public void addFileAttributes(FileAttributes fileAttributes) {
-        // TODO Replace fileId type to generic one: Need to support external file identifier, i.e. sleuthkit file id
-        // TODO Provide file identifier as argument.
         try {
             XContentBuilder builder = jsonBuilder()
                     .startObject()
@@ -135,7 +131,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public List<Artifact> getArtifacts(UUID fileId) {
-        // TODO Implement this method correctly with searchers.
+        // TODO Implement this method correctly with searchers to query for a specific type of an artifact.
         return this.getFileAttributes(fileId).getArtifacts();
     }
 

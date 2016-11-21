@@ -91,6 +91,7 @@ public class TSKReadImageJobTest {
 
     @AfterClass
     public static void cleanUp(){
+        //TODO Clean up test files not working yet
         logger.debug("Cleaning up after test");
         try {
             File directory = new File(workingDir.toString());

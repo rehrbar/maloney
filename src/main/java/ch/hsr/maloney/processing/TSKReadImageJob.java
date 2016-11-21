@@ -1,5 +1,6 @@
 package ch.hsr.maloney.processing;
 
+import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
@@ -16,12 +17,15 @@ import java.util.UUID;
  * Created by olive_000 on 01.11.2016.
  */
 public class TSKReadImageJob implements Job {
+    private final String NewFileEventName = "newFile";
+    private final String NewDiskImageEventName = "newDiskImage";
+
     private LinkedList<String> producedEvents = new LinkedList<>();
     private LinkedList<String> requiredEvents = new LinkedList<>();
 
     public TSKReadImageJob(){
-        this.producedEvents.add("newFile");
-        this.requiredEvents.add("newDiskImage");
+        this.producedEvents.add(NewFileEventName);
+        this.requiredEvents.add(NewDiskImageEventName);
     }
 
     @Override
@@ -31,7 +35,8 @@ public class TSKReadImageJob implements Job {
 
     @Override
     public List<Event> run(Context ctx, Event evt) {
-        java.io.File file = ctx.getDataSource().getFile(evt.getFileUuid());
+        DataSource dataSource = ctx.getDataSource();
+        java.io.File file = dataSource.getFile(evt.getFileUuid());
         final String IMAGE_PATH = file.getAbsolutePath();
         List<Event> events = new LinkedList<>();
 

@@ -98,10 +98,9 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
         return client.prepareGet(indexName, fileAttributeTypeName, id.toString()).get().getSourceAsString();
     }
     public String dumpArtifactSource(UUID id) {
-        refreshIndex();
         StringBuilder sb = new StringBuilder();
         client.prepareSearch(indexName)
-                .setTypes(artifactTypeName)
+                .setTypes(fileAttributeTypeName)
                 .setQuery(QueryBuilders.termQuery("fileId", id.toString()))
                 .get().getHits().forEach(hit -> sb.append(hit.getSourceAsString()));
         return sb.toString();

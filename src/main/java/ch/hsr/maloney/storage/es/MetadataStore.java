@@ -162,52 +162,29 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
               }
             }
          */
-
-        // [script: ctx._source.artifacts == null ? ctx._source.artifacts = [params.artifact] : ctx._source.artifacts.add(params.artifact), type: inline, lang: painless, params: {artifact={"originator":"test","value":"SGVsbG8gd29ybGQh","type":"base64"}}]
-        // TODO improve through bulk update.
+        BulkRequestBuilder bulk = client.prepareBulk();
         artifacts.forEach(artifact -> {
                     try {
-                        String data = mapper.writeValueAsString(artifact);
-//                        XContentBuilder builder = jsonBuilder()
-//                                .startObject()
-//                                .field("originator", artifact.getOriginator())
-//                                .field("value", mapper.writeValueAsString(artifact.getValue())) // TODO convert any object to str
-//                                .field("type", artifact.getType())
-//                                .endObject();
-//                        logger.debug(builder.string());
-                        //Script script = new Script("ctx._source.artifacts == null ? ctx._source.artifacts = [params.artifact] : ctx._source.artifacts.add(params.artifact)",
-                        Script script = new Script("ctx._source.artifacts = []; ctx._source.artifacts == null ? ctx._source.artifacts = [params.artifact] : ctx._source.artifacts.add(params.artifact)",
+                        // Script does not support object as parameters, just simple data types.
+                        // Therefore, newArtifact is defined to wrap the data.
+                        Script script = new Script("def newArtifact = ['originator':params.originator, 'value':params.value, 'type':params.type]; ctx._source.artifacts == null ? ctx._source.artifacts = [newArtifact] : ctx._source.artifacts.add(newArtifact)",
                                 ScriptService.ScriptType.INLINE,
                                 null,
                                 new HashMap<String, Object>() {{
-                                    put("artifact", data);
+                                    put("originator", artifact.getOriginator());
+                                    put("value", mapper.writeValueAsString(artifact.getValue()));
+                                    put("type", artifact.getType());
                                 }});
                         UpdateRequestBuilder requestBuilder = client.prepareUpdate(indexName, fileAttributeTypeName, fileId.toString())
                                 .setScript(script);
-                        UpdateResponse response = requestBuilder.get();
-                        logger.debug("Updated artifact for {} with response {}", fileId, response.status().toString());
+                        bulk.add(requestBuilder);
                     } catch (IOException e) {
                         logger.error("Could not serialize artifact for {}", fileId, e);
                         return;
                     }
                 });
 
-//        BulkRequestBuilder bulk = client.prepareBulk();
-//        artifacts.forEach(artifact -> {
-//            try {
-//                XContentBuilder builder = jsonBuilder().startObject()
-//                        .field("fileId", fileId.toString())
-//                        .field("originator", artifact.getOriginator())
-//                        .field("value", mapper.writeValueAsString(artifact.getValue())) // TODO convert any object to str
-//                        .field("type", artifact.getType())
-//                        .endObject();
-//                logger.debug("Adding artifact to: {}", fileId.toString());
-//                bulk.add(client.prepareIndex(indexName, artifactTypeName).setSource(builder));
-//            } catch (IOException e) {
-//                logger.error("Could not add artifact for file.", e);
-//            }
-//        });
-//        bulk.get();
+        bulk.get();
     }
 
 }

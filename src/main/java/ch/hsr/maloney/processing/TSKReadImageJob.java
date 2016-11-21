@@ -19,14 +19,14 @@ import java.util.*;
  * Created by olive_000 on 01.11.2016.
  */
 public class TSKReadImageJob implements Job {
-    public static final String TSK_DB_FILEEXTENSION = ".db";
+    private static final String TSK_DB_FILE_EXTENSION = ".db";
     private static final int BUFFER_SIZE = 512;
     private final String NewFileEventName = "newFile";
     private final String NewDiskImageEventName = "newDiskImage";
 
     private LinkedList<String> producedEvents = new LinkedList<>();
     private LinkedList<String> requiredEvents = new LinkedList<>();
-    final Logger logger;
+    private final Logger logger;
 
     public TSKReadImageJob(){
         this.producedEvents.add(NewFileEventName);
@@ -105,7 +105,7 @@ public class TSKReadImageJob implements Job {
 
     private SleuthkitCase getSleuthkitCase(DataSource dataSource) throws TskCoreException {
         SleuthkitCase sk;
-        final Path TSK_DB_LOCATION = Paths.get(dataSource.getJobWorkingDir(this.getClass()) + TSK_DB_FILEEXTENSION);
+        final Path TSK_DB_LOCATION = Paths.get(dataSource.getJobWorkingDir(this.getClass()) + TSK_DB_FILE_EXTENSION);
 
         try{
             if(!Files.exists(TSK_DB_LOCATION)){
@@ -144,13 +144,20 @@ public class TSKReadImageJob implements Job {
         DataSource dataSource = ctx.getDataSource();
 
         UUID uuid = dataSource.addFile(evt.getFileUuid(), new FileExtractor() {
+            List<File> extractedFiles;
+
             @Override
             public Path extractFile() {
                 //TODO get single file from TSK and put into working dir
                 //TODO all files are saved in flat structure, rebuild structure in working directory?
-                Path workingDir = dataSource.getJobWorkingDir(TSKReadImageJob.class);
-                java.io.File file = new File(workingDir + "" + abstractFile.getId());
+                final Path WORKING_DIR = dataSource.getJobWorkingDir(TSKReadImageJob.class);
+
+                java.io.File file = new File(WORKING_DIR + "" + abstractFile.getId());
                 //"" Because otherwise it won't recognize it as a string
+                if(extractedFiles == null){
+                    extractedFiles = new LinkedList<>();
+                }
+                extractedFiles.add(file);
 
 //                try {
 //                    Files.deleteIfExists(Paths.get(file.getPath()));
@@ -192,8 +199,15 @@ public class TSKReadImageJob implements Job {
 
             @Override
             public void cleanup() {
-                //TODO clean working dir up
-                //Ain't nobody got time fo dat
+                if(extractedFiles != null){
+                    extractedFiles.forEach(file -> {
+                        try {
+                            Files.deleteIfExists(Paths.get(file.getPath()));
+                        } catch (IOException e) {
+                            logger.warn("Could not delete file '{}'", file.getName(), e);
+                        }
+                    });
+                }
             }
         });
 

@@ -16,9 +16,11 @@ import java.util.UUID;
  * Created by olive_000 on 01.11.2016.
  */
 public class TSKReadImageJobTest {
+    private static final String IMAGE_PATH = "..\\images\\autopsy-demo-disk.dd";
+
     @Test
     public void simpleTest(){
-        final String IMAGE_PATH = "..\\images\\autopsy-demo-disk.dd";
+
 
         try{
             Files.deleteIfExists(Paths.get(IMAGE_PATH + ".db"));

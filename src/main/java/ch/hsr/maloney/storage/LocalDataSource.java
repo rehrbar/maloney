@@ -115,10 +115,12 @@ public class LocalDataSource implements DataSource {
         return uuid;
     }
 
+    @Override
     public Path getJobWorkingDir(Class job) {
         // Providing the simple name for an power user to find temporary files in the working dir.
         // Adding hashed canonical name to supply an unique identifier with a shorter length.
         // If an absolute identifier is required, use only CN instead.
         return jobsWorkingDirPath.resolve(job.getSimpleName() + "_" + job.getCanonicalName().hashCode());
     }
+
 }

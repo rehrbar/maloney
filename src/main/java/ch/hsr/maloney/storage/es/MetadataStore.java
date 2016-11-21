@@ -44,7 +44,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
      * @throws UnknownHostException
      */
     public MetadataStore() throws UnknownHostException {
-        this.logger = LogManager.getLogger("MetadataStore");
+        this.logger = LogManager.getLogger();
         // TODO pass configuration to transportclient for cluster name and node.
         // TODO create index if it does not exist.
         client = new PreBuiltTransportClient(Settings.EMPTY)

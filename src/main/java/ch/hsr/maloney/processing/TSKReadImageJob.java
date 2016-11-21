@@ -23,7 +23,7 @@ public class TSKReadImageJob implements Job {
     final Logger logger;
 
     public TSKReadImageJob(){
-        this.logger = LogManager.getLogger("TSKReadImageJob");
+        this.logger = LogManager.getLogger();
         this.producedEvents.add("newFile");
         this.requiredEvents.add("newDiskImage");
     }

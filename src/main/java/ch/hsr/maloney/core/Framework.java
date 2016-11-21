@@ -23,7 +23,7 @@ public class Framework implements EventObserver {
     private List<Job> registeredJobs;
 
     public Framework() {
-        this.logger = LogManager.getLogger("Framework");
+        this.logger = LogManager.getLogger();
         initializeContext();
         this.registeredJobs = new LinkedList<>();
         this.eventQueue = new ConcurrentLinkedQueue<>();

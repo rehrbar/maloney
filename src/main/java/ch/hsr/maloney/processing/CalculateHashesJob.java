@@ -5,6 +5,7 @@ import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -81,9 +82,13 @@ public class CalculateHashesJob implements Job {
 
             is.close();
 
+            // Convert from Byte Digest to String
+            String md5hash = new String(Hex.encodeHex(md5digest));
+            String sha1hash = new String(Hex.encodeHex(sha1digest));
+
             List<Artifact> artifacts = new LinkedList<>();
-            artifacts.add(new Artifact(getJobName(), md5digest, MD5HashType));
-            artifacts.add(new Artifact(getJobName(), sha1digest, SHA1HashType));
+            artifacts.add(new Artifact(getJobName(), md5hash, MD5HashType));
+            artifacts.add(new Artifact(getJobName(), sha1hash, SHA1HashType));
 
             metadataStore.addArtifacts(fileUuid, artifacts);
 

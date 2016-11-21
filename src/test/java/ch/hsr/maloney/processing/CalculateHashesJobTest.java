@@ -6,7 +6,8 @@ import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
-import org.junit.AfterClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -17,31 +18,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Created by olive_000 on 15.11.2016.
  */
 public class CalculateHashesJobTest {
-    private static Path tempFilePath;
-
+    private Path tempFilePath;
     private UUID tempFileUuid;
     private fakeMetaDataStore fakeMetaDataStore;
     private fakeDataSource fakeDataSource;
     private Context ctx;
-
-    public CalculateHashesJobTest(){
-        try {
-            tempFilePath = Files.createTempFile("CHJT-testfile-",null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        fakeMetaDataStore = new fakeMetaDataStore();
-        fakeDataSource = new fakeDataSource();
-        ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
-        tempFileUuid = fakeDataSource.addFile(tempFilePath.toString(), null);
-
-    }
 
     private class fakeMetaDataStore implements MetadataStore{
 
@@ -119,8 +107,21 @@ public class CalculateHashesJobTest {
         }
     }
 
-    @AfterClass
-    public static void cleanUp(){
+    @Before
+    public void prepare(){
+        try {
+            tempFilePath = Files.createTempFile("CHJT-testfile-",null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        fakeMetaDataStore = new fakeMetaDataStore();
+        fakeDataSource = new fakeDataSource();
+        ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
+        tempFileUuid = fakeDataSource.addFile(tempFilePath.toString(), null);
+    }
+
+    @After
+    public void cleanUp(){
         try {
             Files.deleteIfExists(tempFilePath);
         } catch (IOException e) {
@@ -148,7 +149,6 @@ public class CalculateHashesJobTest {
         List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
         assertTrue(createdArtifacts.size() == 2);
     }
-/*
     @Test
     public void checkMD5Hash(){
         final String zeroLengthMD5Hash = "d41d8cd98f00b204e9800998ecf8427e";
@@ -160,7 +160,7 @@ public class CalculateHashesJobTest {
 
         List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
         createdArtifacts.stream().filter(a -> a.getType().equals("MD5Hash")).forEach(a -> {
-            assertEquals(zeroLengthMD5Hash, a.getValue());
+            assertEquals(zeroLengthMD5Hash, a.getValue().toString());
         });
     }
 
@@ -177,8 +177,7 @@ public class CalculateHashesJobTest {
 
         List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
         createdArtifacts.stream().filter(a -> a.getType().equals("SHA1Hash")).forEach(a -> {
-            assertEquals(zeroLengthSHA1Hash, a.getValue());
+            assertEquals(zeroLengthSHA1Hash, a.getValue().toString());
         });
     }
-*/
 }

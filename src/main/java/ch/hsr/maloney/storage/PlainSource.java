@@ -1,12 +1,12 @@
 package ch.hsr.maloney.storage;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.UUID;
 
 /**
- * Created by olive_000 on 08.11.2016.
+ * Data source which manages small data sets. Probably only useful for tests, but nothing more. No real handling of files.
  */
 public class PlainSource implements DataSource {
     MetadataStore metadataStore;
@@ -27,7 +27,7 @@ public class PlainSource implements DataSource {
     }
 
     @Override
-    public FileInputStream getFileStream(UUID fileID) {
+    public InputStream getFileStream(UUID fileID) {
         //TODO get as FileStream
         throw new UnsupportedOperationException();
     }
@@ -36,6 +36,27 @@ public class PlainSource implements DataSource {
     public UUID addFile(String path, UUID parentId) {
         UUID uuid = UUID.randomUUID();
         metadataStore.addFileAttributes(new FileAttributes("image",path,uuid,new Date(),new Date(),new Date(), null, parentId));
+        return uuid;
+    }
+
+    @Override
+    public UUID addFile(UUID parentId, FileExtractor fileExtractor) {
+        UUID uuid = UUID.randomUUID();
+
+        // Extracting necessary information
+        FileSystemMetadata metadata = fileExtractor.extractMetadata();
+        // We do not gather the file. This should speed up this a little bit.
+        fileExtractor.cleanup();
+
+        // Updating MetadataStore with new information.
+        metadataStore.addFileAttributes(new FileAttributes(
+                metadata.getFileName(),
+                metadata.getFilePath(),
+                uuid,metadata.getDateChanged(),
+                metadata.getDateCreated(),
+                metadata.getDateAccessed(),
+                null,
+                parentId));
         return uuid;
     }
 }

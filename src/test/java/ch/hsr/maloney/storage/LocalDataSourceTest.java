@@ -3,10 +3,12 @@ package ch.hsr.maloney.storage;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
+import java.util.UUID;
 
 public class LocalDataSourceTest {
     private LocalDataSource dataSource ;
@@ -20,7 +22,7 @@ public class LocalDataSourceTest {
     @Test
     public void addFileTest() throws IOException {
         Path tempFile = Files.createTempFile("maloney","");
-        dataSource.addFile(null, new FileExtractor() {
+        UUID uuid = dataSource.addFile(null, new FileExtractor() {
 
             @Override
             public Path extractFile() {
@@ -48,5 +50,11 @@ public class LocalDataSourceTest {
                 }
             }
         });
+
+        FileAttributes fileAttributes = metadataStore.getFileAttributes(uuid);
+        Assert.assertEquals("notepad.exe", fileAttributes.getFileName());
+
+        File file = dataSource.getFile(uuid);
+        Assert.assertTrue(file.exists());
     }
 }

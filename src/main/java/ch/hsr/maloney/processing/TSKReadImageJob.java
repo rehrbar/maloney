@@ -76,7 +76,7 @@ public class TSKReadImageJob implements Job {
 
             // push all files into DataSource
             sk.findAllFilesWhere("1=1").forEach(abstractFile -> { // Low-key SQL Injection
-                pushToMetaDataStore(ctx, evt, events, abstractFile);
+                addToDataSource(ctx, evt, events, abstractFile, sk);
             });
         } catch (TskCoreException e) {
             logger.fatal("Failed to read image with sleuthkit.", e);

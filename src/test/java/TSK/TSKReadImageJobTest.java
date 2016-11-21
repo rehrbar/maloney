@@ -35,7 +35,6 @@ public class TSKReadImageJobTest {
             this.savedFiles = new HashMap<>();
         }
 
-
         @Override
         public void registerFileAttributes() {
             // ... soon to be deprecated ...
@@ -82,6 +81,7 @@ public class TSKReadImageJobTest {
     @BeforeClass
     public static void prepare(){
         logger = LogManager.getLogger();
+        logger.debug("Preparing for tests");
         try {
             workingDir = Files.createTempDirectory("Maloney-");
         } catch (IOException e) {
@@ -91,10 +91,27 @@ public class TSKReadImageJobTest {
 
     @AfterClass
     public static void cleanUp(){
+        logger.debug("Cleaning up after test");
         try {
+            File directory = new File(workingDir.toString());
+            recursiveDelete(directory);
+
             Files.deleteIfExists(workingDir);
         } catch (IOException e) {
             logger.error("Could not delete temp directory at: {}",workingDir,e);
+        }
+    }
+
+    private static void recursiveDelete(File file) {
+        logger.debug("Inside recursiveDelete with File: " + file.getAbsolutePath());
+        if(file.isDirectory()){
+            for(File f : file.listFiles()){
+                recursiveDelete(f);
+            }
+        } else {
+            if(!file.delete()){
+                logger.error("Could not delete file" + file.getName());
+            }
         }
     }
 

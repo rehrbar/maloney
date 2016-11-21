@@ -7,6 +7,7 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.storage.PlainSource;
 import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.UnknownHostException;
 import java.util.*;
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Created by olive_000 on 25.10.2016.
  */
 public class Framework implements EventObserver {
-    final org.apache.logging.log4j.Logger logger;
+    final Logger logger;
     private JobProcessor jobProcessor;
     private Context context;
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence

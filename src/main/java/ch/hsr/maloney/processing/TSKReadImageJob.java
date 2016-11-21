@@ -68,8 +68,8 @@ public class TSKReadImageJob implements Job {
             // add all files found inside the image to the MetaDataStore
             List<Image> images = sk.getImages();
             for (Image image : images) {
-                logger.info(this.getJobName() + ": Found image " + image.getName());
-                logger.info(this.getJobName() + ": There are " + image.getChildren().size() + " children.");
+                logger.info("Found image {}", image.getName());
+                logger.info("There are {} children.", image.getChildren().size());
             }
 
             // push all files into MetaDataStore
@@ -77,7 +77,7 @@ public class TSKReadImageJob implements Job {
                 pushToMetaDataStore(ctx, evt, events, abstractFile);
             });
         } catch (TskCoreException e) {
-            logger.fatal(this.getJobName() + ": Failed with Exception", e);
+            logger.fatal("Failed to read image with sleuthkit.", e);
         }
 
         //TODO create and return events
@@ -103,7 +103,7 @@ public class TSKReadImageJob implements Job {
             logger.error(this.getJobName() + ": Couldn't read Unique Path from file " + abstractFile.getName(), e);
         }
         events.add(new Event("fileAdded",this.getJobName(),uuid));
-        logger.info(this.getJobName() + ": Added \"" + abstractFile.getName() + "\" to MetaDataStore");
+        logger.info("Added \"{}\" to MetaDataStore", abstractFile.getName());
     }
 
     @Override

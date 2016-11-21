@@ -49,7 +49,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         // TODO create index if it does not exist.
         client = new PreBuiltTransportClient(Settings.EMPTY)
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
-        logger.info("Connected nodes: " + String.join(", ", client.connectedNodes()
+        logger.info("Connected nodes: {}", String.join(", ", client.connectedNodes()
                 .stream().map(node -> node.getName()).collect(Collectors.toList())));
         updateMapping(false);
         mapper = new ObjectMapper();
@@ -82,7 +82,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
                 PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
                         .setType(artifactTypeName)
                         .setSource(mapping).get();
-                logger.debug("Update mapping ack? " + putMappingResponse.isAcknowledged());
+                logger.debug("Update mapping ack? {}", putMappingResponse.isAcknowledged());
             } catch (IOException e) {
                 logger.error("Could not update mapping.", e);
             }
@@ -153,7 +153,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
                         .field("value", mapper.writeValueAsString(artifact.getValue())) // TODO convert any object to str
                         .field("type", artifact.getType())
                         .endObject();
-                logger.debug(String.format("Adding artifact to: %s", fileId.toString(), builder.string()));
+                logger.debug("Adding artifact to: {}", fileId.toString());
                 bulk.add(client.prepareIndex(indexName, artifactTypeName).setSource(builder));
             } catch (IOException e) {
                 logger.error("Could not add artifact for file.", e);

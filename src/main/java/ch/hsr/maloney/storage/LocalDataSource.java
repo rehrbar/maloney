@@ -19,6 +19,8 @@ public class LocalDataSource implements DataSource {
     MetadataStore metadataStore;
     Path workingDirPath;
     Logger logger = LogManager.getLogger();
+    private Path jobsWorkingDirPath;
+    private Path filesWorkingDirPath;
 
     public LocalDataSource(MetadataStore metadataStore) {
         this.metadataStore = metadataStore;
@@ -27,6 +29,16 @@ public class LocalDataSource implements DataSource {
             logger.debug("Created temporary working directory: {}", workingDirPath.toString());
         } catch (IOException e) {
             logger.error("Could not create temporary working directory.", e);
+        }
+
+        // Prepare the working directories.
+        jobsWorkingDirPath = workingDirPath.resolve("jobs");
+        filesWorkingDirPath = workingDirPath.resolve("files");
+        try {
+            Files.createDirectories(jobsWorkingDirPath);
+            Files.createDirectories(filesWorkingDirPath);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
     @Override
@@ -37,13 +49,13 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public File getFile(UUID fileID) {
-        return new File(workingDirPath.resolve(fileID.toString()).toString());
+        return new File(filesWorkingDirPath.resolve(fileID.toString()).toString());
     }
 
     @Override
     public InputStream getFileStream(UUID fileID) {
         try {
-            return Files.newInputStream(workingDirPath.resolve(fileID.toString()), StandardOpenOption.READ);
+            return Files.newInputStream(filesWorkingDirPath.resolve(fileID.toString()), StandardOpenOption.READ);
         } catch (IOException e) {
             logger.error("Could not open file stream.");
         }
@@ -68,7 +80,7 @@ public class LocalDataSource implements DataSource {
         // We do not gather the file. This should speed up this a little bit.
         Path path = fileExtractor.extractFile();
         try {
-            Files.copy(path, workingDirPath.resolve(uuid.toString()), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(path, filesWorkingDirPath.resolve(uuid.toString()), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             logger.error("Could not add file to local working director. File: " + path.toString(), e);
         }
@@ -83,5 +95,12 @@ public class LocalDataSource implements DataSource {
                 null,
                 parentId));
         return uuid;
+    }
+
+    public Path getJobWorkingDir(Class job){
+        // Providing the simple name for an power user to find temporary files in the working dir.
+        // Adding hashed canonical name to supply an unique identifier with a shorter length.
+        // If an absolute identifier is required, use only CN instead.
+        return jobsWorkingDirPath.resolve(job.getSimpleName() + "_" + job.getCanonicalName().hashCode());
     }
 }

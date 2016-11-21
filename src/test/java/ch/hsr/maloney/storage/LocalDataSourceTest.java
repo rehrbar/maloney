@@ -57,4 +57,14 @@ public class LocalDataSourceTest {
         File file = dataSource.getFile(uuid);
         Assert.assertTrue(file.exists());
     }
+
+    @Test
+    public void jobWorkingDirTest(){
+        Path jobWorkingDir = dataSource.getJobWorkingDir(LocalDataSourceTest.class);
+        System.out.println("Job working dir: " + jobWorkingDir.toString());
+
+        // Following asserts are not really carved in stone.
+        Assert.assertTrue(jobWorkingDir.toString().contains("jobs"));
+        Assert.assertTrue(jobWorkingDir.toString().contains(LocalDataSourceTest.class.getSimpleName()));
+    }
 }

@@ -25,7 +25,7 @@ public interface DataSource {
      * Get a file from the DataSource as a Stream
      *
      * @param fileID    Unique ID of the file to get
-     * @return          Specified File as Stream
+     * @return          Specified File as Stream or null, if the file could not be opened.
      */
     InputStream getFileStream(UUID fileID);
 

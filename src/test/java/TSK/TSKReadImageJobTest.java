@@ -3,17 +3,20 @@ package TSK;
 import ch.hsr.maloney.processing.TSKReadImageJob;
 import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.FileExtractor;
+import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -70,6 +73,10 @@ public class TSKReadImageJobTest {
         public Path getJobWorkingDir(Class job) {
             return workingDir;
         }
+
+        Map<UUID, FileExtractor> getSavedFiles() {
+            return savedFiles;
+        }
     }
 
     @BeforeClass
@@ -93,14 +100,6 @@ public class TSKReadImageJobTest {
 
     @Test
     public void simpleTest(){
-        System.out.printf("java.library.path:" + System.getProperty("java.library.path"));
-
-//        System.load("C:\\projects\\malware-hunting\\lib\\libtsk_jni.dll");
-//        System.load("C:\\projects\\malware-hunting\\lib\\zlib.dll");
-//        System.load("C:\\projects\\malware-hunting\\lib\\libewf.dll");
-//        System.load("C:\\projects\\malware-hunting\\lib\\libvmdk.dll");
-//        System.load("C:\\projects\\malware-hunting\\lib\\libvhdi.dll");
-
         System.loadLibrary("libtsk_jni");
         System.loadLibrary("zlib");
         System.loadLibrary("libewf");
@@ -108,9 +107,29 @@ public class TSKReadImageJobTest {
         System.loadLibrary("libvhdi");
 
         TSKReadImageJob tskReadImageJob = new TSKReadImageJob();
-        DataSource dataSource = new fakeDataSource();
+        fakeDataSource dataSource = new fakeDataSource();
+
+        UUID uuid = dataSource.addFile(null, new FileExtractor() {
+            @Override
+            public Path extractFile() {
+                //TODO insert position of image
+                return Paths.get("C:\\projects\\malware-hunting\\images\\autopsy-demo-disk.dd");
+            }
+
+            @Override
+            public FileSystemMetadata extractMetadata() {
+                return null;
+            }
+
+            @Override
+            public void cleanup() {
+
+            }
+        });
 
         tskReadImageJob.run(new Context(null , null, dataSource),
-                new Event("newDiskImage","Test", UUID.randomUUID()));
+                new Event("newDiskImage","Test", uuid));
+
+        Assert.assertTrue(dataSource.getSavedFiles().size() > 1);
     }
 }

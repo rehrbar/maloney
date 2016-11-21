@@ -53,9 +53,6 @@ public class TSKReadImageJob implements Job {
         List<Event> events = new LinkedList<>();
 
         try {
-            //TODO how to manage the TSK DB
-            // where should we put it?
-            // delete it afterwards?
             SleuthkitCase sk;
             sk = getSleuthkitCase(dataSource);
 
@@ -77,7 +74,7 @@ public class TSKReadImageJob implements Job {
                 logger.info("Found image {}", image.getName());
             }
 
-            // push all files into MetaDataStore
+            // push all files into DataSource
             sk.findAllFilesWhere("1=1").forEach(abstractFile -> { // Low-key SQL Injection
                 pushToMetaDataStore(ctx, evt, events, abstractFile);
             });

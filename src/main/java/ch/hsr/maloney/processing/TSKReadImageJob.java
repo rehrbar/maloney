@@ -61,7 +61,7 @@ public class TSKReadImageJob implements Job {
             try {
                 process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
             } catch (TskDataException ex) {
-                logger.error(this.getJobName() + ": Could not add image " + IMAGE_PATH, ex);
+                logger.error("Could not add image " + IMAGE_PATH, ex);
             }
             process.commit();
 

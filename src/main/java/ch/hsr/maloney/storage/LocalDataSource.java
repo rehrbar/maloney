@@ -22,13 +22,30 @@ public class LocalDataSource implements DataSource {
     private Path jobsWorkingDirPath;
     private Path filesWorkingDirPath;
 
+
+    /**
+     * Creates an instance of a local data source.
+     * @param metadataStore Used to store additional meta information.
+     */
     public LocalDataSource(MetadataStore metadataStore) {
+        this(metadataStore, null);
+    }
+
+    /**
+     * Creates an instance of a local data source.
+     * @param metadataStore Used to store additional meta information.
+     * @param workingDirectory Path to a directory which should be used as working directory. If null is provided, the
+     *                         temporary directory configured is used.
+     */
+    public LocalDataSource(MetadataStore metadataStore, Path workingDirectory) {
         this.metadataStore = metadataStore;
-        try {
-            workingDirPath = Files.createTempDirectory("maloney");
-            logger.debug("Created temporary working directory: {}", workingDirPath.toString());
-        } catch (IOException e) {
-            logger.error("Could not create temporary working directory.", e);
+        if (workingDirectory == null) {
+            try {
+                workingDirPath = Files.createTempDirectory("maloney");
+                logger.debug("Created temporary working directory: {}", workingDirPath.toString());
+            } catch (IOException e) {
+                logger.error("Could not create temporary working directory.", e);
+            }
         }
 
         // Prepare the working directories.
@@ -41,6 +58,7 @@ public class LocalDataSource implements DataSource {
             e.printStackTrace();
         }
     }
+
     @Override
     public void registerFileAttributes() {
         // TODO remove after refactoring???
@@ -89,7 +107,7 @@ public class LocalDataSource implements DataSource {
         metadataStore.addFileAttributes(new FileAttributes(
                 metadata.getFileName(),
                 metadata.getFilePath(),
-                uuid,metadata.getDateChanged(),
+                uuid, metadata.getDateChanged(),
                 metadata.getDateCreated(),
                 metadata.getDateAccessed(),
                 null,
@@ -97,7 +115,7 @@ public class LocalDataSource implements DataSource {
         return uuid;
     }
 
-    public Path getJobWorkingDir(Class job){
+    public Path getJobWorkingDir(Class job) {
         // Providing the simple name for an power user to find temporary files in the working dir.
         // Adding hashed canonical name to supply an unique identifier with a shorter length.
         // If an absolute identifier is required, use only CN instead.

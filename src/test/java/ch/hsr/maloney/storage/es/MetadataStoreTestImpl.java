@@ -51,17 +51,16 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                             .field("dateCreated", new Date(1473823035000L))
                             .field("dateAccessed", new Date(1473823035000L))
                             .field("parentId", "dadec7c6-ad8c-4f80-b6da-379fceccd0fc")
-                            .endObject()
-                    )
-            );
-            bulk.add(client.prepareIndex(indexName, artifactTypeName)
-                    .setSource(jsonBuilder().startObject()
-                            .field("fileId", "2db50b31-8927-4833-8bb1-0ec9150c12c3")
+                            .startArray("artifacts")
+                            .startObject()
                             .field("type", "base")
                             .field("value", "bm90ZXBhZC5leGU=")
                             .field("originator", "test")
                             .endObject()
-                    ));
+                            .endArray()
+                            .endObject()
+                    )
+            );
             bulk.add(client.prepareIndex(indexName, fileAttributeTypeName, "f99f4262-7b84-440a-b650-ccdd30940511")
                     .setSource(
                             "fileName", "cmd.exe",

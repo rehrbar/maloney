@@ -54,6 +54,13 @@ public class MetadataStoreTest {
     }
 
     @Test
+    public void getFileArtifactsTest(){
+        List<Artifact> artifacts = es.getArtifacts(UUID.fromString("2db50b31-8927-4833-8bb1-0ec9150c12c3"));
+        Assert.assertEquals(1, artifacts.size());
+        Assert.assertEquals("bm90ZXBhZC5leGU=", artifacts.get(0).getValue());
+    }
+
+    @Test
     public void addSingleArtifactTest(){
         Artifact art = new Artifact("test","SGVsbG8gd29ybGQh","base64");
         UUID fileId = UUID.fromString("f99f4262-7b84-440a-b650-ccdd30940511");

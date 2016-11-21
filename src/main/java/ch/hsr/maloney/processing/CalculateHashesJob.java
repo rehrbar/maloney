@@ -34,7 +34,7 @@ public class CalculateHashesJob implements Job {
     private final String SHA1HashType = "SHA1Hash";
 
     public CalculateHashesJob() {
-        logger = LogManager.getLogger("CalculateHashesJob");
+        logger = LogManager.getLogger();
         //TODO check Event names, maybe track globally?
         requiredEvents.add(NewFileEventName);
         producedEvents.add(MD5HashCalculatedEventName);

@@ -40,10 +40,8 @@ public interface DataSource {
 
     /**
      * Adds a new File to the DataSource
-     *
-     * @param parentId  UUID of the parent, null if there is none (e.g. root image)
-     * @param metadataExtractor Used to extract the metadata for the file to add.
+     *  @param parentId  UUID of the parent, null if there is none (e.g. root image)
      * @param fileExtractor Used to exctract the file itself.
      */
-    UUID addFile(UUID parentId, MetadataExtractor metadataExtractor, FileExtractor fileExtractor);
+    UUID addFile(UUID parentId, FileExtractor fileExtractor);
 }

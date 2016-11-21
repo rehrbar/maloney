@@ -19,16 +19,34 @@ public class LocalDataSourceTest {
 
     @Test
     public void addFileTest() throws IOException {
-        final Path[] tempFile = {null};
-        dataSource.addFile(null, () -> new FileSystemMetadata("notepad.exe", "C:\\windows\\", new Date(1436471820000L), new Date(1436471820000L), new Date(1436471820000L), 1337000L), () -> {
-            try {
-                tempFile[0] = Files.createTempFile("maloney","");
-            } catch (IOException e) {
-                e.printStackTrace();
-                Assert.fail("Could not create temp file.");
+        Path tempFile = Files.createTempFile("maloney","");
+        dataSource.addFile(null, new FileExtractor() {
+
+            @Override
+            public Path extractFile() {
+                return tempFile;
             }
-            return tempFile[0];
+
+            @Override
+            public FileSystemMetadata extractMetadata() {
+                return new FileSystemMetadata(
+                        "notepad.exe",
+                        "C:\\windows\\",
+                        new Date(1436471820000L),
+                        new Date(1436471820000L),
+                        new Date(1436471820000L),
+                        1337000L);
+            }
+
+            @Override
+            public void cleanup() {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    System.out.println("Could not delete temp file:");
+                    e.printStackTrace();
+                }
+            }
         });
-        Files.deleteIfExists(tempFile[0]);
     }
 }

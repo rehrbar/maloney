@@ -57,21 +57,22 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public UUID addFile(UUID parentId, MetadataExtractor metadataExtractor, FileExtractor fileExtractor) {
+    public UUID addFile(UUID parentId, FileExtractor fileExtractor) {
         // TODO add overload to suppress file copy.
         UUID uuid = UUID.randomUUID();
 
         // Extracting necessary information
-        FileSystemMetadata metadata = metadataExtractor.run();
+        FileSystemMetadata metadata = fileExtractor.extractMetadata();
         // TODO check if the file needs to be extracted and added again.
 
         // We do not gather the file. This should speed up this a little bit.
-        Path path = fileExtractor.run();
+        Path path = fileExtractor.extractFile();
         try {
             Files.copy(path, workingDirPath.resolve(uuid.toString()), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             logger.error("Could not add file to local working director. File: " + path.toString(), e);
         }
+        fileExtractor.cleanup();
         // Updating MetadataStore with new information.
         metadataStore.addFileAttributes(new FileAttributes(
                 metadata.getFileName(),

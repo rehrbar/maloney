@@ -11,5 +11,16 @@ public interface FileExtractor {
      * Extracts a file and passes the path to this extracted file to the caller.
      * @return Path to extracted file.
      */
-    Path run();
+    Path extractFile();
+
+    /**
+     * Extracts the meta data of a file.
+     * @return Extracted metadata.
+     */
+    FileSystemMetadata extractMetadata();
+
+    /**
+     * Will be called after file extraction to cleanup temporary files.
+     */
+    void cleanup();
 }

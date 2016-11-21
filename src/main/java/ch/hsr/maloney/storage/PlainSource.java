@@ -40,12 +40,13 @@ public class PlainSource implements DataSource {
     }
 
     @Override
-    public UUID addFile(UUID parentId, MetadataExtractor metadataExtractor, FileExtractor fileExtractor) {
+    public UUID addFile(UUID parentId, FileExtractor fileExtractor) {
         UUID uuid = UUID.randomUUID();
 
         // Extracting necessary information
-        FileSystemMetadata metadata = metadataExtractor.run();
+        FileSystemMetadata metadata = fileExtractor.extractMetadata();
         // We do not gather the file. This should speed up this a little bit.
+        fileExtractor.cleanup();
 
         // Updating MetadataStore with new information.
         metadataStore.addFileAttributes(new FileAttributes(

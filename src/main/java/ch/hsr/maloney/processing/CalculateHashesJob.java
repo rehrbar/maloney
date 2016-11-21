@@ -26,6 +26,7 @@ public class CalculateHashesJob implements Job {
     private final List<String> producedEvents = new LinkedList<>();
     private final Logger logger;
 
+    private final String JobName = "CalculateHashesJob";
     private final String NewFileEventName = "newFile";
     private final String MD5HashCalculatedEventName = "MD5HashCalculated";
     private final String SHA1HashCalculatedEventName = "SHA1HashCalculated";
@@ -116,7 +117,7 @@ public class CalculateHashesJob implements Job {
 
     @Override
     public String getJobName() {
-        return "CalculateHashesJob";
+        return JobName;
     }
 
     @Override

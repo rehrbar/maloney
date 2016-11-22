@@ -156,7 +156,7 @@ public class TSKReadImageJob implements Job {
             public FileSystemMetadata extractMetadata() {
                 return new FileSystemMetadata(
                         abstractFile.getName(),
-                        abstractFile.getLocalAbsPath(),
+                        abstractFile.getParentPath(),
                         new Date(abstractFile.getCrtime()),
                         new Date(abstractFile.getMtime()),
                         new Date(abstractFile.getAtime()),

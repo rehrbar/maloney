@@ -88,7 +88,7 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
         }
         BulkResponse bulkResponse = bulk.get();
         bulkResponse.forEach(bulkItemResponse -> {
-            this.logger.info(String.format("-> Added document: %s (%s)", bulkItemResponse.getId(), bulkItemResponse.getResponse().getResult()));
+            this.logger.info("-> Added document: {} ({})", bulkItemResponse.getId(), bulkItemResponse.getResponse().getResult());
             generatedIds.add(bulkItemResponse.getId());
         });
         return generatedIds;
@@ -96,13 +96,5 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
 
     public String dumpFileAttributeSource(UUID id) {
         return client.prepareGet(indexName, fileAttributeTypeName, id.toString()).get().getSourceAsString();
-    }
-    public String dumpArtifactSource(UUID id) {
-        StringBuilder sb = new StringBuilder();
-        client.prepareSearch(indexName)
-                .setTypes(fileAttributeTypeName)
-                .setQuery(QueryBuilders.termQuery("fileId", id.toString()))
-                .get().getHits().forEach(hit -> sb.append(hit.getSourceAsString()));
-        return sb.toString();
     }
 }

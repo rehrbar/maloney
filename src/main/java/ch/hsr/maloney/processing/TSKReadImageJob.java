@@ -115,6 +115,7 @@ public class TSKReadImageJob implements Job {
         return sk;
     }
 
+    @Deprecated
     private void pushToMetaDataStore(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
         UUID uuid = UUID.randomUUID();//TODO add to DataSource
         try {
@@ -149,6 +150,7 @@ public class TSKReadImageJob implements Job {
                 //TODO all files are saved in flat structure, rebuild structure in working directory?
                 final Path WORKING_DIR = dataSource.getJobWorkingDir(TSKReadImageJob.class);
 
+                // Get Location where the file has to be saved
                 java.io.File file = new File(WORKING_DIR + "" + abstractFile.getId());
                 //"" Because otherwise it won't recognize it as a string
                 if(extractedFiles == null){
@@ -162,6 +164,7 @@ public class TSKReadImageJob implements Job {
 //                    logger.error("Failed while trying to delete already existing File: {}", abstractFile.getName(), e);
 //                }
 
+                // Write specified File into working directory
                 try {
                     FileOutputStream os = new FileOutputStream(file);
 

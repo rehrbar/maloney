@@ -2,6 +2,7 @@ package ch.hsr.maloney.storage.es;
 
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -10,18 +11,21 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.update.UpdateRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -36,7 +40,6 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     TransportClient client;
     String indexName = "maloney";
     static final String fileAttributeTypeName = "fileAttribute";
-    static final String artifactTypeName = "artifact";
 
     /**
      * Creates a new Instance of MetadataStore with ElasticSearch as backend.
@@ -69,18 +72,22 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
             try {
                 XContentBuilder mapping = jsonBuilder()
                         .startObject()
-                        .startObject(artifactTypeName)
+                        .startObject(fileAttributeTypeName)
                         .startObject("properties")
                         .startObject("fileId")
-                        .field("type","string")
+                        .field("type","text")
                         .field("index", "not_analyzed")
-                        .endObject()
-                        .endObject()
-                        .endObject()
+                        .endObject() // end fileId
+                        .startObject("artifacts")
+                        .field("type", "nested")
+                        .endObject() // end artifacts
+                        .endObject() // end porperties
+                        .endObject() // end artifact
                         .endObject();
 
+                logger.debug(mapping.string());
                 PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
-                        .setType(artifactTypeName)
+                        .setType(fileAttributeTypeName)
                         .setSource(mapping).get();
                 logger.debug("Update mapping ack? {}", putMappingResponse.isAcknowledged());
             } catch (IOException e) {
@@ -93,7 +100,6 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     public FileAttributes getFileAttributes(UUID fileID) {
         GetResponse response = client.prepareGet(indexName, fileAttributeTypeName, fileID.toString()).get();
         try {
-            // TODO update artifacts within FileAttributes
             return mapper.readValue(response.getSourceAsBytes(), FileAttributes.class);
         } catch (IOException e) {
             logger.error("Could not parse FileAttributes retrieved from elasticsearch.", e);
@@ -103,8 +109,6 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public void addFileAttributes(FileAttributes fileAttributes) {
-        // TODO Replace fileId type to generic one: Need to support external file identifier, i.e. sleuthkit file id
-        // TODO Provide file identifier as argument.
         try {
             XContentBuilder builder = jsonBuilder()
                     .startObject()
@@ -127,7 +131,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public List<Artifact> getArtifacts(UUID fileId) {
-        // TODO Implement this method correctly with searchers.
+        // TODO Implement this method correctly with searchers to query for a specific type of an artifact.
         return this.getFileAttributes(fileId).getArtifacts();
     }
 
@@ -143,22 +147,39 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         if(artifacts == null || artifacts.size() == 0){
             return;
         }
-        BulkRequestBuilder bulk = client.prepareBulk();
-        // TODO improve through bulk update.
-        artifacts.forEach(artifact -> {
-            try {
-                XContentBuilder builder = jsonBuilder().startObject()
-                        .field("fileId", fileId.toString())
-                        .field("originator", artifact.getOriginator())
-                        .field("value", mapper.writeValueAsString(artifact.getValue())) // TODO convert any object to str
-                        .field("type", artifact.getType())
-                        .endObject();
-                logger.debug("Adding artifact to: {}", fileId.toString());
-                bulk.add(client.prepareIndex(indexName, artifactTypeName).setSource(builder));
-            } catch (IOException e) {
-                logger.error("Could not add artifact for file.", e);
+        /* Elasticsearch Script:
+            POST maloney/fileAttribute/f99f4262-7b84-440a-b650-ccdd30940511/_update
+            {
+              "script": {
+                "inline":"ctx._source.artifacts == null ? ctx._source.artifacts = [params.artifact] : ctx._source.artifacts.add(params.artifact)",
+                "params":{
+                  "artifact": {"originator":"test2","value":"ABCDE","type":"base64"}
+                }
+              }
             }
-        });
+         */
+        BulkRequestBuilder bulk = client.prepareBulk();
+        artifacts.forEach(artifact -> {
+                    try {
+                        // Script does not support object as parameters, just simple data types.
+                        // Therefore, newArtifact is defined to wrap the data.
+                        Script script = new Script("def newArtifact = ['originator':params.originator, 'value':params.value, 'type':params.type]; ctx._source.artifacts == null ? ctx._source.artifacts = [newArtifact] : ctx._source.artifacts.add(newArtifact)",
+                                ScriptService.ScriptType.INLINE,
+                                null,
+                                new HashMap<String, Object>() {{
+                                    put("originator", artifact.getOriginator());
+                                    put("value", mapper.writeValueAsString(artifact.getValue()));
+                                    put("type", artifact.getType());
+                                }});
+                        UpdateRequestBuilder requestBuilder = client.prepareUpdate(indexName, fileAttributeTypeName, fileId.toString())
+                                .setScript(script);
+                        bulk.add(requestBuilder);
+                    } catch (IOException e) {
+                        logger.error("Could not serialize artifact for {}", fileId, e);
+                        return;
+                    }
+                });
+
         bulk.get();
     }
 

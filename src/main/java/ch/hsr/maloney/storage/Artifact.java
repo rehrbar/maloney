@@ -8,6 +8,10 @@ public class Artifact {
     private Object value;
     private String type;
 
+    public Artifact(){
+        // Required for deserializing.
+    }
+
     /**
      * Creates a new Artifact
      *
@@ -15,7 +19,6 @@ public class Artifact {
      * @param value         Value of the Artifact
      * @param type          Type of the associated Value
      */
-
     public Artifact(String originator, Object value, String type) {
         this.originator = originator;
         this.value = value;

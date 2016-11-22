@@ -51,17 +51,16 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
                             .field("dateCreated", new Date(1473823035000L))
                             .field("dateAccessed", new Date(1473823035000L))
                             .field("parentId", "dadec7c6-ad8c-4f80-b6da-379fceccd0fc")
-                            .endObject()
-                    )
-            );
-            bulk.add(client.prepareIndex(indexName, artifactTypeName)
-                    .setSource(jsonBuilder().startObject()
-                            .field("fileId", "2db50b31-8927-4833-8bb1-0ec9150c12c3")
+                            .startArray("artifacts")
+                            .startObject()
                             .field("type", "base")
                             .field("value", "bm90ZXBhZC5leGU=")
                             .field("originator", "test")
                             .endObject()
-                    ));
+                            .endArray()
+                            .endObject()
+                    )
+            );
             bulk.add(client.prepareIndex(indexName, fileAttributeTypeName, "f99f4262-7b84-440a-b650-ccdd30940511")
                     .setSource(
                             "fileName", "cmd.exe",
@@ -89,7 +88,7 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
         }
         BulkResponse bulkResponse = bulk.get();
         bulkResponse.forEach(bulkItemResponse -> {
-            this.logger.info(String.format("-> Added document: %s (%s)", bulkItemResponse.getId(), bulkItemResponse.getResponse().getResult()));
+            this.logger.info("-> Added document: {} ({})", bulkItemResponse.getId(), bulkItemResponse.getResponse().getResult());
             generatedIds.add(bulkItemResponse.getId());
         });
         return generatedIds;
@@ -97,14 +96,5 @@ public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataSto
 
     public String dumpFileAttributeSource(UUID id) {
         return client.prepareGet(indexName, fileAttributeTypeName, id.toString()).get().getSourceAsString();
-    }
-    public String dumpArtifactSource(UUID id) {
-        refreshIndex();
-        StringBuilder sb = new StringBuilder();
-        client.prepareSearch(indexName)
-                .setTypes(artifactTypeName)
-                .setQuery(QueryBuilders.termQuery("fileId", id.toString()))
-                .get().getHits().forEach(hit -> sb.append(hit.getSourceAsString()));
-        return sb.toString();
     }
 }

@@ -2,6 +2,7 @@ package ch.hsr.maloney.storage;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.UUID;
 
@@ -58,5 +59,10 @@ public class PlainSource implements DataSource {
                 null,
                 parentId));
         return uuid;
+    }
+
+    @Override
+    public Path getJobWorkingDir(Class job) {
+        return null;
     }
 }

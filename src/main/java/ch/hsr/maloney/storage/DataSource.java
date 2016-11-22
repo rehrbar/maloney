@@ -2,6 +2,7 @@ package ch.hsr.maloney.storage;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.UUID;
 
 /**
@@ -44,4 +45,11 @@ public interface DataSource {
      * @param fileExtractor Used to exctract the file itself.
      */
     UUID addFile(UUID parentId, FileExtractor fileExtractor);
+
+    /**
+     * Get Path to a Directory which can be used as temporary file storage for a Job
+     * @param job   Get Directory for the specified Job
+     * @return      Path to temporary working directory for the specified Job
+     */
+    Path getJobWorkingDir(Class job);
 }

@@ -85,21 +85,6 @@ public class TSKReadImageJob implements Job {
         return events;
     }
 
-    @Deprecated
-    private SleuthkitCase getSleuthkitCase(String IMAGE_PATH, DataSource dataSource) throws TskCoreException {
-        SleuthkitCase sk;
-
-        try{
-            if(!Files.exists(Paths.get(IMAGE_PATH + ".db"))){
-                SleuthkitCase.newCase(IMAGE_PATH + ".db");
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        sk = SleuthkitCase.openCase(IMAGE_PATH + ".db");
-        return sk;
-    }
-
     private SleuthkitCase getSleuthkitCase(DataSource dataSource) throws TskCoreException {
         SleuthkitCase sk;
         final Path TSK_DB_LOCATION = Paths.get(dataSource.getJobWorkingDir(this.getClass()) + TSK_DB_FILE_EXTENSION);
@@ -115,34 +100,16 @@ public class TSKReadImageJob implements Job {
         return sk;
     }
 
-    @Deprecated
-    private void pushToMetaDataStore(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
-        UUID uuid = UUID.randomUUID();//TODO add to DataSource
-        try {
-            ctx.getMetadataStore().addFileAttributes(
-                    new FileAttributes( //TODO add crated, edited, changed etc. stamps
-                            abstractFile.getName(),
-                            abstractFile.getUniquePath(),
-                            uuid,
-                            null,
-                            null,
-                            null,
-                            null,
-                            evt.getFileUuid()
-                    )
-            );
-        } catch (TskCoreException e) {
-            logger.error(this.getJobName() + ": Couldn't read Unique Path from file " + abstractFile.getName(), e);
-        }
-        events.add(new Event("fileAdded",this.getJobName(),uuid));
-        logger.info("Added \"{}\" to MetaDataStore", abstractFile.getName());
-    }
-
     private void addToDataSource(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile, SleuthkitCase sk) {
         DataSource dataSource = ctx.getDataSource();
 
         UUID uuid = dataSource.addFile(evt.getFileUuid(), new FileExtractor() {
             List<File> extractedFiles;
+
+            @Override
+            public boolean useOriginalFile() {
+                return false;
+            }
 
             @Override
             public Path extractFile() {

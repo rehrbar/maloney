@@ -22,32 +22,22 @@ public class LocalDataSourceTest {
     @Test
     public void addFileTest() throws IOException {
         Path tempFile = Files.createTempFile("maloney","");
-        UUID uuid = dataSource.addFile(null, new FileExtractor() {
+        UUID uuid = dataSource.addFile(null, new MyFileExtractor(tempFile));
 
-            @Override
-            public Path extractFile() {
-                return tempFile;
-            }
+        FileAttributes fileAttributes = metadataStore.getFileAttributes(uuid);
+        Assert.assertEquals("notepad.exe", fileAttributes.getFileName());
 
-            @Override
-            public FileSystemMetadata extractMetadata() {
-                return new FileSystemMetadata(
-                        "notepad.exe",
-                        "C:\\windows\\",
-                        new Date(1436471820000L),
-                        new Date(1436471820000L),
-                        new Date(1436471820000L),
-                        1337000L);
-            }
+        File file = dataSource.getFile(uuid);
+        Assert.assertTrue(file.exists());
+    }
 
+    @Test
+    public void addFileWithoutCopyTest() throws IOException {
+        Path tempFile = Files.createTempFile("maloney","");
+        UUID uuid = dataSource.addFile(null, new MyFileExtractor(tempFile){
             @Override
-            public void cleanup() {
-                try {
-                    Files.deleteIfExists(tempFile);
-                } catch (IOException e) {
-                    System.out.println("Could not delete temp file:");
-                    e.printStackTrace();
-                }
+            public boolean useOriginalFile() {
+                return true;
             }
         });
 
@@ -55,7 +45,7 @@ public class LocalDataSourceTest {
         Assert.assertEquals("notepad.exe", fileAttributes.getFileName());
 
         File file = dataSource.getFile(uuid);
-        Assert.assertTrue(file.exists());
+        Assert.assertEquals(tempFile, file.toPath());
     }
 
     @Test
@@ -66,5 +56,45 @@ public class LocalDataSourceTest {
         // Following asserts are not really carved in stone.
         Assert.assertTrue(jobWorkingDir.toString().contains("jobs"));
         Assert.assertTrue(jobWorkingDir.toString().contains(LocalDataSourceTest.class.getSimpleName()));
+    }
+
+    private class MyFileExtractor implements FileExtractor {
+
+        private final Path tempFile;
+
+        public MyFileExtractor(Path tempFile) {
+            this.tempFile = tempFile;
+        }
+
+        @Override
+        public boolean useOriginalFile() {
+            return false;
+        }
+
+        @Override
+        public Path extractFile() {
+            return tempFile;
+        }
+
+        @Override
+        public FileSystemMetadata extractMetadata() {
+            return new FileSystemMetadata(
+                    "notepad.exe",
+                    "C:\\windows\\",
+                    new Date(1436471820000L),
+                    new Date(1436471820000L),
+                    new Date(1436471820000L),
+                    1337000L);
+        }
+
+        @Override
+        public void cleanup() {
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (IOException e) {
+                System.out.println("Could not delete temp file:");
+                e.printStackTrace();
+            }
+        }
     }
 }

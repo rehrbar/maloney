@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -21,6 +23,7 @@ public class LocalDataSource implements DataSource {
     Logger logger = LogManager.getLogger();
     private Path jobsWorkingDirPath;
     private Path filesWorkingDirPath;
+    private Map<UUID, Path> fileReferences = new HashMap<>();
 
 
     /**
@@ -67,17 +70,24 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public File getFile(UUID fileID) {
-        return new File(filesWorkingDirPath.resolve(fileID.toString()).toString());
+        return new File(getFilePath(fileID).toString());
     }
 
     @Override
     public InputStream getFileStream(UUID fileID) {
         try {
-            return Files.newInputStream(filesWorkingDirPath.resolve(fileID.toString()), StandardOpenOption.READ);
+            return Files.newInputStream(getFilePath(fileID), StandardOpenOption.READ);
         } catch (IOException e) {
             logger.error("Could not open file stream.");
         }
         return null;
+    }
+
+    private Path getFilePath(UUID fileID) {
+        if(fileReferences.containsKey(fileID)){
+            return fileReferences.get(fileID);
+        }
+        return filesWorkingDirPath.resolve(fileID.toString());
     }
 
     @Override
@@ -88,21 +98,26 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public UUID addFile(UUID parentId, FileExtractor fileExtractor) {
-        // TODO add overload to suppress file copy.
         UUID uuid = UUID.randomUUID();
 
         // Extracting necessary information
         FileSystemMetadata metadata = fileExtractor.extractMetadata();
-        // TODO check if the file needs to be extracted and added again.
 
-        // We do not gather the file. This should speed up this a little bit.
+        // TODO check if the file needs to be extracted and added again.
+        // We should not gather the file if it's not required. This should speed up the process a little bit.
         Path path = fileExtractor.extractFile();
-        try {
-            Files.copy(path, filesWorkingDirPath.resolve(uuid.toString()), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            logger.error("Could not add file to local working director. File: " + path.toString(), e);
+
+        if(fileExtractor.useOriginalFile()){
+            fileReferences.put(uuid, path);
+        } else {
+            try {
+                Files.copy(path, filesWorkingDirPath.resolve(uuid.toString()), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                logger.error("Could not add file to local working director. File: " + path.toString(), e);
+            }
         }
         fileExtractor.cleanup();
+
         // Updating MetadataStore with new information.
         metadataStore.addFileAttributes(new FileAttributes(
                 metadata.getFileName(),

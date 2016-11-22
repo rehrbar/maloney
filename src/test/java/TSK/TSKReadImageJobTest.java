@@ -2,6 +2,7 @@ package TSK;
 
 import ch.hsr.maloney.processing.TSKReadImageJob;
 import ch.hsr.maloney.storage.DataSource;
+import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.FileExtractor;
 import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.util.Context;
@@ -30,9 +31,11 @@ public class TSKReadImageJobTest {
 
     private class fakeDataSource implements DataSource{
         private final Map<UUID, FileExtractor> savedFiles;
+        private final Map<UUID, FileSystemMetadata> fileSystemMetadata;
 
         public fakeDataSource() {
             this.savedFiles = new HashMap<>();
+            this.fileSystemMetadata = new HashMap<>();
         }
 
         @Override
@@ -65,6 +68,7 @@ public class TSKReadImageJobTest {
         public UUID addFile(UUID parentId, FileExtractor fileExtractor) {
             UUID uuid = UUID.randomUUID();
             savedFiles.put(uuid, fileExtractor);
+            fileSystemMetadata.put(uuid,fileExtractor.extractMetadata());
             return uuid;
         }
 
@@ -118,16 +122,21 @@ public class TSKReadImageJobTest {
 
     @Test
     public void simpleTest(){
-        System.loadLibrary("libtsk_jni");
         System.loadLibrary("zlib");
         System.loadLibrary("libewf");
         System.loadLibrary("libvmdk");
         System.loadLibrary("libvhdi");
+        System.loadLibrary("libtsk_jni");
 
         TSKReadImageJob tskReadImageJob = new TSKReadImageJob();
         fakeDataSource dataSource = new fakeDataSource();
 
         UUID uuid = dataSource.addFile(null, new FileExtractor() {
+            @Override
+            public boolean useOriginalFile() {
+                return true;
+            }
+
             @Override
             public Path extractFile() {
                 //TODO insert position of image

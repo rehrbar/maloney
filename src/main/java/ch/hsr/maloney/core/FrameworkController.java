@@ -1,5 +1,6 @@
 package ch.hsr.maloney.core;
 
+import ch.hsr.maloney.processing.CalculateHashesJob;
 import ch.hsr.maloney.processing.TSKReadImageJob;
 
 /**
@@ -9,6 +10,7 @@ public class FrameworkController {
     public static void run(String imagePath) {
         Framework framework = new Framework();
         framework.register(new TSKReadImageJob());
+        framework.register(new CalculateHashesJob());
 
         framework.startWithDisk(imagePath);
     }

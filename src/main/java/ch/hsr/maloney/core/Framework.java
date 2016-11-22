@@ -5,8 +5,8 @@ import ch.hsr.maloney.processing.JobProcessor;
 import ch.hsr.maloney.processing.SimpleProcessor;
 import ch.hsr.maloney.storage.FileExtractor;
 import ch.hsr.maloney.storage.FileSystemMetadata;
+import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
-import ch.hsr.maloney.storage.PlainSource;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.EventObserver;
@@ -29,6 +29,8 @@ public class Framework implements EventObserver {
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
+    private final String NewDiskImageEventName = "newDiskImage";
+
     public Framework() {
         this.logger = LogManager.getLogger();
         initializeContext();
@@ -48,15 +50,33 @@ public class Framework implements EventObserver {
         this.context = new Context(
                 metadataStore,
                 null, //TODO Implement adn add Progress Tracker
-                new PlainSource(metadataStore)
+                new LocalDataSource(metadataStore)
         );
     }
 
     public void checkDependencies() {
-        //TODO: Not necessary as of now, but later
+        Set<String> availableEvents = new HashSet<>();
+        Set<Job> unresolvedDependencies = new HashSet<>(registeredJobs);
+
+        //TODO remove this as soon as startWithDisk is a registered Job within the Framework
+        availableEvents.add(NewDiskImageEventName);
+
+        boolean addedSome = true;
+
+        while(addedSome){
+            addedSome = false;
+            for(Job job : registeredJobs){
+                if(availableEvents.containsAll(job.getRequiredEvents())){
+                    addedSome = true;
+                    availableEvents.addAll(job.getProducedEvents());
+                    unresolvedDependencies.remove(job);
+                }
+            }
+        }
     }
 
     public void startWithDisk(String fileName) {
+        //TODO extract to Job
         UUID uuid = context.getDataSource().addFile(null, new FileExtractor() {
 
             private Path path = Paths.get(fileName);
@@ -84,12 +104,10 @@ public class Framework implements EventObserver {
                 // nothing to cleanup yet
             }
         });
-        Event event = new Event("newDiskImage", "ch.hsr.maloney.core", uuid);
 
-        registeredJobs.forEach((job -> {
-            //TODO check whether Job is interested in this event or not
-            jobProcessor.enqueue(job, event);
-        }));
+        Event event = new Event(NewDiskImageEventName, "ch.hsr.maloney.core", uuid);
+
+        enqueueToInterestedJobs(event);
 
         jobProcessor.start();
     }
@@ -114,7 +132,15 @@ public class Framework implements EventObserver {
     }
 
     @Override
-    public void update(Observable o, Event arg) {
-        throw new UnsupportedOperationException();
+    public void update(Observable o, Event evt) {
+        enqueueToInterestedJobs(evt);
+    }
+
+    private void enqueueToInterestedJobs(Event evt) {
+        registeredJobs.forEach((job)->{
+            if(job.getRequiredEvents().contains(evt.getName())){
+                jobProcessor.enqueue(job, evt);
+            }
+        });
     }
 }

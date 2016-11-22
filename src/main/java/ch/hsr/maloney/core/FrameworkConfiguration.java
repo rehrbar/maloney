@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Created by olive_000 on 08.11.2016.
  */
-public class FrameworkConfiguration implements Serializable{
+public class FrameworkConfiguration implements Serializable {
     private String JobProcessorType;
     private String MetadataStoreType;
     private String DataSourceType;
@@ -53,14 +53,14 @@ public class FrameworkConfiguration implements Serializable{
         LoggerType = loggerType;
     }
 
-    public static FrameworkConfiguration loadFromFile(String path){
+    public static FrameworkConfiguration loadFromFile(String path) {
         File config = new File(path);
         config.canRead();
         return null;
         // return new FrameworkConfiguration();
     }
 
-    public static FrameworkConfiguration loadFromParameters(String params){
+    public static FrameworkConfiguration loadFromParameters(String params) {
         return null;
     }
 }

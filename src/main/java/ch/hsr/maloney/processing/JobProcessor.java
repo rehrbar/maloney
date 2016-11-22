@@ -21,8 +21,8 @@ public abstract class JobProcessor extends Observable {
     /**
      * Adds a Job to be executed with the specified Event.
      *
-     * @param job       Job to be executed.
-     * @param event     Event which has to be forwarded to Job.
+     * @param job   Job to be executed.
+     * @param event Event which has to be forwarded to Job.
      */
     public abstract void enqueue(Job job, Event event);
 }

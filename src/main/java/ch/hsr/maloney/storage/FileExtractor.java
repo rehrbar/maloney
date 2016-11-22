@@ -8,13 +8,22 @@ import java.nio.file.Path;
  */
 public interface FileExtractor {
     /**
+     * Tells whether the file should be copied into the datastore or if the original should be referenced and used.
+     *
+     * @return True, if the original should be used.
+     */
+    boolean useOriginalFile();
+
+    /**
      * Extracts a file and passes the path to this extracted file to the caller.
+     *
      * @return Path to extracted file.
      */
     Path extractFile();
 
     /**
      * Extracts the meta data of a file.
+     *
      * @return Extracted metadata.
      */
     FileSystemMetadata extractMetadata();

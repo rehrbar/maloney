@@ -1,6 +1,5 @@
 package ch.hsr.maloney.core;
 
-import org.sleuthkit.datamodel.AbstractFile;
 import org.sleuthkit.datamodel.BlackboardArtifact;
 
 /**
@@ -8,11 +7,12 @@ import org.sleuthkit.datamodel.BlackboardArtifact;
  */
 public class Demo {
     // TODO remove this superlfuent class.
-    public static String helloWorld(){
+    public static String helloWorld() {
         return "Hello World!";
     }
-    public static String testTsk(){
-        BlackboardArtifact.Type artifact = new BlackboardArtifact.Type(1,"Name.Something", "This is something.");
+
+    public static String testTsk() {
+        BlackboardArtifact.Type artifact = new BlackboardArtifact.Type(1, "Name.Something", "This is something.");
         return artifact.getTypeName();
     }
 }

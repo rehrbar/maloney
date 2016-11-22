@@ -16,20 +16,21 @@ public class FileSystemMetadata {
     /**
      * Creates a new instance of FileSystemMetadata.
      */
-    public FileSystemMetadata(){
+    public FileSystemMetadata() {
 
     }
 
     /**
      * Creates a new instance of FileSystemMetadata.
-     * @param fileName Name of the file.
-     * @param filePath Path of the file, excluding the actual file name.
-     * @param dateCreated Date when the file was created.
-     * @param dateChanged Date when the file was changed.
+     *
+     * @param fileName     Name of the file.
+     * @param filePath     Path of the file, excluding the actual file name.
+     * @param dateCreated  Date when the file was created.
+     * @param dateChanged  Date when the file was changed.
      * @param dateAccessed Date when the file was last accessed.
-     * @param size Size in bytes.
+     * @param size         Size in bytes.
      */
-    public FileSystemMetadata(String fileName, String filePath, Date dateCreated, Date dateChanged, Date dateAccessed, long size){
+    public FileSystemMetadata(String fileName, String filePath, Date dateCreated, Date dateChanged, Date dateAccessed, long size) {
         this.fileName = fileName;
         this.filePath = filePath;
         this.dateCreated = dateCreated;

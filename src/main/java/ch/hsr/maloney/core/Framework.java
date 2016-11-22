@@ -54,7 +54,7 @@ public class Framework implements EventObserver {
         );
     }
 
-    public void checkDependencies() {
+    public void checkDependencies() throws UnrunnableJobException {
         Set<String> availableEvents = new HashSet<>();
         Set<Job> unresolvedDependencies = new HashSet<>(registeredJobs);
 
@@ -72,6 +72,15 @@ public class Framework implements EventObserver {
                     unresolvedDependencies.remove(job);
                 }
             }
+        }
+
+        if(unresolvedDependencies.size() > 0){
+            StringBuilder stringBuilder = new StringBuilder();
+            unresolvedDependencies.forEach(job -> {
+                stringBuilder.append(job.getJobName());
+            });
+
+            throw new UnrunnableJobException(stringBuilder.toString());
         }
     }
 
@@ -142,5 +151,14 @@ public class Framework implements EventObserver {
                 jobProcessor.enqueue(job, evt);
             }
         });
+    }
+
+    public class UnrunnableJobException extends Exception {
+        public UnrunnableJobException(){
+        }
+
+        public UnrunnableJobException(String msg) {
+            super(msg);
+        }
     }
 }

@@ -2,7 +2,6 @@ package TSK;
 
 import ch.hsr.maloney.processing.TSKReadImageJob;
 import ch.hsr.maloney.storage.DataSource;
-import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.FileExtractor;
 import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.util.Context;
@@ -39,11 +38,6 @@ public class TSKReadImageJobTest {
         }
 
         @Override
-        public void registerFileAttributes() {
-            // ... soon to be deprecated ...
-        }
-
-        @Override
         public File getFile(UUID fileID) {
             return new File(savedFiles.get(fileID).extractFile().toString());
         }
@@ -55,12 +49,6 @@ public class TSKReadImageJobTest {
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-            return null;
-        }
-
-        @Override
-        public UUID addFile(String path, UUID parentId) {
-            // ... soon to be deprecated ...
             return null;
         }
 

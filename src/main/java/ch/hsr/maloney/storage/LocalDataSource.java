@@ -63,12 +63,6 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void registerFileAttributes() {
-        // TODO remove after refactoring???
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public File getFile(UUID fileID) {
         return new File(getFilePath(fileID).toString());
     }
@@ -88,12 +82,6 @@ public class LocalDataSource implements DataSource {
             return fileReferences.get(fileID);
         }
         return filesWorkingDirPath.resolve(fileID.toString());
-    }
-
-    @Override
-    public UUID addFile(String path, UUID parentId) {
-        // TODO remove after refactoring
-        throw new UnsupportedOperationException();
     }
 
     @Override

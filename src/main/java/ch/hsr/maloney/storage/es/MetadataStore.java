@@ -131,7 +131,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public List<Artifact> getArtifacts(UUID fileId) {
-        // TODO Implement this method correctly with searchers to query for a specific type of an artifact.
+        // TODO Idea: Implement this method correctly with searchers to query for a specific type of an artifact.
         return this.getFileAttributes(fileId).getArtifacts();
     }
 

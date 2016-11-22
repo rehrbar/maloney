@@ -9,10 +9,6 @@ import java.util.UUID;
  * Created by olive_000 on 01.11.2016.
  */
 public interface DataSource {
-    /**
-     * Reads all Files in the Source and adds its MetaData to the MetadataStore
-     */
-    void registerFileAttributes();
 
     /**
      * Get a file from the DataSource as a File
@@ -33,11 +29,6 @@ public interface DataSource {
     /**
      * Adds a new File to the DataSource
      *
-     * @param path      Path of the file to add to the DataSource
-     * @param parentId  UUID of the parent, null if there is none (e.g. root image)
-     */
-    // TODO replace with new addFile implementation
-    UUID addFile(String path, UUID parentId);
 
     /**
      * Adds a new File to the DataSource

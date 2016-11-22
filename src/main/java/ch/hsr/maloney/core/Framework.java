@@ -3,13 +3,19 @@ package ch.hsr.maloney.core;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobProcessor;
 import ch.hsr.maloney.processing.SimpleProcessor;
+import ch.hsr.maloney.storage.FileExtractor;
+import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.storage.PlainSource;
-import ch.hsr.maloney.util.*;
+import ch.hsr.maloney.util.Context;
+import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.EventObserver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -50,9 +56,35 @@ public class Framework implements EventObserver {
         //TODO: Not necessary as of now, but later
     }
 
-    public void startWithDisk(String fileName){
-        UUID uuid = context.getDataSource().addFile(fileName, null);
-        Event event = new Event("newDiskImage","ch.hsr.maloney.core", uuid);
+    public void startWithDisk(String fileName) {
+        UUID uuid = context.getDataSource().addFile(null, new FileExtractor() {
+
+            private Path path = Paths.get(fileName);
+
+            @Override
+            public boolean useOriginalFile() {
+                return true;
+            }
+
+            @Override
+            public Path extractFile() {
+                return path;
+            }
+
+            @Override
+            public FileSystemMetadata extractMetadata() {
+                // TODO supply some metadata about the image. E.g. creationDate, name, etc.
+                FileSystemMetadata metadata = new FileSystemMetadata();
+                metadata.setFileName(path.getFileName().toString());
+                return metadata;
+            }
+
+            @Override
+            public void cleanup() {
+                // nothing to cleanup yet
+            }
+        });
+        Event event = new Event("newDiskImage", "ch.hsr.maloney.core", uuid);
 
         registeredJobs.forEach((job -> {
             //TODO check whether Job is interested in this event or not

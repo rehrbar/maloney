@@ -37,7 +37,7 @@ public class Framework implements EventObserver {
         this.jobProcessor = new SimpleProcessor(context);
     }
 
-    private void initializeContext(){
+    private void initializeContext() {
         MetadataStore metadataStore = null;
         try {
             metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();
@@ -52,7 +52,7 @@ public class Framework implements EventObserver {
         );
     }
 
-    public void checkDependencies(){
+    public void checkDependencies() {
         //TODO: Not necessary as of now, but later
     }
 
@@ -94,20 +94,20 @@ public class Framework implements EventObserver {
         jobProcessor.start();
     }
 
-    public void register(Job job){
+    public void register(Job job) {
         registeredJobs.add(job);
     }
 
-    public void unregister(Job job){
-        if(registeredJobs.contains(job)){
+    public void unregister(Job job) {
+        if (registeredJobs.contains(job)) {
             registeredJobs.remove(job);
         }
     }
 
     @Override
     public void update(Observable o, Object arg) {
-        if(arg instanceof Event){
-            update(o, (Event)arg);
+        if (arg instanceof Event) {
+            update(o, (Event) arg);
         } else {
             throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
         }

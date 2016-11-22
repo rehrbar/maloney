@@ -8,7 +8,7 @@ import java.util.UUID;
 /**
  * Created by olive_000 on 08.11.2016.
  */
-public class SimpleMetadataStore implements MetadataStore{
+public class SimpleMetadataStore implements MetadataStore {
     Map<UUID, FileAttributes> uuidFileAttributesMap;
 
     public SimpleMetadataStore() {

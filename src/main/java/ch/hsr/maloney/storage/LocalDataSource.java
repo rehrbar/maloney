@@ -28,6 +28,7 @@ public class LocalDataSource implements DataSource {
 
     /**
      * Creates an instance of a local data source.
+     *
      * @param metadataStore Used to store additional meta information.
      */
     public LocalDataSource(MetadataStore metadataStore) {
@@ -36,7 +37,8 @@ public class LocalDataSource implements DataSource {
 
     /**
      * Creates an instance of a local data source.
-     * @param metadataStore Used to store additional meta information.
+     *
+     * @param metadataStore    Used to store additional meta information.
      * @param workingDirectory Path to a directory which should be used as working directory. If null is provided, the
      *                         temporary directory configured is used.
      */
@@ -78,7 +80,7 @@ public class LocalDataSource implements DataSource {
     }
 
     private Path getFilePath(UUID fileID) {
-        if(fileReferences.containsKey(fileID)){
+        if (fileReferences.containsKey(fileID)) {
             return fileReferences.get(fileID);
         }
         return filesWorkingDirPath.resolve(fileID.toString());
@@ -95,7 +97,7 @@ public class LocalDataSource implements DataSource {
         // We should not gather the file if it's not required. This should speed up the process a little bit.
         Path path = fileExtractor.extractFile();
 
-        if(fileExtractor.useOriginalFile()){
+        if (fileExtractor.useOriginalFile()) {
             fileReferences.put(uuid, path);
         } else {
             try {

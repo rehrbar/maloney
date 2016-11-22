@@ -8,16 +8,16 @@ public class Artifact {
     private Object value;
     private String type;
 
-    public Artifact(){
+    public Artifact() {
         // Required for deserializing.
     }
 
     /**
      * Creates a new Artifact
      *
-     * @param originator    Job which created this Artifact
-     * @param value         Value of the Artifact
-     * @param type          Type of the associated Value
+     * @param originator Job which created this Artifact
+     * @param value      Value of the Artifact
+     * @param type       Type of the associated Value
      */
     public Artifact(String originator, Object value, String type) {
         this.originator = originator;
@@ -26,24 +26,21 @@ public class Artifact {
     }
 
     /**
-     *
-     * @return          Name of Job which created this Artifact
+     * @return Name of Job which created this Artifact
      */
     public String getOriginator() {
         return originator;
     }
 
     /**
-     *
-     * @return          Value of the Artifact
+     * @return Value of the Artifact
      */
     public Object getValue() {
         return value;
     }
 
     /**
-     *
-     * @return          Type of the Value associated with the Artifact
+     * @return Type of the Value associated with the Artifact
      */
     public String getType() {
         return type;

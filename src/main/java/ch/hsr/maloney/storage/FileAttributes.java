@@ -18,7 +18,7 @@ public class FileAttributes {
     private Date dateAccessed;
     private List<Artifact> artifacts = new LinkedList<>();
 
-    public FileAttributes(){
+    public FileAttributes() {
         // Keep for deserialization.
     }
 
@@ -30,7 +30,7 @@ public class FileAttributes {
         this.dateChanged = dateChanged;
         this.dateCreated = dateCreated;
         this.dateAccessed = dateAccessed;
-        if(artifacts !=  null){
+        if (artifacts != null) {
             this.artifacts.addAll(artifacts);
         }
     }

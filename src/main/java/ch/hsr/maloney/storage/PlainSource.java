@@ -39,7 +39,7 @@ public class PlainSource implements DataSource {
         metadataStore.addFileAttributes(new FileAttributes(
                 metadata.getFileName(),
                 metadata.getFilePath(),
-                uuid,metadata.getDateChanged(),
+                uuid, metadata.getDateChanged(),
                 metadata.getDateCreated(),
                 metadata.getDateAccessed(),
                 null,

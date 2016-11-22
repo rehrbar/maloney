@@ -25,9 +25,9 @@ public class SimpleProcessor extends JobProcessor {
         // TODO Review processing of events. This implementation will
         // not handle events, which are added later, well.
         List<Job> removeWhenDone = new LinkedList<>();
-        while(!queue.isEmpty()){
+        while (!queue.isEmpty()) {
             queue.forEach((job, event) -> {
-                if (job.canRun(ctx, event)){
+                if (job.canRun(ctx, event)) {
                     job.run(ctx, event); //TODO notify framework about new Events
                     removeWhenDone.add(job);
                 }

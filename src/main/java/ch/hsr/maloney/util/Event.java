@@ -12,9 +12,10 @@ public class Event {
 
     /**
      * Constructor.
-     * @param name      Name of the event
-     * @param origin    Origin of the event, i.e. name of the Job that created this event
-     * @param fileUuid      Uuid of the file concerned
+     *
+     * @param name     Name of the event
+     * @param origin   Origin of the event, i.e. name of the Job that created this event
+     * @param fileUuid Uuid of the file concerned
      */
     public Event(String name, String origin, UUID fileUuid) {
         this.name = name;
@@ -23,7 +24,6 @@ public class Event {
     }
 
     /**
-     *
      * @return Uuid of the file processed
      */
     public UUID getFileUuid() {
@@ -31,7 +31,6 @@ public class Event {
     }
 
     /**
-     *
      * @return Job which generated this Event
      */
     public String getOrigin() {
@@ -39,7 +38,6 @@ public class Event {
     }
 
     /**
-     *
      * @return Name of this event
      */
     public String getName() {

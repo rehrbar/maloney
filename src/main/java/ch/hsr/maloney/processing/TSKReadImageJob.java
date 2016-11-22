@@ -1,15 +1,17 @@
 package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.storage.DataSource;
-import ch.hsr.maloney.storage.*;
+import ch.hsr.maloney.storage.FileExtractor;
+import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sleuthkit.datamodel.*;
 
-import java.io.*;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,7 +30,7 @@ public class TSKReadImageJob implements Job {
     private LinkedList<String> requiredEvents = new LinkedList<>();
     private final Logger logger;
 
-    public TSKReadImageJob(){
+    public TSKReadImageJob() {
         this.producedEvents.add(NewFileEventName);
         this.requiredEvents.add(NewDiskImageEventName);
         this.logger = LogManager.getLogger();
@@ -36,8 +38,8 @@ public class TSKReadImageJob implements Job {
 
     @Override
     public boolean canRun(Context ctx, Event evt) {
-        for(String eventName : requiredEvents){
-            if(evt.getName().equals(eventName)){
+        for (String eventName : requiredEvents) {
+            if (evt.getName().equals(eventName)) {
                 return true;
             }
         }
@@ -89,11 +91,11 @@ public class TSKReadImageJob implements Job {
         SleuthkitCase sk;
         final Path TSK_DB_LOCATION = Paths.get(dataSource.getJobWorkingDir(this.getClass()) + TSK_DB_FILE_EXTENSION);
 
-        try{
-            if(!Files.exists(TSK_DB_LOCATION)){
+        try {
+            if (!Files.exists(TSK_DB_LOCATION)) {
                 SleuthkitCase.newCase(TSK_DB_LOCATION.toString());
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         sk = SleuthkitCase.openCase(TSK_DB_LOCATION.toString());
@@ -120,7 +122,7 @@ public class TSKReadImageJob implements Job {
                 // Get Location where the file has to be saved
                 java.io.File file = new File(WORKING_DIR + "" + abstractFile.getId());
                 //"" Because otherwise it won't recognize it as a string
-                if(extractedFiles == null){
+                if (extractedFiles == null) {
                     extractedFiles = new LinkedList<>();
                 }
                 extractedFiles.add(file);
@@ -139,7 +141,7 @@ public class TSKReadImageJob implements Job {
                     long offset = 0;
                     long length = (long) BUFFER_SIZE;
 
-                    while(abstractFile.read(buffer, offset, length) > 0){
+                    while (abstractFile.read(buffer, offset, length) > 0) {
                         os.write(buffer);
                         offset += BUFFER_SIZE;
                     }
@@ -161,12 +163,12 @@ public class TSKReadImageJob implements Job {
                         new Date(abstractFile.getMtime()),
                         new Date(abstractFile.getAtime()),
                         abstractFile.getSize()
-                        );
+                );
             }
 
             @Override
             public void cleanup() {
-                if(extractedFiles != null){
+                if (extractedFiles != null) {
                     extractedFiles.forEach(file -> {
                         try {
                             Files.deleteIfExists(Paths.get(file.getPath()));

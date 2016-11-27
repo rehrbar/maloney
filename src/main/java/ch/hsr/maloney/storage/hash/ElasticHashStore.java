@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -13,13 +14,17 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.stream.Collectors;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
  * Hash store based on elastic search.
@@ -57,8 +62,34 @@ public class ElasticHashStore implements HashStore {
         }
         if (wasCreated || force) {
             // Index has to be created to work.
+            try {
+                XContentBuilder mapping = jsonBuilder()
+                        .startObject()
+                        .startObject(HASHRECORD_TYPE)
+                        .startObject("properties");
+                Arrays.stream(HashAlgorithm.values()).forEach((hashAlgorithm -> {
+                    try {
+                        mapping.startObject("hashes." + hashAlgorithm)
+                                .field("type", "text")
+                                .field("index", "not_analyzed")
+                                .endObject(); // end hashes
+                    } catch (IOException e) {
+                        logger.error("Could not prepare mapping for hash ({}).", hashAlgorithm, e);
+                    }
 
-            // TODO add some mapping information.
+                }));
+                mapping.endObject() // end properties
+                        .endObject() // end artifact
+                        .endObject();
+
+                logger.debug(mapping.string());
+                PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(INDEX_NAME)
+                        .setType(HASHRECORD_TYPE)
+                        .setSource(mapping).get();
+                logger.debug("Update mapping ack? {}", putMappingResponse.isAcknowledged());
+            } catch (IOException e) {
+                logger.error("Could not update mapping.", e);
+            }
         }
     }
     @Override
@@ -92,6 +123,7 @@ public class ElasticHashStore implements HashStore {
         return null;
     }
 
+
     @Override
     public HashRecord findHash(String hashValue) {
         // TODO check if this query is correct.
@@ -105,6 +137,17 @@ public class ElasticHashStore implements HashStore {
     @Override
     public HashRecord findHash(String hashValue, HashType type) {
         // TODO improve search to pass type to speed up search.
+        // TODO make this search term working
+    /* Kibana debug console:
+GET hashes/hashrecord/_search
+{
+  "query": {
+        "term": {
+          "hashes.SHA1":"0000000F8527DCCAB6642252BBCFA1B8072D33EE"
+        }
+  }
+}
+     */
         return findHash(hashValue);
     }
 }

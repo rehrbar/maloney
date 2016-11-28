@@ -38,9 +38,9 @@ public class ElasticHashStore implements HashStore {
     static final String HASHRECORD_TYPE = "hashrecord";
 
     /**
-     * Creates a new Instance of MetadataStore with ElasticSearch as backend.
+     * Creates a new Instance of a {@link HashStore} with ElasticSearch as backend.
      *
-     * @throws UnknownHostException
+     * @throws UnknownHostException If the hostname for elasticsearch could not be looked up.
      */
     public ElasticHashStore() throws UnknownHostException {
         this.logger = LogManager.getLogger();
@@ -54,6 +54,10 @@ public class ElasticHashStore implements HashStore {
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
+    /**
+     * Updates the data mapping in ES. The index will be created, if it does not exist already.
+     * @param force If true, the mapping will be forced to upgrade, whether the index was created or not.
+     */
     void updateMapping(boolean force) {
         // https://www.elastic.co/guide/en/elasticsearch/guide/current/_finding_exact_values.html
         boolean wasCreated = false;
@@ -95,7 +99,6 @@ public class ElasticHashStore implements HashStore {
     @Override
     public String addHashRecord(HashRecord record) {
         try {
-            // TODO test if everything is serialized correctly.
             byte[] data = mapper.writeValueAsBytes(record);
             IndexResponse indexResponse = client.prepareIndex(INDEX_NAME, HASHRECORD_TYPE).setSource(data).get();
             logger.debug("Indexed HashRecord with id: {}", indexResponse.getId());

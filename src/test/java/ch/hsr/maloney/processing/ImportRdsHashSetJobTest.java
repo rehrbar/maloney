@@ -18,7 +18,7 @@ public class ImportRdsHashSetJobTest {
     @Test
     public void runTest(){
         Job job = new ImportRdsHashSetJob();
-        job.setJobConfig("F:\\BA\\hash\\rds_253_1000.zip");
+        job.setJobConfig("/media/sf_shared/hash/rds_254u.zip");
         Assert.assertTrue(job.canRun(null, null));
         job.run(null, null);
     }

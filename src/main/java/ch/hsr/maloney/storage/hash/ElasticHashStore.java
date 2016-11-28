@@ -7,6 +7,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -23,6 +25,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -56,6 +60,7 @@ public class ElasticHashStore implements HashStore {
 
     /**
      * Updates the data mapping in ES. The index will be created, if it does not exist already.
+     *
      * @param force If true, the mapping will be forced to upgrade, whether the index was created or not.
      */
     void updateMapping(boolean force) {
@@ -96,6 +101,7 @@ public class ElasticHashStore implements HashStore {
             }
         }
     }
+
     @Override
     public String addHashRecord(HashRecord record) {
         try {
@@ -107,6 +113,27 @@ public class ElasticHashStore implements HashStore {
             logger.error("Could not serialize HashRecord.", e);
         }
         return null;
+    }
+
+    public List<String> addHashRecords(List<HashRecord> records) {
+        // TODO add to interface
+        List<String> addedRecordIds = new LinkedList<>();
+        BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+        records.forEach(record -> {
+            try {
+                byte[] data = mapper.writeValueAsBytes(record);
+                bulkRequestBuilder.add(client.prepareIndex(INDEX_NAME, HASHRECORD_TYPE).setSource(data));
+            } catch (JsonProcessingException e) {
+                logger.error("Could not serialize HashRecord.", e);
+            }
+        });
+
+        BulkResponse bulkResponse = bulkRequestBuilder.get();
+        bulkResponse.forEach(bulkItemResponse -> {
+            this.logger.trace("Added document: {} ({})", bulkItemResponse.getId(), bulkItemResponse.getResponse().getResult());
+            addedRecordIds.add(bulkItemResponse.getId());
+        });
+        return addedRecordIds;
     }
 
     @Override
@@ -122,7 +149,7 @@ public class ElasticHashStore implements HashStore {
             return mapper.readValue(response.getSourceAsBytes(), HashRecord.class);
         } catch (IOException e) {
             logger.error("Could not parse HashRecord retrieved from elasticsearch.", e);
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
             logger.info("Requested HashRecord with id '{}' was not found.", id, e);
         }
         return null;
@@ -135,7 +162,7 @@ public class ElasticHashStore implements HashStore {
                 .setTypes(HASHRECORD_TYPE)
                 .setQuery(QueryBuilders.multiMatchQuery(hashValue, "hashes.*").type(MultiMatchQueryBuilder.Type.BEST_FIELDS))
                 .setFrom(0).setSize(1).get();
-        if(searchResponse.getHits().getTotalHits() != 1){
+        if (searchResponse.getHits().getTotalHits() != 1) {
             logger.info("None or multiple results found for hash '{}'", hashValue);
             return null;
         }
@@ -146,9 +173,9 @@ public class ElasticHashStore implements HashStore {
     public HashRecord findHash(String hashValue, HashAlgorithm algorithm) {
         SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
                 .setTypes(HASHRECORD_TYPE)
-                .setQuery(QueryBuilders.termQuery("hashes."+ algorithm, hashValue))
+                .setQuery(QueryBuilders.termQuery("hashes." + algorithm, hashValue))
                 .setFrom(0).setSize(1).get();
-        if(searchResponse.getHits().getTotalHits() != 1){
+        if (searchResponse.getHits().getTotalHits() != 1) {
             logger.info("None or multiple results found for hash '{}'", hashValue);
             return null;
         }

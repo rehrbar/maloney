@@ -20,6 +20,7 @@ import java.util.stream.Stream;
  */
 public class ImportRdsHashSetJob implements Job {
     private static final String JOB_NAME = "ImportRdsHashSetJob";
+    public static final int BUFFER_LIMIT = 1000;
     private final Logger logger;
     private Path zipFile;
     private LinkedList<String> producedEvents;
@@ -74,11 +75,18 @@ public class ImportRdsHashSetJob implements Job {
     private void readFileList(Path path) throws IOException {
         FileInputStream inputStream = null;
         Scanner sc = null;
+        List<HashRecord> buffer = new LinkedList<>();
         try {
             sc = new Scanner(Files.newInputStream(path), "UTF-8");
             while (sc.hasNextLine()) {
                 String line = sc.nextLine();
-                processHashSetLine(line);
+                processHashSetLine(line, buffer);
+
+                // Flush buffer
+                if(buffer.size() >= BUFFER_LIMIT){
+                    ((ElasticHashStore)hashStore).addHashRecords(buffer);
+                    buffer.clear();
+                }
             }
             // note that Scanner suppresses exceptions
             if (sc.ioException() != null) {
@@ -92,9 +100,12 @@ public class ImportRdsHashSetJob implements Job {
                 sc.close();
             }
         }
+
+        // Flush leftovers.
+        ((ElasticHashStore)hashStore).addHashRecords(buffer);
     }
 
-    private void processHashSetLine(String s) {
+    private void processHashSetLine(String s, List<HashRecord> buffer) {
         // Skipping header
         if(s.startsWith("\"SHA-1\"")){
             return;
@@ -107,7 +118,7 @@ public class ImportRdsHashSetJob implements Job {
             record.getHashes().put(HashAlgorithm.SHA1, matcher.group("sha1"));
             record.getHashes().put(HashAlgorithm.MD5, matcher.group("md5"));
             record.getHashes().put(HashAlgorithm.CRC32, matcher.group("crc32"));
-            hashStore.addHashRecord(record);
+            buffer.add(record);
         } catch (IllegalStateException | UncheckedIOException e){
             logger.warn("Could not parse line: {}", s);
         }

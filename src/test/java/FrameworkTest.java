@@ -2,11 +2,12 @@ import ch.hsr.maloney.core.Framework;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
+
+import static org.junit.Assert.fail;
 
 /**
  * Created by olive_000 on 22.11.2016.
@@ -132,16 +133,20 @@ public class FrameworkTest {
         framework.register(new JobA());
         framework.register(new JobAtoB());
 
-        framework.checkDependencies();
+        try {
+            framework.checkDependencies();
+        } catch (Framework.UnrunnableJobException e) {
+            fail();
+        }
     }
 
     @Test(expected = Framework.UnrunnableJobException.class)
-    public void advancedDependencyTest(){
+    public void advancedDependencyTest() throws Framework.UnrunnableJobException{
         Framework framework = new Framework();
         framework.register(new JobA());
         framework.register(new JobBtoC());
 
         framework.checkDependencies();
-        Assert.fail();
+        fail();
     }
 }

@@ -3,6 +3,7 @@ package ch.hsr.maloney.core;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobProcessor;
 import ch.hsr.maloney.processing.SimpleProcessor;
+import ch.hsr.maloney.processing.TSKReadImageJob;
 import ch.hsr.maloney.storage.FileExtractor;
 import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.storage.LocalDataSource;
@@ -49,7 +50,7 @@ public class Framework implements EventObserver {
         }
         this.context = new Context(
                 metadataStore,
-                null, //TODO Implement adn add Progress Tracker
+                null, //TODO Implement and add Progress Tracker
                 new LocalDataSource(metadataStore)
         );
     }
@@ -61,23 +62,28 @@ public class Framework implements EventObserver {
         //TODO remove this as soon as startWithDisk is a registered Job within the Framework
         availableEvents.add(NewDiskImageEventName);
 
-        boolean addedSome = true;
+        LinkedList<Job> runnableJobs = new LinkedList<>();
+        runnableJobs.add(new TSKReadImageJob());
+        // Added some random Job that gets cleared out
+        // just so that the following while loop can be started
 
-        while(addedSome){
-            addedSome = false;
-            for(Job job : registeredJobs){
+        while(runnableJobs.size() > 0){
+            runnableJobs.clear();
+            for(Job job : unresolvedDependencies){
                 if(availableEvents.containsAll(job.getRequiredEvents())){
-                    addedSome = true;
                     availableEvents.addAll(job.getProducedEvents());
-                    unresolvedDependencies.remove(job);
+                    runnableJobs.add(job);
                 }
             }
+            unresolvedDependencies.removeAll(runnableJobs);
         }
 
         if(unresolvedDependencies.size() > 0){
             StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("Error with following Jobs:\r\n");
             unresolvedDependencies.forEach(job -> {
                 stringBuilder.append(job.getJobName());
+                stringBuilder.append("\r\n");
             });
 
             throw new UnrunnableJobException(stringBuilder.toString());

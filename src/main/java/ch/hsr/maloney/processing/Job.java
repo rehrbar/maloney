@@ -54,4 +54,11 @@ public interface Job {
      * @return Configuration of this Job
      */
     String getJobConfig();
+
+    /**
+     * Setter for Configuration of this job.
+     *
+     * @param config Configuration, which can be interpreted by the job.
+     */
+    void setJobConfig(String config);
 }

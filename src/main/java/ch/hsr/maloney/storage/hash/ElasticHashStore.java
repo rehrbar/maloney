@@ -126,22 +126,27 @@ public class ElasticHashStore implements HashStore {
 
     @Override
     public HashRecord findHash(String hashValue) {
-        // TODO check if this query is correct.
         SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
                 .setTypes(HASHRECORD_TYPE)
                 .setQuery(QueryBuilders.multiMatchQuery(hashValue, "hashes.*").type(MultiMatchQueryBuilder.Type.BEST_FIELDS))
                 .setFrom(0).setSize(1).get();
-            return getHashRecord(searchResponse.getHits().getAt(0).id());
+        if(searchResponse.getHits().getTotalHits() != 1){
+            logger.info("None or multiple results found for hash '{}'", hashValue);
+            return null;
+        }
+        return getHashRecord(searchResponse.getHits().getAt(0).id());
     }
 
     @Override
     public HashRecord findHash(String hashValue, HashAlgorithm algorithm) {
-        // TODO improve search to pass type to speed up search.
-        // TODO make this search term working
         SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
                 .setTypes(HASHRECORD_TYPE)
                 .setQuery(QueryBuilders.termQuery("hashes."+ algorithm, hashValue))
                 .setFrom(0).setSize(1).get();
+        if(searchResponse.getHits().getTotalHits() != 1){
+            logger.info("None or multiple results found for hash '{}'", hashValue);
+            return null;
+        }
         return getHashRecord(searchResponse.getHits().getAt(0).id());
     }
 }

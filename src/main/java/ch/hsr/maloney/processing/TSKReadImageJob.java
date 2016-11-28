@@ -118,37 +118,49 @@ public class TSKReadImageJob implements Job {
                 //TODO get single file from TSK and put into working dir
                 //TODO all files are saved in flat structure, rebuild structure in working directory?
                 final Path WORKING_DIR = dataSource.getJobWorkingDir(TSKReadImageJob.class);
+                logger.info("Extratcting file to {}", WORKING_DIR);
 
                 // Get Location where the file has to be saved
-                java.io.File file = new File(WORKING_DIR + "" + abstractFile.getId());
-                //"" Because otherwise it won't recognize it as a string
-                if (extractedFiles == null) {
-                    extractedFiles = new LinkedList<>();
-                }
-                extractedFiles.add(file);
+                java.io.File file = WORKING_DIR.resolve(Long.toString(abstractFile.getId())).toFile();
 
-//                try {
-//                    Files.deleteIfExists(Paths.get(file.getPath()));
-//                } catch (IOException e) {
-//                    logger.error("Failed while trying to delete already existing File: {}", abstractFile.getName(), e);
-//                }
-
-                // Write specified File into working directory
+                ReadContentInputStream is = null;
+                FileOutputStream os = null;
                 try {
-                    FileOutputStream os = new FileOutputStream(file);
+                    //TODO decide whether to do this here or inside LocalDataSource?
+                    if(!Files.exists(WORKING_DIR))
+                        Files.createDirectory(WORKING_DIR);
 
-                    byte[] buffer = new byte[BUFFER_SIZE];
-                    long offset = 0;
-                    long length = (long) BUFFER_SIZE;
+                    logger.debug("Writing file '{}' to '{}'", abstractFile.getName(), file);
+                    is = new ReadContentInputStream(abstractFile);
+                    os = new FileOutputStream(file);
+                    
+                    int read = 0;
+                    byte[] bytes = new byte[512];
 
-                    while (abstractFile.read(buffer, offset, length) > 0) {
-                        os.write(buffer);
-                        offset += BUFFER_SIZE;
+                    while ((read = is.read(bytes)) != -1) {
+                        os.write(bytes, 0, read);
                     }
-                } catch (TskCoreException e) {
-                    logger.error("Error while trying to read file {}", abstractFile.getName(), e);
+
+                    if (extractedFiles == null) {
+                        extractedFiles = new LinkedList<>();
+                    }
+                    extractedFiles.add(file);
+
+                    logger.debug("Done writing file '{}'", abstractFile.getName());
                 } catch (IOException e) {
-                    logger.error("Could not write into working copy file: {}", abstractFile.getName(), e);
+                    logger.error("Could not write file '" + abstractFile.getName() + "' to temporary dir '" +
+                            file.getAbsolutePath() + "'.", e);
+                } finally {
+                    try {
+                        if (is != null) {
+                            is.close();
+                        }
+                        if (os != null) {
+                            os.close();
+                        }
+                    } catch (IOException e){
+                            logger.error("Could not close IOstream(s)", e);
+                    }
                 }
 
                 return Paths.get(file.getPath());

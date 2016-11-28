@@ -80,7 +80,7 @@ public class TSKReadImageJob implements Job {
                 addToDataSource(ctx, evt, events, abstractFile, sk);
             });
         } catch (TskCoreException e) {
-            logger.fatal("Failed to read image with sleuthkit.", e);
+            logger.fatal("Failed to read image in '" + IMAGE_PATH + "' with sleuthkit.", e);
         }
 
         return events;

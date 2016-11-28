@@ -11,7 +11,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by olive_000 on 08.11.2016.
+ * @author oniet
+ *
+ * Should handle the running of jobs.
+ *
+ * The stuff inside of method start() somewhat resembles the Reactor Pattern
+ * https://en.wikipedia.org/wiki/Reactor_pattern
+ *
+ * In the end, this should be a Proactor (asynchronous), but it's still very much work in progress.
  */
 public class SimpleProcessor extends JobProcessor {
     private final Logger logger;
@@ -26,6 +33,7 @@ public class SimpleProcessor extends JobProcessor {
 
     @Override
     public void start() {
+        logger.debug("Starting Processing");
         List<Job> removeWhenDone = new LinkedList<>();
         while(!jobQueue.isEmpty()){
             // while there are still jobs to be run..
@@ -41,18 +49,20 @@ public class SimpleProcessor extends JobProcessor {
                         notifyObservers(createdEvents);
                     }
                 }
-                // Now, remove processed events from eventList ...
+                // Now, remove processed events from this Jobs' eventList ...
                 processedEvents.forEach(eventList::remove);
                 processedEvents.clear();
                 // ... and if there are no more events for this job, mark the job for removal ...
                 if(eventList.size() == 0){
+                    logger.debug("No more events for Job '{}', will be removed from processing,");
                     removeWhenDone.add(job);
                 }
             });
-            // ... finally, remove jobs where there are no more events pending ...
+            // ... finally, remove that Job
             removeWhenDone.forEach(jobQueue::remove);
             removeWhenDone.clear();
         }
+        logger.debug("Nothing more to process");
     }
 
     @Override
@@ -62,6 +72,7 @@ public class SimpleProcessor extends JobProcessor {
 
     @Override
     public void enqueue(Job job, Event event) {
+        logger.debug("Job '{}' enqueued with new event '{}'", job.getJobName(), event.getName());
         List<Event> eventList = jobQueue.get(job);
         if(eventList == null){
             eventList = new LinkedList<>();

@@ -15,40 +15,21 @@ import java.util.Map;
  */
 public class SimpleProcessor extends JobProcessor {
     private final Logger logger;
-    private final Map<Job, Event> queue; //TODO replace with better structure
-    private final Map<Job, List<Event>> jobListMap;
+    private final Map<Job, List<Event>> jobQueue; //TODO replace with better Queueing structure
     private Context ctx;
 
     public SimpleProcessor(Context ctx) {
         logger = LogManager.getLogger();
         this.ctx = ctx;
-        //TODO only need queue OR jobListMap
-        queue = new HashMap<>();
-        jobListMap = new HashMap<>();
-    }
-
-
-    public void otherStart() {
-        // TODO Review processing of events. This implementation will
-        // not handle events, which are added later, well.
-        List<Job> removeWhenDone = new LinkedList<>();
-        while (!queue.isEmpty()) {
-            queue.forEach((job, event) -> {
-                if (job.canRun(ctx, event)) {
-                    job.run(ctx, event); //TODO notify framework about new Events
-                    removeWhenDone.add(job);
-                }
-            });
-            removeWhenDone.forEach((queue::remove));
-        }
+        jobQueue = new HashMap<>();
     }
 
     @Override
     public void start() {
         List<Job> removeWhenDone = new LinkedList<>();
-        while(!jobListMap.isEmpty()){
+        while(!jobQueue.isEmpty()){
             // while there are still jobs to be run..
-            jobListMap.forEach((job, eventList) -> {
+            jobQueue.forEach((job, eventList) -> {
                 // ... go through their queued events ...
                 LinkedList<Event> processedEvents = new LinkedList<>();
                 for(Event evt : eventList){
@@ -61,16 +42,15 @@ public class SimpleProcessor extends JobProcessor {
                     }
                 }
                 // Now, remove processed events from eventList ...
-                if(processedEvents.size() > 0){
-                    processedEvents.forEach(eventList::remove);
-                    processedEvents.clear();
-                }
+                processedEvents.forEach(eventList::remove);
+                processedEvents.clear();
                 // ... and if there are no more events for this job, mark the job for removal ...
                 if(eventList.size() == 0){
                     removeWhenDone.add(job);
                 }
             });
-            removeWhenDone.forEach(jobListMap::remove);
+            // ... finally, remove jobs where there are no more events pending ...
+            removeWhenDone.forEach(jobQueue::remove);
             removeWhenDone.clear();
         }
     }
@@ -82,14 +62,11 @@ public class SimpleProcessor extends JobProcessor {
 
     @Override
     public void enqueue(Job job, Event event) {
-        queue.put(job, event);
-
-        List<Event> eventList;
-        if(jobListMap.get(job) != null){
-            eventList = jobListMap.get(job);
-        } else {
+        List<Event> eventList = jobQueue.get(job);
+        if(eventList == null){
             eventList = new LinkedList<>();
         }
-        jobListMap.put(job, eventList);
+        eventList.add(event);
+        jobQueue.put(job, eventList);
     }
 }

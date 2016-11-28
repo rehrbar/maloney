@@ -53,6 +53,7 @@ public class CalculateHashesJob implements Job {
 
     @Override
     public List<Event> run(Context ctx, Event evt) {
+        logger.debug("Calculating Hash for file UUID '{}'", evt.getFileUuid());
         MetadataStore metadataStore = ctx.getMetadataStore();
         DataSource dataSource = ctx.getDataSource();
         UUID fileUuid = evt.getFileUuid();

@@ -22,7 +22,6 @@ import java.util.*;
  */
 public class TSKReadImageJob implements Job {
     private static final String TSK_DB_FILE_EXTENSION = ".db";
-    private static final int BUFFER_SIZE = 512;
     private final String NewFileEventName = "newFile";
     private final String NewDiskImageEventName = "newDiskImage";
 
@@ -133,7 +132,7 @@ public class TSKReadImageJob implements Job {
                     logger.debug("Writing file '{}' to '{}'", abstractFile.getName(), file);
                     is = new ReadContentInputStream(abstractFile);
                     os = new FileOutputStream(file);
-                    
+
                     int read = 0;
                     byte[] bytes = new byte[512];
 

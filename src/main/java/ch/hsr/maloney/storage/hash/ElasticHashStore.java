@@ -122,6 +122,8 @@ public class ElasticHashStore implements HashStore {
             return mapper.readValue(response.getSourceAsBytes(), HashRecord.class);
         } catch (IOException e) {
             logger.error("Could not parse HashRecord retrieved from elasticsearch.", e);
+        } catch (NullPointerException e){
+            logger.info("Requested HashRecord with id '{}' was not found.", id, e);
         }
         return null;
     }

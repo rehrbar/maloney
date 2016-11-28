@@ -22,7 +22,24 @@ public class ElasticHashStorageTest {
     }
 
     @Test
-    public void testIndexHash(){
+    public void getHashTest(){
+        String id = generatedIds.get(0);
+        Map<String, Object> dump = ((ElasticHashStorageTestImpl)es).dumpRecord(id);
+        printMap(dump);
+        Assert.assertTrue(dump != null);
+        Assert.assertEquals(HashType.GOOD, HashType.valueOf((String)dump.get("type")));
+        Assert.assertEquals(3, ((Map<Object, Object>)dump.get("hashes")).size());
+    }
+
+    @Test
+    public void getNonExistingHashTest(){
+        String id = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
+        Map<String, Object> dump = ((ElasticHashStorageTestImpl)es).dumpRecord(id);
+        Assert.assertEquals(null, dump);
+    }
+
+    @Test
+    public void indexHashTest(){
         HashRecord record = new HashRecord(HashType.GOOD, "rds_254u", "Windows", "Canvas 8");
         record.setUpdated(new Date());
         record.getHashes().put(HashAlgorithm.MD5, "392126E756571EBF112CB1C1CDEDF926");
@@ -38,7 +55,7 @@ public class ElasticHashStorageTest {
     }
 
     @Test
-    public void searchGenericHash(){
+    public void searchGenericHashTest(){
         String hashValue = "68CE322D8A896B6E4E7E3F18339EC85C"; // MD5 hash
         HashRecord match = es.findHash(hashValue);
         Assert.assertNotEquals(null, match);
@@ -47,7 +64,7 @@ public class ElasticHashStorageTest {
     }
 
     @Test
-    public void searchSpecificHash(){
+    public void searchSpecificHashTest(){
         String hashValue = "68CE322D8A896B6E4E7E3F18339EC85C"; // MD5 hash
         HashRecord match = es.findHash(hashValue, HashAlgorithm.MD5);
         Assert.assertNotEquals(null, match);
@@ -56,7 +73,7 @@ public class ElasticHashStorageTest {
     }
 
     @Test
-    public void searchUnknownGenericHash(){
+    public void searchUnknownGenericHashTest(){
         // TODO should an exception be expected or null?
         String hashValue = "0000034C9033333F8F58D9C7A64800F509962F3A"; // SHA1
         HashRecord match = es.findHash(hashValue);
@@ -64,13 +81,30 @@ public class ElasticHashStorageTest {
     }
 
     @Test
-    public void searchUnknownSpecificHash(){
+    public void searchUnknownSpecificHashTest(){
         // TODO should an exception be expected or null?
         String hashValue = "0000034C9033333F8F58D9C7A64800F509962F3A"; // SHA1
         HashRecord match = es.findHash(hashValue, HashAlgorithm.MD5);
         Assert.assertEquals(null, match);
     }
 
+    @Test
+    public void removeHashTest(){
+        String id = generatedIds.get(0);
+        System.out.printf("Removing hash with id %s", id);
+        Assert.assertNotEquals("Precondition not met.",null, es.getHashRecord(id));
+        es.removeHashRecord(id);
+        Assert.assertEquals("Hash was not removed.",null, es.getHashRecord(id));
+    }
+
+    @Test
+    public void removeNotExistingHashTest(){
+        String id = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
+        System.out.printf("Removing hash with id %s", id);
+        Assert.assertEquals("Precondition not met.",null, es.getHashRecord(id));
+        es.removeHashRecord(id);
+        Assert.assertEquals("Hash was not removed.",null, es.getHashRecord(id));
+    }
 
     private void printMap(Map<String, Object> map){
         System.out.println("Content of map:");

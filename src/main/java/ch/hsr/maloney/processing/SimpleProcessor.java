@@ -5,10 +5,9 @@ import ch.hsr.maloney.util.Event;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Queue;
 
 /**
  * @author oniet
@@ -20,48 +19,55 @@ import java.util.Map;
  *
  * In the end, this should be a Proactor (asynchronous), but it's still very much work in progress.
  */
+
+class Tuple<K,V>{
+    final private K left;
+    final private V right;
+
+    Tuple(K left, V right) {
+        this.left = left;
+        this.right = right;
+    }
+
+    K getLeft() {
+        return left;
+    }
+
+    V getRight() {
+        return right;
+    }
+
+}
+
 public class SimpleProcessor extends JobProcessor {
     private final Logger logger;
-    private final Map<Job, List<Event>> jobQueue; //TODO replace with better Queueing structure
+    private final Queue<Tuple<Job, Event>> jobQueue; //TODO replace with better Queueing structure (persistent)
     private Context ctx;
 
     public SimpleProcessor(Context ctx) {
         logger = LogManager.getLogger();
         this.ctx = ctx;
-        jobQueue = new HashMap<>();
+        jobQueue = new LinkedList<>();
     }
 
     @Override
     public void start() {
         logger.debug("Starting Processing");
-        List<Job> removeWhenDone = new LinkedList<>();
         while(!jobQueue.isEmpty()){
-            // while there are still jobs to be run..
-            jobQueue.forEach((job, eventList) -> {
-                // ... go through their queued events ...
-                LinkedList<Event> processedEvents = new LinkedList<>();
-                for(Event evt : eventList){
-                    // ... if possible run the job with the event ...
-                    if (job.canRun(ctx, evt)){
-                        List<Event> createdEvents = job.run(ctx, evt);
-                        // ... and mark the processed event for removal
-                        processedEvents.add(evt);
-                        setChanged();
-                        notifyObservers(createdEvents);
-                    }
-                }
-                // Now, remove processed events from this Jobs' eventList ...
-                processedEvents.forEach(eventList::remove);
-                processedEvents.clear();
-                // ... and if there are no more events for this job, mark the job for removal ...
-                if(eventList.size() == 0){
-                    logger.debug("No more events for Job '{}', will be removed from processing,");
-                    removeWhenDone.add(job);
-                }
-            });
-            // ... finally, remove that Job
-            removeWhenDone.forEach(jobQueue::remove);
-            removeWhenDone.clear();
+            // while there are still jobs to be run...
+            Tuple<Job, Event> tuple = jobQueue.poll();
+            Job job = tuple.getLeft();
+            Event evt = tuple.getRight();
+
+            if(job.canRun(ctx, evt)){
+                List<Event> createdEvents = job.run(ctx, evt);
+                setChanged();
+                notifyObservers(createdEvents);
+            } else {
+                // Job could not be run and is put at the end of the queue
+                jobQueue.add(tuple);
+                //TODO remove job if it shan't be completed
+            }
         }
         logger.debug("Nothing more to process");
     }
@@ -74,11 +80,6 @@ public class SimpleProcessor extends JobProcessor {
     @Override
     public void enqueue(Job job, Event event) {
         logger.debug("Job '{}' enqueued with new event '{}'", job.getJobName(), event.getName());
-        List<Event> eventList = jobQueue.get(job);
-        if(eventList == null){
-            eventList = new LinkedList<>();
-        }
-        eventList.add(event);
-        jobQueue.put(job, eventList);
+        jobQueue.add(new Tuple<>(job, event));
     }
 }

@@ -15,6 +15,7 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
@@ -70,8 +71,7 @@ public class ElasticHashStore implements HashStore {
                 Arrays.stream(HashAlgorithm.values()).forEach((hashAlgorithm -> {
                     try {
                         mapping.startObject("hashes." + hashAlgorithm)
-                                .field("type", "text")
-                                .field("index", "not_analyzed")
+                                .field("type", "keyword")
                                 .endObject(); // end hashes
                     } catch (IOException e) {
                         logger.error("Could not prepare mapping for hash ({}).", hashAlgorithm, e);
@@ -129,25 +129,19 @@ public class ElasticHashStore implements HashStore {
         // TODO check if this query is correct.
         SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
                 .setTypes(HASHRECORD_TYPE)
-                .setQuery(QueryBuilders.termQuery("hashes.value", hashValue))
+                .setQuery(QueryBuilders.multiMatchQuery(hashValue, "hashes.*").type(MultiMatchQueryBuilder.Type.BEST_FIELDS))
                 .setFrom(0).setSize(1).get();
             return getHashRecord(searchResponse.getHits().getAt(0).id());
     }
 
     @Override
-    public HashRecord findHash(String hashValue, HashType type) {
+    public HashRecord findHash(String hashValue, HashAlgorithm algorithm) {
         // TODO improve search to pass type to speed up search.
         // TODO make this search term working
-    /* Kibana debug console:
-GET hashes/hashrecord/_search
-{
-  "query": {
-        "term": {
-          "hashes.SHA1":"0000000F8527DCCAB6642252BBCFA1B8072D33EE"
-        }
-  }
-}
-     */
-        return findHash(hashValue);
+        SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
+                .setTypes(HASHRECORD_TYPE)
+                .setQuery(QueryBuilders.termQuery("hashes."+ algorithm, hashValue))
+                .setFrom(0).setSize(1).get();
+        return getHashRecord(searchResponse.getHits().getAt(0).id());
     }
 }

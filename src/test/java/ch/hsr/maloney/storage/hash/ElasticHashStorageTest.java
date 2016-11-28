@@ -6,16 +6,18 @@ import org.junit.Test;
 
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class ElasticHashStorageTest {
     ElasticHashStore es;
+    private List<String> generatedIds;
 
     @Before
     public void setUp() throws UnknownHostException {
         es = new ElasticHashStorageTestImpl();
         ((ElasticHashStorageTestImpl)es).clearIndex();
-        ((ElasticHashStorageTestImpl)es).seedTestData();
+        generatedIds = ((ElasticHashStorageTestImpl) es).seedTestData();
         ((ElasticHashStorageTestImpl)es).refreshIndex();
     }
 
@@ -34,6 +36,41 @@ public class ElasticHashStorageTest {
         Assert.assertEquals(record.getType(), HashType.valueOf((String)dump.get("type")));
         Assert.assertEquals(3, ((Map<Object, Object>)dump.get("hashes")).size());
     }
+
+    @Test
+    public void searchGenericHash(){
+        String hashValue = "68CE322D8A896B6E4E7E3F18339EC85C"; // MD5 hash
+        HashRecord match = es.findHash(hashValue);
+        Assert.assertNotEquals(null, match);
+        Assert.assertEquals(hashValue, match.getHashes().get(HashAlgorithm.MD5));
+        Assert.assertEquals("rds_254u", match.getSourceName());
+    }
+
+    @Test
+    public void searchSpecificHash(){
+        String hashValue = "68CE322D8A896B6E4E7E3F18339EC85C"; // MD5 hash
+        HashRecord match = es.findHash(hashValue, HashAlgorithm.MD5);
+        Assert.assertNotEquals(null, match);
+        Assert.assertEquals(hashValue, match.getHashes().get(HashAlgorithm.MD5));
+        Assert.assertEquals("rds_254u", match.getSourceName());
+    }
+
+    @Test
+    public void searchUnknownGenericHash(){
+        // TODO should an exception be expected or null?
+        String hashValue = "0000034C9033333F8F58D9C7A64800F509962F3A"; // SHA1
+        HashRecord match = es.findHash(hashValue);
+        Assert.assertEquals(null, match);
+    }
+
+    @Test
+    public void searchUnknownSpecificHash(){
+        // TODO should an exception be expected or null?
+        String hashValue = "0000034C9033333F8F58D9C7A64800F509962F3A"; // SHA1
+        HashRecord match = es.findHash(hashValue, HashAlgorithm.MD5);
+        Assert.assertEquals(null, match);
+    }
+
 
     private void printMap(Map<String, Object> map){
         System.out.println("Content of map:");

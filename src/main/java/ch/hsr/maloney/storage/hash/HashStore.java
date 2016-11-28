@@ -8,5 +8,5 @@ public interface HashStore {
     HashRecord getHashRecord(String id);
 
     HashRecord findHash(String hashValue);
-    HashRecord findHash(String hashValue, HashType type);
+    HashRecord findHash(String hashValue, HashAlgorithm algorithm);
 }

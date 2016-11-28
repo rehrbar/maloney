@@ -22,12 +22,13 @@ public class SimpleProcessor extends JobProcessor {
     public SimpleProcessor(Context ctx) {
         logger = LogManager.getLogger();
         this.ctx = ctx;
+        //TODO only need queue OR jobListMap
         queue = new HashMap<>();
         jobListMap = new HashMap<>();
     }
 
-    @Override
-    public void start() {
+
+    public void otherStart() {
         // TODO Review processing of events. This implementation will
         // not handle events, which are added later, well.
         List<Job> removeWhenDone = new LinkedList<>();
@@ -42,26 +43,41 @@ public class SimpleProcessor extends JobProcessor {
         }
     }
 
-    public void otherStart() {
+    @Override
+    public void start() {
         List<Job> removeWhenDone = new LinkedList<>();
         while(!jobListMap.isEmpty()){
+            // while there are still jobs to be run..
             jobListMap.forEach((job, eventList) -> {
-                eventList.forEach((event -> {
-                    if (job.canRun(ctx, event)){
-                        List<Event> createdEvents = job.run(ctx, event); //TODO notify framework about new Events
+                // ... go through their queued events ...
+                LinkedList<Event> processedEvents = new LinkedList<>();
+                for(Event evt : eventList){
+                    // ... if possible run the job with the event ...
+                    if (job.canRun(ctx, evt)){
+                        List<Event> createdEvents = job.run(ctx, evt);
+                        // ... and mark the processed event for removal
+                        processedEvents.add(evt);
                         notifyObservers(createdEvents);
-                        removeWhenDone.add(job);
                     }
-                }));
-
+                }
+                // Now, remove processed events from eventList ...
+                if(processedEvents.size() > 0){
+                    processedEvents.forEach(eventList::remove);
+                    processedEvents.clear();
+                }
+                // ... and if there are no more events for this job, mark the job for removal ...
+                if(eventList.size() == 0){
+                    removeWhenDone.add(job);
+                }
             });
-            removeWhenDone.forEach((jobListMap::remove));
+            removeWhenDone.forEach(jobListMap::remove);
+            removeWhenDone.clear();
         }
     }
 
     @Override
     public void stop() {
-        //TODO: Not necessary as of now, because it's sequential. But in the future maybe?
+        //TODO: Not necessary as of now, because it's sequential (single Process). But in the future maybe?
     }
 
     @Override

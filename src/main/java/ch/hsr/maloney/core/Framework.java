@@ -59,6 +59,8 @@ public class Framework implements EventObserver {
         Set<String> availableEvents = new HashSet<>();
         Set<Job> unresolvedDependencies = new HashSet<>(registeredJobs);
 
+        logger.debug("Checking if registered Jobs can be run...");
+
         //TODO remove this as soon as startWithDisk is a registered Job within the Framework
         availableEvents.add(NewDiskImageEventName);
 
@@ -85,9 +87,10 @@ public class Framework implements EventObserver {
                 stringBuilder.append(job.getJobName());
                 stringBuilder.append("\r\n");
             });
-
+            logger.error(stringBuilder.toString());
             throw new UnrunnableJobException(stringBuilder.toString());
         }
+        logger.debug("... Job dependencies to each other look good.");
     }
 
     public void startWithDisk(String fileName) {

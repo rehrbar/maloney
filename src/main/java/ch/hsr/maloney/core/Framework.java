@@ -38,6 +38,7 @@ public class Framework implements EventObserver {
         this.registeredJobs = new LinkedList<>();
         this.eventQueue = new ConcurrentLinkedQueue<>();
         this.jobProcessor = new SimpleProcessor(context);
+        jobProcessor.addObserver(this);
     }
 
     private void initializeContext() {
@@ -142,9 +143,9 @@ public class Framework implements EventObserver {
 
     @Override
     public void update(Observable o, Object arg) {
-        if (arg instanceof Event) {
-            update(o, (Event) arg);
-        } else {
+        try {
+            ((List<Event>)arg).forEach(evt -> update(o, evt));
+        } catch (ClassCastException e){
             throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
         }
     }

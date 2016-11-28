@@ -46,6 +46,7 @@ public class SimpleProcessor extends JobProcessor {
                         List<Event> createdEvents = job.run(ctx, evt);
                         // ... and mark the processed event for removal
                         processedEvents.add(evt);
+                        setChanged();
                         notifyObservers(createdEvents);
                     }
                 }

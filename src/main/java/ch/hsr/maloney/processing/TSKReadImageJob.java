@@ -19,21 +19,27 @@ import java.util.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
- * Created by olive_000 on 01.11.2016.
+ * @author oniet
+ *
+ * Reads an Image with help of The Sleuth Kit
  */
 public class TSKReadImageJob implements Job {
     private static final String TSK_DB_FILE_EXTENSION = ".db";
-    public static final int BUFFER_SIZE = 512;
-    private final String NewFileEventName = "newFile";
-    private final String NewDiskImageEventName = "newDiskImage";
+
+    private static final String NEW_FILE_EVENT_NAME = "newFile";
+    private static final String NEW_DISK_IMAGE_EVENT_NAME = "newDiskImage";
+    private static final String NEW_UNALLOCATED_SPACE_EVENT_NAME = "newUnallocatedSpace";
+
+    private static final String TSK_READ_IMAGE_JOB_NAME = "TSKReadImageJob";
 
     private LinkedList<String> producedEvents = new LinkedList<>();
     private LinkedList<String> requiredEvents = new LinkedList<>();
     private final Logger logger;
 
     public TSKReadImageJob() {
-        this.producedEvents.add(NewFileEventName);
-        this.requiredEvents.add(NewDiskImageEventName);
+        this.producedEvents.add(NEW_FILE_EVENT_NAME);
+        this.producedEvents.add(NEW_UNALLOCATED_SPACE_EVENT_NAME);
+        this.requiredEvents.add(NEW_DISK_IMAGE_EVENT_NAME);
         this.logger = LogManager.getLogger();
     }
 
@@ -69,7 +75,7 @@ public class TSKReadImageJob implements Job {
             }
 
             // push all files into DataSource
-            sk.findAllFilesWhere("1=1").forEach(abstractFile -> { // Low-key SQL Injection
+            sk.findAllFilesWhere("name NOT IN ('.', '..')").forEach(abstractFile -> { // Low-key SQL Injection
                 addToDataSource(ctx, evt, events, abstractFile);
             });
         } catch (TskCoreException e) {
@@ -77,19 +83,6 @@ public class TSKReadImageJob implements Job {
         }
 
         return events;
-    }
-
-    private void addImageToSleuthkitCaseDB(String IMAGE_PATH, SleuthkitCase sk) throws TskCoreException {
-        String timezone = "";
-        SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
-        ArrayList<String> paths = new ArrayList<>();
-        paths.add(IMAGE_PATH);
-        try {
-            process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
-        } catch (TskDataException ex) {
-            logger.error("Could not add image {}", IMAGE_PATH, ex);
-        }
-        process.commit();
     }
 
     private SleuthkitCase getSleuthkitCase(DataSource dataSource) throws TskCoreException {
@@ -105,6 +98,19 @@ public class TSKReadImageJob implements Job {
         }
         sk = SleuthkitCase.openCase(TSK_DB_LOCATION.toString());
         return sk;
+    }
+
+    private void addImageToSleuthkitCaseDB(String IMAGE_PATH, SleuthkitCase sk) throws TskCoreException {
+        String timezone = "";
+        SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
+        ArrayList<String> paths = new ArrayList<>();
+        paths.add(IMAGE_PATH);
+        try {
+            process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
+        } catch (TskDataException ex) {
+            logger.error("Could not add image {}", IMAGE_PATH, ex);
+        }
+        process.commit();
     }
 
     private void addToDataSource(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
@@ -186,7 +192,7 @@ public class TSKReadImageJob implements Job {
             }
         });
 
-        events.add(new Event(NewFileEventName, getJobName(), uuid));
+        events.add(new Event(NEW_FILE_EVENT_NAME, getJobName(), uuid));
     }
 
     @Override
@@ -201,7 +207,7 @@ public class TSKReadImageJob implements Job {
 
     @Override
     public String getJobName() {
-        return "TSKReadImageJob";
+        return TSK_READ_IMAGE_JOB_NAME;
     }
 
     @Override

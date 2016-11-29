@@ -22,24 +22,24 @@ import java.util.UUID;
  * Created by olive_000 on 15.11.2016.
  */
 public class CalculateHashesJob implements Job {
-    public static final int BUFFER_SIZE = 1024;
+    private static final String JOB_NAME = "CalculateHashesJob";
+    private static final String NEW_FILE_EVENT_NAME = "newFile";
+    private static final String MD_5_HASH_CALCULATED_EVENT_NAME = "MD5HashCalculated";
+    private static final String SHA_1_HASH_CALCULATED_EVENT_NAME = "SHA1HashCalculated";
+    private static final String MD_5_HASH_TYPE = "MD5Hash";
+    private static final String SHA_1_HASH_TYPE = "SHA1Hash";
+
+    private static final int BUFFER_SIZE = 1024;
+
     private final List<String> requiredEvents = new LinkedList<>();
     private final List<String> producedEvents = new LinkedList<>();
     private final Logger logger;
 
-    private final String JobName = "CalculateHashesJob";
-    private final String NewFileEventName = "newFile";
-    private final String MD5HashCalculatedEventName = "MD5HashCalculated";
-    private final String SHA1HashCalculatedEventName = "SHA1HashCalculated";
-    private final String MD5HashType = "MD5Hash";
-    private final String SHA1HashType = "SHA1Hash";
-
     public CalculateHashesJob() {
         logger = LogManager.getLogger();
-        //TODO check Event names, maybe track globally?
-        requiredEvents.add(NewFileEventName);
-        producedEvents.add(MD5HashCalculatedEventName);
-        producedEvents.add(SHA1HashCalculatedEventName);
+        requiredEvents.add(NEW_FILE_EVENT_NAME);
+        producedEvents.add(MD_5_HASH_CALCULATED_EVENT_NAME);
+        producedEvents.add(SHA_1_HASH_CALCULATED_EVENT_NAME);
     }
 
     @Override
@@ -89,13 +89,13 @@ public class CalculateHashesJob implements Job {
             String sha1hash = new String(Hex.encodeHex(sha1digest));
 
             List<Artifact> artifacts = new LinkedList<>();
-            artifacts.add(new Artifact(getJobName(), md5hash, MD5HashType));
-            artifacts.add(new Artifact(getJobName(), sha1hash, SHA1HashType));
+            artifacts.add(new Artifact(getJobName(), md5hash, MD_5_HASH_TYPE));
+            artifacts.add(new Artifact(getJobName(), sha1hash, SHA_1_HASH_TYPE));
 
             metadataStore.addArtifacts(fileUuid, artifacts);
 
-            events.add(new Event(MD5HashCalculatedEventName, getJobName(), fileUuid));
-            events.add(new Event(SHA1HashCalculatedEventName, getJobName(), fileUuid));
+            events.add(new Event(MD_5_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
+            events.add(new Event(SHA_1_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
 
         } catch (IOException e) {
             logger.error("Could not read file with UUID: " + fileUuid.toString(), e);
@@ -127,7 +127,7 @@ public class CalculateHashesJob implements Job {
 
     @Override
     public String getJobName() {
-        return JobName;
+        return JOB_NAME;
     }
 
     @Override

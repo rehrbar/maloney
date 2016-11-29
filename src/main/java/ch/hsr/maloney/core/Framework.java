@@ -113,6 +113,13 @@ public class Framework implements EventObserver {
      * @param fileName  Path to the Image file to be analyzed
      */
     public void startWithDisk(String fileName) {
+        try {
+            checkDependencies();
+        } catch (UnrunnableJobException e) {
+            logger.fatal("Cannot run all Jobs", e);
+            return;
+        }
+
         //TODO extract to Job
         UUID uuid = context.getDataSource().addFile(null, new FileExtractor() {
 

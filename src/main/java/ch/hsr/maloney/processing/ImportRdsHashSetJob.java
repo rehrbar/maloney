@@ -6,14 +6,13 @@ import ch.hsr.maloney.util.Event;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.*;
-import java.net.UnknownHostException;
-import java.nio.charset.Charset;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 /**
  * Created by r1ehrbar on 28.11.2016.
@@ -77,7 +76,9 @@ public class ImportRdsHashSetJob implements Job {
         Scanner sc = null;
         List<HashRecord> buffer = new LinkedList<>();
         try {
-            sc = new Scanner(Files.newInputStream(path), "UTF-8");
+            // File is encoded in ASCII, but fileNames can be encoded different.
+            // Using UTF-8 encoding may cause nextLine to break in this field, resulting in not added hashes.
+            sc = new Scanner(Files.newInputStream(path), "US-ASCII");
             while (sc.hasNextLine()) {
                 String line = sc.nextLine();
                 processHashSetLine(line, buffer);
@@ -102,7 +103,9 @@ public class ImportRdsHashSetJob implements Job {
         }
 
         // Flush leftovers.
-        ((ElasticHashStore)hashStore).addHashRecords(buffer);
+        if(buffer.size() > 0) {
+            ((ElasticHashStore) hashStore).addHashRecords(buffer);
+        }
     }
 
     private void processHashSetLine(String s, List<HashRecord> buffer) {

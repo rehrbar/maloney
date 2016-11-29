@@ -21,10 +21,16 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Created by olive_000 on 25.10.2016.
+ * @author oniet
+ *
+ * Framework for the whole applicaton:
+ *  - Initializes all needed classes (DataSource, MetadataStore, ProgressTracker)
+ *  - Checks dependencies on registered Jobs on initialization
+ *  - Enqueues new Events to interested Jobs
+ *  - ATM: Creates new Event on start (should be moved to a seperate Job...)
  */
 public class Framework implements EventObserver {
-    final Logger logger;
+    private final Logger logger;
     private JobProcessor jobProcessor;
     private Context context;
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
@@ -56,6 +62,11 @@ public class Framework implements EventObserver {
         );
     }
 
+    /**
+     * Checks whether all registered Jobs can be run by looking through all produced and required Events.
+     *
+     * @throws UnrunnableJobException   If one or multiple registered Jobs cannot be run, this Exception is thrown
+     */
     public void checkDependencies() throws UnrunnableJobException {
         Set<String> availableEvents = new HashSet<>();
         Set<Job> unresolvedDependencies = new HashSet<>(registeredJobs);
@@ -94,6 +105,13 @@ public class Framework implements EventObserver {
         logger.debug("... Job dependencies to each other look good.");
     }
 
+    /**
+     * Start the Process of reading out an Image. It creates an Event which a Job then can use to start processing.
+     *
+     * This could, or even should, be moved to a separate Job in the future.
+     *
+     * @param fileName  Path to the Image file to be analyzed
+     */
     public void startWithDisk(String fileName) {
         //TODO extract to Job
         UUID uuid = context.getDataSource().addFile(null, new FileExtractor() {
@@ -131,6 +149,11 @@ public class Framework implements EventObserver {
         jobProcessor.start();
     }
 
+    /**
+     * Register a Job on the Framework to be run if the required Event is created.
+     *
+     * @param job   Job to be registered and run when required Event is created.
+     */
     public void register(Job job) {
         registeredJobs.add(job);
     }
@@ -163,6 +186,10 @@ public class Framework implements EventObserver {
         });
     }
 
+    /**
+     * If registered Jobs cannot be run and the Framework realizes this inside checkDependencies(),
+     * this Exception is thrown.
+     */
     public class UnrunnableJobException extends Exception {
         public UnrunnableJobException(){
         }

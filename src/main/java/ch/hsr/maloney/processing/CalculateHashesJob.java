@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Created by olive_000 on 15.11.2016.
+ * @author oniet
+ *
+ * Calcultes MD5 and SHA-1 Hashes
  */
 public class CalculateHashesJob implements Job {
     private static final String JOB_NAME = "CalculateHashesJob";

@@ -53,6 +53,7 @@ public class SimpleProcessor extends JobProcessor {
     @Override
     public void start() {
         logger.debug("Starting Processing");
+        //TODO add the stuff below into a thread(pool)
         while(!jobQueue.isEmpty()){
             // while there are still jobs to be run...
             Tuple<Job, Event> tuple = jobQueue.poll();
@@ -66,7 +67,7 @@ public class SimpleProcessor extends JobProcessor {
             } else {
                 // Job could not be run and is put at the end of the queue
                 jobQueue.add(tuple);
-                //TODO remove job if it shan't be completed
+                //TODO remove job if it can't be completed ever
             }
         }
         logger.debug("Nothing more to process");

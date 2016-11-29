@@ -22,6 +22,7 @@ import java.util.UUID;
  * Created by olive_000 on 15.11.2016.
  */
 public class CalculateHashesJob implements Job {
+    public static final int BUFFER_SIZE = 1024;
     private final List<String> requiredEvents = new LinkedList<>();
     private final List<String> producedEvents = new LinkedList<>();
     private final Logger logger;
@@ -65,24 +66,23 @@ public class CalculateHashesJob implements Job {
         byte[] sha1digest;
 
         List<Event> events = new LinkedList<>();
+        InputStream is = null;
 
         try {
             md5 = MessageDigest.getInstance("MD5");
             sha1 = MessageDigest.getInstance("SHA-1");
 
-            InputStream is = dataSource.getFileStream(fileUuid);
+            is = dataSource.getFileStream(fileUuid);
 
             DigestInputStream md5dis = new DigestInputStream(is, md5);
             DigestInputStream sha1dis = new DigestInputStream(md5dis, sha1);
 
-            while(sha1dis.read() != -1){
-                /* Read decorated stream to EOF as normal... */
-            }
+            byte[] buffer = new byte[BUFFER_SIZE];
+            while(sha1dis.read(buffer) != -1);
 
+            logger.debug("Done reading file '{}', now encoding and transfering to MetadataStore", fileUuid);
             md5digest = md5.digest();
             sha1digest = sha1.digest();
-
-            is.close();
 
             // Convert from Byte Digest to String
             String md5hash = new String(Hex.encodeHex(md5digest));
@@ -101,7 +101,16 @@ public class CalculateHashesJob implements Job {
             logger.error("Could not read file with UUID: " + fileUuid.toString(), e);
         } catch (NoSuchAlgorithmException e) {
             logger.error("Could not find specified Algorithm to calculate Hash", e);
+        } finally {
+            if(is != null){
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    logger.error("Could not close InputStream", e);
+                }
+            }
         }
+
 
         return events;
     }

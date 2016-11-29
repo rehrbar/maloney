@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *  - ATM: Creates new Event on start (should be moved to a seperate Job...)
  */
 public class Framework implements EventObserver {
+    public static final String EVENT_ORIGIN = "ch.hsr.maloney.core";
     private final Logger logger;
     private JobProcessor jobProcessor;
     private Context context;
@@ -74,6 +75,7 @@ public class Framework implements EventObserver {
         logger.debug("Checking if registered Jobs can be run...");
 
         //TODO remove this as soon as startWithDisk is a registered Job within the Framework
+        availableEvents.add(FrameworkEventNames.STARTUP);
         availableEvents.add(NewDiskImageEventName);
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
@@ -113,6 +115,8 @@ public class Framework implements EventObserver {
      * @param fileName  Path to the Image file to be analyzed
      */
     public void startWithDisk(String fileName) {
+        // TODO move to real framework start.
+        enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
         try {
             checkDependencies();
         } catch (UnrunnableJobException e) {
@@ -149,7 +153,7 @@ public class Framework implements EventObserver {
             }
         });
 
-        Event event = new Event(NewDiskImageEventName, "ch.hsr.maloney.core", uuid);
+        Event event = new Event(NewDiskImageEventName, EVENT_ORIGIN, uuid);
 
         enqueueToInterestedJobs(event);
 

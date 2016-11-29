@@ -39,6 +39,7 @@ class Tuple<K,V>{
 
 }
 
+// TODO phrasing!
 public class SimpleProcessor extends JobProcessor {
     private final Logger logger;
     private final Queue<Tuple<Job, Event>> jobQueue; //TODO replace with better Queueing structure (persistent)
@@ -62,12 +63,10 @@ public class SimpleProcessor extends JobProcessor {
 
             if(job.canRun(ctx, evt)){
                 List<Event> createdEvents = job.run(ctx, evt);
-                setChanged();
-                notifyObservers(createdEvents);
-            } else {
-                // Job could not be run and is put at the end of the queue
-                jobQueue.add(tuple);
-                //TODO remove job if it can't be completed ever
+                if(createdEvents != null && !createdEvents.isEmpty()){
+                    setChanged();
+                    notifyObservers(createdEvents);
+                }
             }
         }
         logger.debug("Nothing more to process");

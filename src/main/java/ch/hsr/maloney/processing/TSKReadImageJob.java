@@ -10,29 +10,38 @@ import org.apache.logging.log4j.Logger;
 import org.sleuthkit.datamodel.*;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 /**
- * Created by olive_000 on 01.11.2016.
+ * @author oniet
+ *
+ * Reads an Image with help of The Sleuth Kit
  */
 public class TSKReadImageJob implements Job {
     private static final String TSK_DB_FILE_EXTENSION = ".db";
-    private static final int BUFFER_SIZE = 512;
-    private final String NewFileEventName = "newFile";
-    private final String NewDiskImageEventName = "newDiskImage";
+
+    private static final String NEW_FILE_EVENT_NAME = "newFile";
+    private static final String NEW_DISK_IMAGE_EVENT_NAME = "newDiskImage";
+    private static final String NEW_UNALLOCATED_SPACE_EVENT_NAME = "newUnallocatedSpace";
+    private static final String NEW_DIRECTORY_EVENT_NAME = "newDirectory";
+
+    private static final String TSK_READ_IMAGE_JOB_NAME = "TSKReadImageJob";
 
     private LinkedList<String> producedEvents = new LinkedList<>();
     private LinkedList<String> requiredEvents = new LinkedList<>();
     private final Logger logger;
 
     public TSKReadImageJob() {
-        this.producedEvents.add(NewFileEventName);
-        this.requiredEvents.add(NewDiskImageEventName);
+        this.producedEvents.add(NEW_FILE_EVENT_NAME);
+        this.producedEvents.add(NEW_UNALLOCATED_SPACE_EVENT_NAME);
+        this.producedEvents.add(NEW_DIRECTORY_EVENT_NAME);
+        this.requiredEvents.add(NEW_DISK_IMAGE_EVENT_NAME);
         this.logger = LogManager.getLogger();
     }
 
@@ -59,16 +68,7 @@ public class TSKReadImageJob implements Job {
             sk = getSleuthkitCase(dataSource);
 
             // initialize the case with an image
-            String timezone = "";
-            SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
-            ArrayList<String> paths = new ArrayList<>();
-            paths.add(IMAGE_PATH);
-            try {
-                process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
-            } catch (TskDataException ex) {
-                logger.error("Could not add image {}", IMAGE_PATH, ex);
-            }
-            process.commit();
+            addImageToSleuthkitCaseDB(IMAGE_PATH, sk);
 
             // log information about image
             List<Image> images = sk.getImages();
@@ -77,11 +77,11 @@ public class TSKReadImageJob implements Job {
             }
 
             // push all files into DataSource
-            sk.findAllFilesWhere("1=1").forEach(abstractFile -> { // Low-key SQL Injection
-                addToDataSource(ctx, evt, events, abstractFile, sk);
+            sk.findAllFilesWhere("name NOT IN ('.', '..')").forEach(abstractFile -> { // Low-key SQL Injection
+                addToDataSource(ctx, evt, events, abstractFile);
             });
         } catch (TskCoreException e) {
-            logger.fatal("Failed to read image with sleuthkit.", e);
+            logger.fatal("Failed to read image in '" + IMAGE_PATH + "' with sleuthkit.", e);
         }
 
         return events;
@@ -102,7 +102,20 @@ public class TSKReadImageJob implements Job {
         return sk;
     }
 
-    private void addToDataSource(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile, SleuthkitCase sk) {
+    private void addImageToSleuthkitCaseDB(String IMAGE_PATH, SleuthkitCase sk) throws TskCoreException {
+        String timezone = "";
+        SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
+        ArrayList<String> paths = new ArrayList<>();
+        paths.add(IMAGE_PATH);
+        try {
+            process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
+        } catch (TskDataException ex) {
+            logger.error("Could not add image {}", IMAGE_PATH, ex);
+        }
+        process.commit();
+    }
+
+    private void addToDataSource(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
         DataSource dataSource = ctx.getDataSource();
 
         UUID uuid = dataSource.addFile(evt.getFileUuid(), new FileExtractor() {
@@ -118,39 +131,40 @@ public class TSKReadImageJob implements Job {
                 //TODO get single file from TSK and put into working dir
                 //TODO all files are saved in flat structure, rebuild structure in working directory?
                 final Path WORKING_DIR = dataSource.getJobWorkingDir(TSKReadImageJob.class);
+                logger.info("Extratcting file to {}", WORKING_DIR);
 
                 // Get Location where the file has to be saved
-                java.io.File file = new File(WORKING_DIR + "" + abstractFile.getId());
-                //"" Because otherwise it won't recognize it as a string
-                if (extractedFiles == null) {
-                    extractedFiles = new LinkedList<>();
-                }
-                extractedFiles.add(file);
+                java.io.File file = WORKING_DIR.resolve(Long.toString(abstractFile.getId())).toFile();
 
-//                try {
-//                    Files.deleteIfExists(Paths.get(file.getPath()));
-//                } catch (IOException e) {
-//                    logger.error("Failed while trying to delete already existing File: {}", abstractFile.getName(), e);
-//                }
-
-                // Write specified File into working directory
+                ReadContentInputStream is = null;
                 try {
-                    FileOutputStream os = new FileOutputStream(file);
+                    //TODO decide whether to do this here or inside LocalDataSource?
+                    if(!Files.exists(WORKING_DIR))
+                        Files.createDirectory(WORKING_DIR);
 
-                    byte[] buffer = new byte[BUFFER_SIZE];
-                    long offset = 0;
-                    long length = (long) BUFFER_SIZE;
+                    logger.debug("Writing file '{}' to '{}'", abstractFile.getName(), file.getPath());
+                    is = new ReadContentInputStream(abstractFile);
 
-                    while (abstractFile.read(buffer, offset, length) > 0) {
-                        os.write(buffer);
-                        offset += BUFFER_SIZE;
+                    Files.copy(is,file.toPath(), REPLACE_EXISTING);
+
+                    if (extractedFiles == null) {
+                        extractedFiles = new LinkedList<>();
                     }
-                } catch (TskCoreException e) {
-                    logger.error("Error while trying to read file {}", abstractFile.getName(), e);
-                } catch (IOException e) {
-                    logger.error("Could not write into working copy file: {}", abstractFile.getName(), e);
-                }
+                    extractedFiles.add(file);
 
+                    logger.debug("Done writing file '{}'", abstractFile.getName());
+                } catch (IOException e) {
+                    logger.error("Could not write file '" + abstractFile.getName() + "' to temporary dir '" +
+                            file.getAbsolutePath() + "'.", e);
+                } finally {
+                    try {
+                        if (is != null) {
+                            is.close();
+                        }
+                    } catch (IOException e){
+                            logger.error("Could not close IOstream(s)", e);
+                    }
+                }
                 return Paths.get(file.getPath());
             }
 
@@ -180,7 +194,16 @@ public class TSKReadImageJob implements Job {
             }
         });
 
-        events.add(new Event(NewFileEventName, getJobName(), uuid));
+        if(abstractFile.isMetaFlagSet(TskData.TSK_FS_META_FLAG_ENUM.UNALLOC)){
+            logger.debug("Creating Event for Unallocated SPAAAACCEEE");
+            events.add(new Event(NEW_UNALLOCATED_SPACE_EVENT_NAME, getJobName(), uuid));
+        } else if (abstractFile.isFile()) {
+            logger.debug("Creating Event for new File");
+            events.add(new Event(NEW_FILE_EVENT_NAME, getJobName(), uuid));
+        } else if(abstractFile.isDir()){
+            logger.debug("Creating Event for new Directory");
+            events.add(new Event(NEW_DIRECTORY_EVENT_NAME, getJobName(), uuid));
+        }
     }
 
     @Override
@@ -195,7 +218,7 @@ public class TSKReadImageJob implements Job {
 
     @Override
     public String getJobName() {
-        return "TSKReadImageJob";
+        return TSK_READ_IMAGE_JOB_NAME;
     }
 
     @Override

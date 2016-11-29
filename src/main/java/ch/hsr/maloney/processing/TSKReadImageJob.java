@@ -10,18 +10,20 @@ import org.apache.logging.log4j.Logger;
 import org.sleuthkit.datamodel.*;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 /**
  * Created by olive_000 on 01.11.2016.
  */
 public class TSKReadImageJob implements Job {
     private static final String TSK_DB_FILE_EXTENSION = ".db";
+    public static final int BUFFER_SIZE = 512;
     private final String NewFileEventName = "newFile";
     private final String NewDiskImageEventName = "newDiskImage";
 
@@ -58,16 +60,7 @@ public class TSKReadImageJob implements Job {
             sk = getSleuthkitCase(dataSource);
 
             // initialize the case with an image
-            String timezone = "";
-            SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
-            ArrayList<String> paths = new ArrayList<>();
-            paths.add(IMAGE_PATH);
-            try {
-                process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
-            } catch (TskDataException ex) {
-                logger.error("Could not add image {}", IMAGE_PATH, ex);
-            }
-            process.commit();
+            addImageToSleuthkitCaseDB(IMAGE_PATH, sk);
 
             // log information about image
             List<Image> images = sk.getImages();
@@ -77,13 +70,26 @@ public class TSKReadImageJob implements Job {
 
             // push all files into DataSource
             sk.findAllFilesWhere("1=1").forEach(abstractFile -> { // Low-key SQL Injection
-                addToDataSource(ctx, evt, events, abstractFile, sk);
+                addToDataSource(ctx, evt, events, abstractFile);
             });
         } catch (TskCoreException e) {
             logger.fatal("Failed to read image in '" + IMAGE_PATH + "' with sleuthkit.", e);
         }
 
         return events;
+    }
+
+    private void addImageToSleuthkitCaseDB(String IMAGE_PATH, SleuthkitCase sk) throws TskCoreException {
+        String timezone = "";
+        SleuthkitJNI.CaseDbHandle.AddImageProcess process = sk.makeAddImageProcess(timezone, true, false);
+        ArrayList<String> paths = new ArrayList<>();
+        paths.add(IMAGE_PATH);
+        try {
+            process.run(UUID.randomUUID().toString(), paths.toArray(new String[paths.size()]));
+        } catch (TskDataException ex) {
+            logger.error("Could not add image {}", IMAGE_PATH, ex);
+        }
+        process.commit();
     }
 
     private SleuthkitCase getSleuthkitCase(DataSource dataSource) throws TskCoreException {
@@ -101,7 +107,7 @@ public class TSKReadImageJob implements Job {
         return sk;
     }
 
-    private void addToDataSource(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile, SleuthkitCase sk) {
+    private void addToDataSource(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
         DataSource dataSource = ctx.getDataSource();
 
         UUID uuid = dataSource.addFile(evt.getFileUuid(), new FileExtractor() {
@@ -123,22 +129,15 @@ public class TSKReadImageJob implements Job {
                 java.io.File file = WORKING_DIR.resolve(Long.toString(abstractFile.getId())).toFile();
 
                 ReadContentInputStream is = null;
-                FileOutputStream os = null;
                 try {
                     //TODO decide whether to do this here or inside LocalDataSource?
                     if(!Files.exists(WORKING_DIR))
                         Files.createDirectory(WORKING_DIR);
 
-                    logger.debug("Writing file '{}' to '{}'", abstractFile.getName(), file);
+                    logger.debug("Writing file '{}' to '{}'", abstractFile.getName(), file.getPath());
                     is = new ReadContentInputStream(abstractFile);
-                    os = new FileOutputStream(file);
 
-                    int read = 0;
-                    byte[] bytes = new byte[512];
-
-                    while ((read = is.read(bytes)) != -1) {
-                        os.write(bytes, 0, read);
-                    }
+                    Files.copy(is,file.toPath(), REPLACE_EXISTING);
 
                     if (extractedFiles == null) {
                         extractedFiles = new LinkedList<>();
@@ -154,14 +153,10 @@ public class TSKReadImageJob implements Job {
                         if (is != null) {
                             is.close();
                         }
-                        if (os != null) {
-                            os.close();
-                        }
                     } catch (IOException e){
                             logger.error("Could not close IOstream(s)", e);
                     }
                 }
-
                 return Paths.get(file.getPath());
             }
 

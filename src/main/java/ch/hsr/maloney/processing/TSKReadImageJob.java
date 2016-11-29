@@ -29,6 +29,7 @@ public class TSKReadImageJob implements Job {
     private static final String NEW_FILE_EVENT_NAME = "newFile";
     private static final String NEW_DISK_IMAGE_EVENT_NAME = "newDiskImage";
     private static final String NEW_UNALLOCATED_SPACE_EVENT_NAME = "newUnallocatedSpace";
+    private static final String NEW_DIRECTORY_EVENT_NAME = "newDirectory";
 
     private static final String TSK_READ_IMAGE_JOB_NAME = "TSKReadImageJob";
 
@@ -39,6 +40,7 @@ public class TSKReadImageJob implements Job {
     public TSKReadImageJob() {
         this.producedEvents.add(NEW_FILE_EVENT_NAME);
         this.producedEvents.add(NEW_UNALLOCATED_SPACE_EVENT_NAME);
+        this.producedEvents.add(NEW_DIRECTORY_EVENT_NAME);
         this.requiredEvents.add(NEW_DISK_IMAGE_EVENT_NAME);
         this.logger = LogManager.getLogger();
     }
@@ -192,7 +194,16 @@ public class TSKReadImageJob implements Job {
             }
         });
 
-        events.add(new Event(NEW_FILE_EVENT_NAME, getJobName(), uuid));
+        if(abstractFile.isMetaFlagSet(TskData.TSK_FS_META_FLAG_ENUM.UNALLOC)){
+            logger.debug("Creating Event for Unallocated SPAAAACCEEE");
+            events.add(new Event(NEW_UNALLOCATED_SPACE_EVENT_NAME, getJobName(), uuid));
+        } else if (abstractFile.isFile()) {
+            logger.debug("Creating Event for new File");
+            events.add(new Event(NEW_FILE_EVENT_NAME, getJobName(), uuid));
+        } else if(abstractFile.isDir()){
+            logger.debug("Creating Event for new Directory");
+            events.add(new Event(NEW_DIRECTORY_EVENT_NAME, getJobName(), uuid));
+        }
     }
 
     @Override

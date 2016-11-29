@@ -15,11 +15,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by r1ehrbar on 28.11.2016.
+ * A job to import a zipped National Institute of Standards and Technology (NIST)
+ * National Software Reference Library (NSRL) Reference Data Set (RDS).
+ * This implementation supports the reduced unique set available at <a href="http://www.nsrl.nist.gov/Downloads.htm">NSRL Downloads</a>.
  */
 public class ImportRdsHashSetJob implements Job {
     private static final String JOB_NAME = "ImportRdsHashSetJob";
-    public static final int BUFFER_LIMIT = 1000;
+    private static final int BUFFER_LIMIT = 1000;
     private final Logger logger;
     private Path zipFile;
     private LinkedList<String> producedEvents;
@@ -28,6 +30,8 @@ public class ImportRdsHashSetJob implements Job {
     private Map<String, String> osList;
     private HashStore hashStore;
     public static final Pattern FILE_PATTERN = Pattern.compile("\"(?<sha1>[0-9A-F]*)\",\"(?<md5>[0-9A-F]*)\",\"(?<crc32>[0-9A-F]*)\",\"(?<fileName>[^\"]*)\",(?<fileSize>\\d*),(?<productCode>\\d*),\"(?<osCode>[^\"]*)\",\"(?<specialCode>\\w*)\"");
+    public static final Pattern OS_PATTERN = Pattern.compile("\"(?<osCode>[^\"]*)\",\"(?<osName>[^\"]*)\",\"(?<osVersion>[^\"]*)\",\"(?<mfgCode>[^\"]*)\"");
+    public static final Pattern PRODUCT_PATTERN = Pattern.compile("(?<productCode>[\\d]*),\"(?<productName>[^\"]*)\",\"(?<productVersion>[^\"]*)\",\"(?<osCode>[^\"]*)\",\"(?<mfgCode>[^\"]*)\",\"(?<language>[^\"]*)\",\"(?<applicationType>[^\"]*)\"");
 
 
     public ImportRdsHashSetJob() {
@@ -56,7 +60,7 @@ public class ImportRdsHashSetJob implements Job {
             logger.error("Could not connect to hash store. No hashes will be imported.");
             return null;
         }
-        try(FileSystem fs = FileSystems.newFileSystem(zipFile, null)){
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, null)) {
             Path productList = fs.getPath("/NSRLProd.txt");
             Path osList = fs.getPath("/NSRLOS.txt");
             Path fileList = fs.getPath("/NSRLFile.txt");
@@ -79,13 +83,16 @@ public class ImportRdsHashSetJob implements Job {
             // File is encoded in ASCII, but fileNames can be encoded different.
             // Using UTF-8 encoding may cause nextLine to break in this field, resulting in not added hashes.
             sc = new Scanner(Files.newInputStream(path), "US-ASCII");
+
+            // Skipping header
+            sc.nextLine();
             while (sc.hasNextLine()) {
                 String line = sc.nextLine();
                 processHashSetLine(line, buffer);
 
                 // Flush buffer
-                if(buffer.size() >= BUFFER_LIMIT){
-                    ((ElasticHashStore)hashStore).addHashRecords(buffer);
+                if (buffer.size() >= BUFFER_LIMIT) {
+                    ((ElasticHashStore) hashStore).addHashRecords(buffer);
                     buffer.clear();
                 }
             }
@@ -103,38 +110,107 @@ public class ImportRdsHashSetJob implements Job {
         }
 
         // Flush leftovers.
-        if(buffer.size() > 0) {
+        if (buffer.size() > 0) {
             ((ElasticHashStore) hashStore).addHashRecords(buffer);
         }
     }
 
     private void processHashSetLine(String s, List<HashRecord> buffer) {
-        // Skipping header
-        if(s.startsWith("\"SHA-1\"")){
-            return;
-        }
         Matcher matcher = FILE_PATTERN.matcher(s);
-        // TODO lookup os and product code.
         try {
             matcher.matches();
-            HashRecord record = new HashRecord(HashType.GOOD, zipFile.getFileName().toString(), matcher.group("osCode"), matcher.group("productCode"));
+            String os = osList.get(matcher.group("osCode")); // TODO default values?
+            String product = productList.get(matcher.group("productCode"));
+            HashRecord record = new HashRecord(HashType.GOOD, zipFile.getFileName().toString(), os, product);
             record.getHashes().put(HashAlgorithm.SHA1, matcher.group("sha1"));
             record.getHashes().put(HashAlgorithm.MD5, matcher.group("md5"));
             record.getHashes().put(HashAlgorithm.CRC32, matcher.group("crc32"));
             buffer.add(record);
-        } catch (IllegalStateException | UncheckedIOException e){
+        } catch (IllegalStateException | UncheckedIOException e) {
             logger.warn("Could not parse line: {}", s);
         }
     }
 
-    private void readOsList(Path path) {
+    private void readOsList(Path path) throws IOException {
         osList = new HashMap<>();
-        // TODO implement when the list is required
+        FileInputStream inputStream = null;
+        Scanner sc = null;
+        try {
+            // File is encoded in ASCII, but fileNames can be encoded different.
+            // Using UTF-8 encoding may cause nextLine to break in this field, resulting in not added hashes.
+            sc = new Scanner(Files.newInputStream(path), "US-ASCII");
+
+            // Skipping header
+            sc.nextLine();
+            while (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                processOsListLine(line);
+            }
+            // note that Scanner suppresses exceptions
+            if (sc.ioException() != null) {
+                throw sc.ioException();
+            }
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            if (sc != null) {
+                sc.close();
+            }
+        }
     }
 
-    private void readProductList(Path path) {
+    private void processOsListLine(String s) {
+        // TODO remove duplicated code
+        Matcher matcher = OS_PATTERN.matcher(s);
+        try {
+            matcher.matches();
+            osList.put(matcher.group("osCode"), String.format("%s %s", matcher.group("osName"),matcher.group("osVersion")));
+        } catch (IllegalStateException | UncheckedIOException e) {
+            logger.warn("Could not parse line: {}", s);
+        }
+    }
+
+    private void readProductList(Path path) throws IOException {
         productList = new HashMap<>();
-        // TODO implement when the list is required.
+        FileInputStream inputStream = null;
+        Scanner sc = null;
+        try {
+            // File is encoded in ASCII, but fileNames can be encoded different.
+            // Using UTF-8 encoding may cause nextLine to break in this field, resulting in not added hashes.
+            sc = new Scanner(Files.newInputStream(path), "US-ASCII");
+
+            // Skipping header
+            sc.nextLine();
+            while (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                // TODO add to productList
+
+                processProductListLine(line);
+            }
+            // note that Scanner suppresses exceptions
+            if (sc.ioException() != null) {
+                throw sc.ioException();
+            }
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            if (sc != null) {
+                sc.close();
+            }
+        }
+    }
+
+    private void processProductListLine(String s) {
+        // TODO remove duplicated code
+        Matcher matcher = PRODUCT_PATTERN.matcher(s);
+        try {
+            matcher.matches();
+            productList.put(matcher.group("productCode"), String.format("%s %s", matcher.group("productName"),matcher.group("productVersion")));
+        } catch (IllegalStateException | UncheckedIOException e) {
+            logger.warn("Could not parse line: {}", s);
+        }
     }
 
     @Override

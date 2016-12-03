@@ -43,6 +43,11 @@ class FakeJobA implements Job {
     public String getJobConfig() {
         return null;
     }
+
+    @Override
+    public void setJobConfig(String config) {
+
+    }
 }
 
 class FakeJobB implements Job{
@@ -77,6 +82,11 @@ class FakeJobB implements Job{
     @Override
     public String getJobConfig() {
         return null;
+    }
+
+    @Override
+    public void setJobConfig(String config) {
+
     }
 }
 

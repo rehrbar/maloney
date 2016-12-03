@@ -1,3 +1,5 @@
+package ch.hsr.maloney.core;
+
 import ch.hsr.maloney.core.Framework;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.util.Context;
@@ -51,6 +53,11 @@ public class FrameworkTest {
         public String getJobConfig() {
             return null;
         }
+
+        @Override
+        public void setJobConfig(String config) {
+
+        }
     }
 
     private class JobAtoB implements Job{
@@ -88,6 +95,11 @@ public class FrameworkTest {
         public String getJobConfig() {
             return null;
         }
+
+        @Override
+        public void setJobConfig(String config) {
+
+        }
     }
 
     private class JobBtoC implements Job{
@@ -124,6 +136,11 @@ public class FrameworkTest {
         @Override
         public String getJobConfig() {
             return null;
+        }
+
+        @Override
+        public void setJobConfig(String config) {
+
         }
     }
 

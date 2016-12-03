@@ -36,6 +36,7 @@ public class TSKReadImageJob implements Job {
     private LinkedList<String> producedEvents = new LinkedList<>();
     private LinkedList<String> requiredEvents = new LinkedList<>();
     private final Logger logger;
+    private Path working_dir;
 
     public TSKReadImageJob() {
         this.producedEvents.add(NEW_FILE_EVENT_NAME);
@@ -58,6 +59,8 @@ public class TSKReadImageJob implements Job {
     @Override
     public List<Event> run(Context ctx, Event evt) {
         DataSource dataSource = ctx.getDataSource();
+        working_dir = dataSource.getJobWorkingDir(TSKReadImageJob.class);
+        logger.info("Using working dir: '{}'", working_dir);
         java.io.File file = dataSource.getFile(evt.getFileUuid());
 
         final String IMAGE_PATH = file.getAbsolutePath();
@@ -119,7 +122,7 @@ public class TSKReadImageJob implements Job {
         DataSource dataSource = ctx.getDataSource();
 
         UUID uuid = dataSource.addFile(evt.getFileUuid(), new FileExtractor() {
-            List<File> extractedFiles;
+            Path extractedFile;
 
             @Override
             public boolean useOriginalFile() {
@@ -128,34 +131,25 @@ public class TSKReadImageJob implements Job {
 
             @Override
             public Path extractFile() {
-                //TODO get single file from TSK and put into working dir
-                //TODO all files are saved in flat structure, rebuild structure in working directory?
-                final Path WORKING_DIR = dataSource.getJobWorkingDir(TSKReadImageJob.class);
-                logger.info("Extratcting file to {}", WORKING_DIR);
 
                 // Get Location where the file has to be saved
-                java.io.File file = WORKING_DIR.resolve(Long.toString(abstractFile.getId())).toFile();
+                extractedFile = working_dir.resolve(Long.toString(abstractFile.getId()));
 
                 ReadContentInputStream is = null;
                 try {
                     //TODO decide whether to do this here or inside LocalDataSource?
-                    if(!Files.exists(WORKING_DIR))
-                        Files.createDirectory(WORKING_DIR);
+                    if(!Files.exists(working_dir))
+                        Files.createDirectory(working_dir);
 
-                    logger.debug("Writing file '{}' to '{}'", abstractFile.getName(), file.getPath());
+                    logger.debug("Writing file '{}' to '{}'", abstractFile.getName(), extractedFile.toAbsolutePath().toString());
                     is = new ReadContentInputStream(abstractFile);
 
-                    Files.copy(is,file.toPath(), REPLACE_EXISTING);
-
-                    if (extractedFiles == null) {
-                        extractedFiles = new LinkedList<>();
-                    }
-                    extractedFiles.add(file);
+                    Files.copy(is,extractedFile, REPLACE_EXISTING);
 
                     logger.debug("Done writing file '{}'", abstractFile.getName());
                 } catch (IOException e) {
                     logger.error("Could not write file '" + abstractFile.getName() + "' to temporary dir '" +
-                            file.getAbsolutePath() + "'.", e);
+                            extractedFile.toAbsolutePath().toString() + "'.", e);
                 } finally {
                     try {
                         if (is != null) {
@@ -165,7 +159,7 @@ public class TSKReadImageJob implements Job {
                             logger.error("Could not close IOstream(s)", e);
                     }
                 }
-                return Paths.get(file.getPath());
+                return extractedFile;
             }
 
             @Override
@@ -182,14 +176,12 @@ public class TSKReadImageJob implements Job {
 
             @Override
             public void cleanup() {
-                if (extractedFiles != null) {
-                    extractedFiles.forEach(file -> {
-                        try {
-                            Files.deleteIfExists(Paths.get(file.getPath()));
-                        } catch (IOException e) {
-                            logger.warn("Could not delete file '{}'", file.getName(), e);
-                        }
-                    });
+                if (extractedFile != null) {
+                    try {
+                        Files.deleteIfExists(extractedFile);
+                    } catch (IOException e) {
+                        logger.warn("Could not delete temporary file {}.", extractedFile.toString(), e);
+                    }
                 }
             }
         });

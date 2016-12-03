@@ -217,4 +217,9 @@ public class TSKReadImageJob implements Job {
     public String getJobConfig() {
         return null;
     }
+
+    @Override
+    public void setJobConfig(String config) {
+        // no configuration intended yet.
+    }
 }

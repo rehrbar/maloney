@@ -137,4 +137,9 @@ public class CalculateHashesJob implements Job {
         return null;
         //TODO not necessary as of yet
     }
+
+    @Override
+    public void setJobConfig(String config) {
+        // no configuration intended yet.
+    }
 }

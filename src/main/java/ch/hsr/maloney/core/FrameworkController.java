@@ -1,6 +1,7 @@
 package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.CalculateHashesJob;
+import ch.hsr.maloney.processing.ImportRdsHashSetJob;
 import ch.hsr.maloney.processing.TSKReadImageJob;
 
 /**
@@ -13,6 +14,9 @@ public class FrameworkController {
         Framework framework = new Framework();
         framework.register(new TSKReadImageJob());
         framework.register(new CalculateHashesJob());
+        ImportRdsHashSetJob importRdsHashSetJob = new ImportRdsHashSetJob();
+        importRdsHashSetJob.setJobConfig(""); // TODO set path from run parameters.
+        framework.register(importRdsHashSetJob);
 
         framework.startWithDisk(imagePath);
     }

@@ -19,26 +19,29 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Created by olive_000 on 15.11.2016.
+ * @author oniet
+ *
+ * Calcultes MD5 and SHA-1 Hashes
  */
 public class CalculateHashesJob implements Job {
+    private static final String JOB_NAME = "CalculateHashesJob";
+    private static final String NEW_FILE_EVENT_NAME = "newFile";
+    private static final String MD_5_HASH_CALCULATED_EVENT_NAME = "MD5HashCalculated";
+    private static final String SHA_1_HASH_CALCULATED_EVENT_NAME = "SHA1HashCalculated";
+    private static final String MD_5_HASH_TYPE = "MD5Hash";
+    private static final String SHA_1_HASH_TYPE = "SHA1Hash";
+
+    private static final int BUFFER_SIZE = 1024;
+
     private final List<String> requiredEvents = new LinkedList<>();
     private final List<String> producedEvents = new LinkedList<>();
     private final Logger logger;
 
-    private final String JobName = "CalculateHashesJob";
-    private final String NewFileEventName = "newFile";
-    private final String MD5HashCalculatedEventName = "MD5HashCalculated";
-    private final String SHA1HashCalculatedEventName = "SHA1HashCalculated";
-    private final String MD5HashType = "MD5Hash";
-    private final String SHA1HashType = "SHA1Hash";
-
     public CalculateHashesJob() {
         logger = LogManager.getLogger();
-        //TODO check Event names, maybe track globally?
-        requiredEvents.add(NewFileEventName);
-        producedEvents.add(MD5HashCalculatedEventName);
-        producedEvents.add(SHA1HashCalculatedEventName);
+        requiredEvents.add(NEW_FILE_EVENT_NAME);
+        producedEvents.add(MD_5_HASH_CALCULATED_EVENT_NAME);
+        producedEvents.add(SHA_1_HASH_CALCULATED_EVENT_NAME);
     }
 
     @Override
@@ -53,6 +56,7 @@ public class CalculateHashesJob implements Job {
 
     @Override
     public List<Event> run(Context ctx, Event evt) {
+        logger.info("Calculating Hash for file UUID '{}'", evt.getFileUuid());
         MetadataStore metadataStore = ctx.getMetadataStore();
         DataSource dataSource = ctx.getDataSource();
         UUID fileUuid = evt.getFileUuid();
@@ -64,43 +68,51 @@ public class CalculateHashesJob implements Job {
         byte[] sha1digest;
 
         List<Event> events = new LinkedList<>();
+        InputStream is = null;
 
         try {
             md5 = MessageDigest.getInstance("MD5");
             sha1 = MessageDigest.getInstance("SHA-1");
 
-            InputStream is = dataSource.getFileStream(fileUuid);
+            is = dataSource.getFileStream(fileUuid);
 
             DigestInputStream md5dis = new DigestInputStream(is, md5);
             DigestInputStream sha1dis = new DigestInputStream(md5dis, sha1);
 
-            while(sha1dis.read() != -1){
-                /* Read decorated stream to EOF as normal... */
-            }
+            byte[] buffer = new byte[BUFFER_SIZE];
+            while(sha1dis.read(buffer) != -1);
 
+            logger.debug("Done reading file '{}', now encoding and transfering to MetadataStore", fileUuid);
             md5digest = md5.digest();
             sha1digest = sha1.digest();
-
-            is.close();
 
             // Convert from Byte Digest to String
             String md5hash = new String(Hex.encodeHex(md5digest));
             String sha1hash = new String(Hex.encodeHex(sha1digest));
 
             List<Artifact> artifacts = new LinkedList<>();
-            artifacts.add(new Artifact(getJobName(), md5hash, MD5HashType));
-            artifacts.add(new Artifact(getJobName(), sha1hash, SHA1HashType));
+            artifacts.add(new Artifact(getJobName(), md5hash, MD_5_HASH_TYPE));
+            artifacts.add(new Artifact(getJobName(), sha1hash, SHA_1_HASH_TYPE));
 
             metadataStore.addArtifacts(fileUuid, artifacts);
 
-            events.add(new Event(MD5HashCalculatedEventName, getJobName(), fileUuid));
-            events.add(new Event(SHA1HashCalculatedEventName, getJobName(), fileUuid));
+            events.add(new Event(MD_5_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
+            events.add(new Event(SHA_1_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
 
         } catch (IOException e) {
             logger.error("Could not read file with UUID: " + fileUuid.toString(), e);
         } catch (NoSuchAlgorithmException e) {
             logger.error("Could not find specified Algorithm to calculate Hash", e);
+        } finally {
+            if(is != null){
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    logger.error("Could not close InputStream", e);
+                }
+            }
         }
+
 
         return events;
     }
@@ -117,7 +129,7 @@ public class CalculateHashesJob implements Job {
 
     @Override
     public String getJobName() {
-        return JobName;
+        return JOB_NAME;
     }
 
     @Override

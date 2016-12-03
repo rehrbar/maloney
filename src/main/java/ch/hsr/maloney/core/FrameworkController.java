@@ -1,14 +1,18 @@
 package ch.hsr.maloney.core;
 
+import ch.hsr.maloney.processing.CalculateHashesJob;
 import ch.hsr.maloney.processing.TSKReadImageJob;
 
 /**
- * Created by olive_000 on 08.11.2016.
+ * @author oniet
+ *
+ * Creates the Jobs which are to be run, registers them at the Framework, and then starts the Application.
  */
 public class FrameworkController {
     public static void run(String imagePath) {
         Framework framework = new Framework();
         framework.register(new TSKReadImageJob());
+        framework.register(new CalculateHashesJob());
 
         framework.startWithDisk(imagePath);
     }

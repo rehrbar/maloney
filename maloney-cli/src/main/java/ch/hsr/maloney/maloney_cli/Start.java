@@ -1,6 +1,9 @@
 package ch.hsr.maloney.maloney_cli;
 
+import ch.hsr.maloney.core.FrameworkConfiguration;
 import ch.hsr.maloney.core.FrameworkController;
+
+import java.io.IOException;
 
 /**
  * Entry point for the command line interface of Maloney.
@@ -17,10 +20,18 @@ public class Start {
             System.loadLibrary("libvhdi");
             System.loadLibrary("libtsk_jni");
         }
-
-        final String IMAGE_PATH = args[0];
-        System.out.println("Starting framework with image in: " + IMAGE_PATH);
-        FrameworkController.run(IMAGE_PATH);
-        System.out.println("...FINISHED");
+        // TODO convert args to hash map to make them easier available
+        // TODO allow overrides of FrameworkConfiguration
+        // TODO pass working directory
+        // TODO pass job configurations
+        // TODO pass jobs to execute
+        // TODO add generator for example configuration
+        try {
+            FrameworkConfiguration config = FrameworkConfiguration.loadFromFile(args[0]);
+            FrameworkController.run(config);
+        } catch (IOException e) {
+            e.printStackTrace();
+            // TODO print example usage
+        }
     }
 }

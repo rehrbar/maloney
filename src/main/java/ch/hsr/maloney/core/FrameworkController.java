@@ -20,4 +20,8 @@ public class FrameworkController {
 
         framework.startWithDisk(imagePath);
     }
+
+    public static void run(FrameworkConfiguration config) {
+        // TODO implement this
+    }
 }

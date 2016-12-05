@@ -40,6 +40,7 @@ public class Start {
         options.addOption("c", "configuration", true, "configuration to load");
         options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
+        options.addOption("rds", true, "indexes an rds hash set"); // TODO replace with job configuration
 
         try {
             CommandLine line = parser.parse(options, args);
@@ -75,6 +76,11 @@ public class Start {
                 // TODO pass jobs to execute
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
                 FrameworkController.run(frameworkConfiguration);
+                return;
+            }
+            if (line.hasOption("rds")) {
+                // TODO replace with job configuration
+                FrameworkController.runHashSet(line.getOptionValue("rds"));
                 return;
             }
 

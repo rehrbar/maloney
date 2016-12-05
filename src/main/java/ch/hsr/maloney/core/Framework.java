@@ -4,8 +4,6 @@ import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobProcessor;
 import ch.hsr.maloney.processing.SimpleProcessor;
 import ch.hsr.maloney.processing.TSKReadImageJob;
-import ch.hsr.maloney.storage.FileExtractor;
-import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
@@ -15,8 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.UnknownHostException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -36,8 +32,6 @@ public class Framework implements EventObserver {
     private Context context;
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
-
-    private final String NewDiskImageEventName = "newDiskImage";
 
     public Framework() {
         this.logger = LogManager.getLogger();
@@ -74,9 +68,7 @@ public class Framework implements EventObserver {
 
         logger.debug("Checking if registered Jobs can be run...");
 
-        //TODO remove this as soon as startWithDisk is a registered Job within the Framework
         availableEvents.add(FrameworkEventNames.STARTUP);
-        availableEvents.add(NewDiskImageEventName);
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
         runnableJobs.add(new TSKReadImageJob());
@@ -108,14 +100,10 @@ public class Framework implements EventObserver {
     }
 
     /**
-     * Start the Process of reading out an Image. It creates an Event which a Job then can use to start processing.
+     * Starts the framework.
      *
-     * This could, or even should, be moved to a separate Job in the future.
-     *
-     * @param fileName  Path to the Image file to be analyzed
      */
-    public void startWithDisk(String fileName) {
-        // TODO move to real framework start.
+    public void start() {
         enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
         try {
             checkDependencies();
@@ -123,40 +111,6 @@ public class Framework implements EventObserver {
             logger.fatal("Cannot run all Jobs", e);
             return;
         }
-
-        //TODO extract to Job
-        UUID uuid = context.getDataSource().addFile(null, new FileExtractor() {
-
-            private Path path = Paths.get(fileName);
-
-            @Override
-            public boolean useOriginalFile() {
-                return true;
-            }
-
-            @Override
-            public Path extractFile() {
-                return path;
-            }
-
-            @Override
-            public FileSystemMetadata extractMetadata() {
-                // TODO supply some metadata about the image. E.g. creationDate, name, etc.
-                FileSystemMetadata metadata = new FileSystemMetadata();
-                metadata.setFileName(path.getFileName().toString());
-                return metadata;
-            }
-
-            @Override
-            public void cleanup() {
-                // nothing to cleanup yet
-            }
-        });
-
-        Event event = new Event(NewDiskImageEventName, EVENT_ORIGIN, uuid);
-
-        enqueueToInterestedJobs(event);
-
         jobProcessor.start();
     }
 

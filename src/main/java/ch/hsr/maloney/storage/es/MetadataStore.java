@@ -50,7 +50,9 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         this.logger = LogManager.getLogger();
         // TODO pass configuration to transportclient for cluster name and node.
         // TODO create index if it does not exist.
-        client = new PreBuiltTransportClient(Settings.EMPTY)
+        Settings settings = Settings.builder()
+            .put("cluster.name", "maloney").build();
+        client = new PreBuiltTransportClient(settings)
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("localhost"), 9300));
         logger.info("Connected nodes: {}", String.join(", ", client.connectedNodes()
                 .stream().map(node -> node.getName()).collect(Collectors.toList())));

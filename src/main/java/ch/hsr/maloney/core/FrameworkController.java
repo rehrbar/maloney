@@ -25,4 +25,18 @@ public class FrameworkController {
 
         framework.start();
     }
+
+    public static void run(FrameworkConfiguration config) {
+        // TODO implement this
+    }
+
+    public static void runHashSet(String hashSetPath) {
+        // TODO replace through run(FrameworkConfiguration config)
+        Framework framework = new Framework();
+        ImportRdsHashSetJob importRdsHashSetJob = new ImportRdsHashSetJob();
+        importRdsHashSetJob.setJobConfig(hashSetPath);
+        framework.register(importRdsHashSetJob);
+
+        framework.start();
+    }
 }

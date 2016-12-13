@@ -37,3 +37,25 @@ task fatJar(type: Jar) {
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
+
+
+distributions {
+    main {
+        contents {
+            // adding missing library which is required by libtsk_jni
+            from("../sleuthkit/tsk/.libs/") {
+                include "libtsk.so.13"
+                into "lib"
+            }
+        }
+    }
+}
+
+startScripts {
+    doLast{
+        // Modifying the default script to 
+        def unixScriptLines = unixScript.readLines()
+        unixScriptLines.addAll(unixScriptLines.size()-1, ['# add library path for tsk', 'export LD_LIBRARY_PATH=$APP_HOME/lib/', '\n'])
+        unixScript.text = unixScriptLines.join('\n')
+    }
+}

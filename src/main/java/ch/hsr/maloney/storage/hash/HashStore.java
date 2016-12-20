@@ -23,7 +23,7 @@ public interface HashStore {
      * Gets a specific record.
      *
      * @param id Identifier of the record to retrieve.
-     * @return
+     * @return  Specified record.
      */
     HashRecord getHashRecord(String id);
 

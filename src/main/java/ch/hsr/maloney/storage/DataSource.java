@@ -28,13 +28,10 @@ public interface DataSource {
 
     /**
      * Adds a new File to the DataSource
-     * <p>
-     * <p>
-     * /**
-     * Adds a new File to the DataSource
      *
      * @param parentId      UUID of the parent, null if there is none (e.g. root image)
      * @param fileExtractor Used to exctract the file itself.
+     * @return              New UUID for the added file
      */
     UUID addFile(UUID parentId, FileExtractor fileExtractor);
 

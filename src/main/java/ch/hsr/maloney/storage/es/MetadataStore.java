@@ -44,7 +44,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     /**
      * Creates a new Instance of MetadataStore with ElasticSearch as backend.
      *
-     * @throws UnknownHostException
+     * @throws UnknownHostException Gets thrown when ElasticSearch instance ip address cannot be resolved
      */
     public MetadataStore() throws UnknownHostException {
         this.logger = LogManager.getLogger();

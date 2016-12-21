@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
@@ -37,8 +36,8 @@ public class Start {
 
         options = new Options();
         options.addOption("v", "verbose", false, "enables verbose output");
-        options.addOption("c", "configuration", true, "configuration to load");
-        options.addOption("sc", "save-configuration", true, "saves an example configuration");
+        //options.addOption("c", "configuration", true, "configuration to load");
+        //options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
         options.addOption("rds", true, "indexes an rds hash set"); // TODO replace with job configuration
 

@@ -6,6 +6,9 @@ task wrapper(type: Wrapper) {
 }
 
 apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = "ch.hsr.maloney.maloney_cli.Start"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -16,6 +19,10 @@ repositories {
 
 dependencies {
     compile project(':maloney')
+    // https://mvnrepository.com/artifact/commons-cli/commons-cli
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.3.1'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.7'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
@@ -29,4 +36,26 @@ task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
+}
+
+
+distributions {
+    main {
+        contents {
+            // adding missing library which is required by libtsk_jni
+            from("../sleuthkit/tsk/.libs/") {
+                include "libtsk.so.13"
+                into "lib"
+            }
+        }
+    }
+}
+
+startScripts {
+    doLast{
+        // Modifying the default script to 
+        def unixScriptLines = unixScript.readLines()
+        unixScriptLines.addAll(unixScriptLines.size()-1, ['# add library path for tsk', 'export LD_LIBRARY_PATH=$APP_HOME/lib/', '\n'])
+        unixScript.text = unixScriptLines.join('\n')
+    }
 }

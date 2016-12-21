@@ -8,30 +8,29 @@ import java.util.UUID;
 public class Event {
     private String name;
     private String origin; //Job Name
-    private UUID uuid;
+    private UUID fileUuid;
 
     /**
      * Constructor.
-     * @param name      Name of the event
-     * @param origin    Origin of the event, i.e. name of the Job that created this event
-     * @param uuid      Uuid of the file concerned
+     *
+     * @param name     Name of the event
+     * @param origin   Origin of the event, i.e. name of the Job that created this event
+     * @param fileUuid Uuid of the file concerned
      */
-    public Event(String name, String origin, UUID uuid) {
+    public Event(String name, String origin, UUID fileUuid) {
         this.name = name;
         this.origin = origin;
-        this.uuid = uuid;
+        this.fileUuid = fileUuid;
     }
 
     /**
-     *
      * @return Uuid of the file processed
      */
-    public UUID getUuid() {
-        return uuid;
+    public UUID getFileUuid() {
+        return fileUuid;
     }
 
     /**
-     *
      * @return Job which generated this Event
      */
     public String getOrigin() {
@@ -39,7 +38,6 @@ public class Event {
     }
 
     /**
-     *
      * @return Name of this event
      */
     public String getName() {

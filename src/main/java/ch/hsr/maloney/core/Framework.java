@@ -3,77 +3,164 @@ package ch.hsr.maloney.core;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobProcessor;
 import ch.hsr.maloney.processing.SimpleProcessor;
-import ch.hsr.maloney.storage.PlainSource;
-import ch.hsr.maloney.storage.SimpleMetadataStore;
+import ch.hsr.maloney.processing.TSKReadImageJob;
+import ch.hsr.maloney.storage.LocalDataSource;
+import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.EventObserver;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.util.List;
-import java.util.Observable;
-import java.util.UUID;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Created by olive_000 on 25.10.2016.
+ * @author oniet
+ *
+ * Framework for the whole applicaton:
+ *  - Initializes all needed classes (DataSource, MetadataStore, ProgressTracker)
+ *  - Checks dependencies on registered Jobs on initialization
+ *  - Enqueues new Events to interested Jobs
+ *  - ATM: Creates new Event on start (should be moved to a seperate Job...)
  */
 public class Framework implements EventObserver {
+    public static final String EVENT_ORIGIN = "ch.hsr.maloney.core";
+    private final Logger logger;
     private JobProcessor jobProcessor;
     private Context context;
-    private Object eventQueue; //TODO Better Queue with nice persistence
+    private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
     public Framework() {
-        this.jobProcessor = new SimpleProcessor(context);
+        this.logger = LogManager.getLogger();
         initializeContext();
+        this.registeredJobs = new LinkedList<>();
+        this.eventQueue = new ConcurrentLinkedQueue<>();
+        this.jobProcessor = new SimpleProcessor(context);
+        jobProcessor.addObserver(this);
     }
 
-    private void initializeContext(){
-        SimpleMetadataStore simpleMetadataStore = new SimpleMetadataStore();
+    private void initializeContext() {
+        MetadataStore metadataStore = null;
+        try {
+            metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();
+        } catch (UnknownHostException e) {
+            logger.fatal("Elasticsearch host not found. Terminating...", e);
+            System.exit(0);
+        }
         this.context = new Context(
-                simpleMetadataStore,
-                null, //TODO Implement adn add Progress Tracker
-                null, //TODO Implement and add Logger
-                new PlainSource(simpleMetadataStore)
+                metadataStore,
+                null, //TODO Implement and add Progress Tracker
+                new LocalDataSource(metadataStore)
         );
     }
 
-    public void checkDependencies(){
-        //TODO: Not necessary as of now, but later
-    }
+    /**
+     * Checks whether all registered Jobs can be run by looking through all produced and required Events.
+     *
+     * @throws UnrunnableJobException   If one or multiple registered Jobs cannot be run, this Exception is thrown
+     */
+    public void checkDependencies() throws UnrunnableJobException {
+        Set<String> availableEvents = new HashSet<>();
+        Set<Job> unresolvedDependencies = new HashSet<>(registeredJobs);
 
-    public void startWithDisk(String fileName){
-        UUID uuid = context.getDataSource().addFile(fileName);
-        Event event = new Event("newDiskImage","ch.hsr.maloney.core", uuid);
+        logger.debug("Checking if registered Jobs can be run...");
 
-        registeredJobs.forEach((job -> {
-            if(job.getRequiredEvents().isEmpty()){
-                //TODO enqueue Jobs in JobProcessor
+        availableEvents.add(FrameworkEventNames.STARTUP);
+
+        LinkedList<Job> runnableJobs = new LinkedList<>();
+        runnableJobs.add(new TSKReadImageJob());
+        // Added some random Job that gets cleared out
+        // just so that the following while loop can be started
+
+        while(runnableJobs.size() > 0){
+            runnableJobs.clear();
+            for(Job job : unresolvedDependencies){
+                if(availableEvents.containsAll(job.getRequiredEvents())){
+                    availableEvents.addAll(job.getProducedEvents());
+                    runnableJobs.add(job);
+                }
             }
-        }));
+            unresolvedDependencies.removeAll(runnableJobs);
+        }
+
+        if(unresolvedDependencies.size() > 0){
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("Error with following Jobs:\r\n");
+            unresolvedDependencies.forEach(job -> {
+                stringBuilder.append(job.getJobName());
+                stringBuilder.append("\r\n");
+            });
+            logger.error(stringBuilder.toString());
+            throw new UnrunnableJobException(stringBuilder.toString());
+        }
+        logger.debug("... Job dependencies to each other look good.");
     }
 
-    public void register(Job job){
+    /**
+     * Starts the framework.
+     *
+     */
+    public void start() {
+        enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
+        try {
+            checkDependencies();
+        } catch (UnrunnableJobException e) {
+            logger.fatal("Cannot run all Jobs", e);
+            return;
+        }
+        jobProcessor.start();
+    }
+
+    /**
+     * Register a Job on the Framework to be run if the required Event is created.
+     *
+     * @param job   Job to be registered and run when required Event is created.
+     */
+    public void register(Job job) {
         registeredJobs.add(job);
     }
 
-    public void unregister(Job job){
-        if(registeredJobs.contains(job)){
+    public void unregister(Job job) {
+        if (registeredJobs.contains(job)) {
             registeredJobs.remove(job);
         }
     }
 
     @Override
     public void update(Observable o, Object arg) {
-        if(arg instanceof Event){
-            update(o, (Event)arg);
-        } else {
+        try {
+            ((List<Event>)arg).forEach(evt -> update(o, evt));
+        } catch (ClassCastException e){
             throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
         }
     }
 
     @Override
-    public void update(Observable o, Event arg) {
-        throw new NotImplementedException();
+    public void update(Observable o, Event evt) {
+        enqueueToInterestedJobs(evt);
+    }
+
+    private void enqueueToInterestedJobs(Event evt) {
+        registeredJobs.forEach((job)->{
+            if(job.getRequiredEvents().contains(evt.getName())){
+                jobProcessor.enqueue(job, evt);
+            }
+        });
+    }
+
+    /**
+     * If registered Jobs cannot be run and the Framework realizes this inside checkDependencies(),
+     * this Exception is thrown.
+     */
+    public class UnrunnableJobException extends Exception {
+        public UnrunnableJobException(){
+        }
+
+        public UnrunnableJobException(String msg) {
+            super(msg);
+        }
     }
 }

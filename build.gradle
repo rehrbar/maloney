@@ -23,6 +23,10 @@ dependencies {
     }
     testCompile group: 'junit', name: 'junit', version: '4.11'
 
+    compile group: 'org.elasticsearch.client', name: 'transport', version: '5.0.2'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.4'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.7'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.8.11.2'
     compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
 }
@@ -30,6 +34,10 @@ dependencies {
 test {
     systemProperty "java.library.path", file("..\\lib")
     exclude "TSK/**"
+    exclude "ch/hsr/maloney/storage/es/**"
+    exclude "ch/hsr/maloney/storage/hash/**"
+    exclude "ch/hsr/maloney/processing/ImportRdsHashSetJobTest*"
+    exclude "ch/hsr/maloney/core/**"
 }
 
 // Adding ant build commands and prefixing them with 'tsk-'

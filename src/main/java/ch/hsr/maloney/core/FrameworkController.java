@@ -1,9 +1,15 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.processing.CalculateHashesJob;
-import ch.hsr.maloney.processing.DiskImageJob;
-import ch.hsr.maloney.processing.ImportRdsHashSetJob;
-import ch.hsr.maloney.processing.TSKReadImageJob;
+import ch.hsr.maloney.processing.*;
+import ch.hsr.maloney.util.CustomClassLoader;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 /**
  * @author oniet
@@ -27,7 +33,38 @@ public class FrameworkController {
     }
 
     public static void run(FrameworkConfiguration config) {
-        // TODO implement this
+        Framework framework = new Framework();
+        // TODO assign configuration specific to framework
+
+        URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+        CustomClassLoader myClassLoader = new CustomClassLoader(urlClassLoader);
+
+        try {
+            // Extracts the plugins folder which is a sibling of the application folder (like libs)
+            String path = FrameworkController.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            File pluginFolder = new File(path).getParentFile().toPath().resolveSibling("plugins").toFile();
+            File[] jars = pluginFolder.listFiles((dir, filename) -> filename.endsWith(".jar"));
+            if(jars != null){
+                for (File jar : jars) {
+                    myClassLoader.addURL(jar.toURI().toURL());
+                }
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        // load all implementations of interface Job using SPI
+        Iterator<Job> iter = ServiceLoader.load(Job.class, myClassLoader).iterator();
+        // configure jobs and assign them
+        while (iter.hasNext()) {
+            // TODO assign configuration to each job
+            Job job = iter.next();
+            job.setJobConfig(config.getJobConfigurationMap().getOrDefault(job.getJobName(),""));
+            System.out.println("Registering job " + job.getJobName());
+            framework.register(job);
+        }
+
+        framework.start();
     }
 
     public static void runHashSet(String hashSetPath) {

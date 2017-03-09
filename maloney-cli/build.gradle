@@ -59,3 +59,9 @@ startScripts {
         unixScript.text = unixScriptLines.join('\n')
     }
 }
+
+run {
+    if (project.hasProperty("appArgs")) {
+        args Eval.me(appArgs)
+    }
+}

@@ -36,8 +36,8 @@ public class Start {
 
         options = new Options();
         options.addOption("v", "verbose", false, "enables verbose output");
-        //options.addOption("c", "configuration", true, "configuration to load");
-        //options.addOption("sc", "save-configuration", true, "saves an example configuration");
+        options.addOption("c", "configuration", true, "configuration to load");
+        options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
         options.addOption("rds", true, "indexes an rds hash set"); // TODO replace with job configuration
 

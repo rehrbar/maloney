@@ -112,6 +112,7 @@ public class Framework implements EventObserver {
             return;
         }
         jobProcessor.start();
+        //TODO wait for abort command or for the application finish Event
     }
 
     /**

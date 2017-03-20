@@ -66,9 +66,6 @@ public class MultithreadedJobProcessor extends JobProcessor{
                 }
                 pushFinishedEventsUp(pendingEvents);
             }
-            while(!pendingEvents.isEmpty()){
-                pushFinishedEventsUp(pendingEvents);
-            }
             logger.debug("Nothing more to process or processing canceled");
         });
 

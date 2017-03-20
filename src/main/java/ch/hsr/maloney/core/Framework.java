@@ -1,9 +1,6 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.processing.Job;
-import ch.hsr.maloney.processing.JobProcessor;
-import ch.hsr.maloney.processing.SimpleProcessor;
-import ch.hsr.maloney.processing.TSKReadImageJob;
+import ch.hsr.maloney.processing.*;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
@@ -38,7 +35,7 @@ public class Framework implements EventObserver {
         initializeContext();
         this.registeredJobs = new LinkedList<>();
         this.eventQueue = new ConcurrentLinkedQueue<>();
-        this.jobProcessor = new SimpleProcessor(context);
+        this.jobProcessor = new MultithreadedJobProcessor(context);
         jobProcessor.addObserver(this);
     }
 

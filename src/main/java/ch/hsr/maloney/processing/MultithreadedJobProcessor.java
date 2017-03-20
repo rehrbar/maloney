@@ -43,7 +43,7 @@ public class MultithreadedJobProcessor extends JobProcessor{
         controllerThread = new Thread(()->{
             logger.debug("Started controllerThread");
             List<Future<List<Event>>> pendingEvents = new LinkedList<>();
-            ForkJoinPool pool = new ForkJoinPool();
+            ForkJoinPool pool = ForkJoinPool.commonPool();
 
             while(!stopProcessing){
                 if(!jobQueue.isEmpty()){

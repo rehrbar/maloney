@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Framework implements EventObserver {
     public static final String EVENT_ORIGIN = "ch.hsr.maloney.core";
     private final Logger logger;
-    private JobProcessor jobProcessor;
+    private MultithreadedJobProcessor jobProcessor;
     private Context context;
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
@@ -109,6 +109,7 @@ public class Framework implements EventObserver {
             return;
         }
         jobProcessor.start();
+        jobProcessor.waitForFinish();
         //TODO wait for abort command or for the application finish Event
     }
 

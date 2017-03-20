@@ -55,6 +55,14 @@ public class MultithreadedJobProcessor extends JobProcessor{
                         Future<List<Event>> createdEvents = pool.submit(()-> job.run(ctx, evt));
                         pendingEvents.add(createdEvents);
                     }
+                } else {
+                    pushFinishedEventsUp(pendingEvents);
+                    if(     jobQueue.isEmpty() &&
+                            pool.getQueuedSubmissionCount()==0 &&
+                            pool.getQueuedTaskCount()==0 &&
+                            pendingEvents.isEmpty()){
+                        stopProcessing = true;
+                    }
                 }
                 pushFinishedEventsUp(pendingEvents);
             }
@@ -112,5 +120,16 @@ public class MultithreadedJobProcessor extends JobProcessor{
     public void enqueue(Job job, Event event) {
         logger.debug("Enqueued '{}' to '{}'", event.getName(), job.getJobName());
         jobQueue.add(new Tuple<>(job, event));
+    }
+
+    public void waitForFinish(){
+        boolean joined = false;
+        while(!joined){
+            try {
+                controllerThread.join();
+                joined = true;
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 }

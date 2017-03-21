@@ -74,7 +74,7 @@ public class Start {
                 // TODO pass job configurations
                 // TODO pass jobs to execute
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
-                FrameworkController.run(frameworkConfiguration);
+                (new FrameworkController()).run(frameworkConfiguration);
                 return;
             }
             if (line.hasOption("rds")) {

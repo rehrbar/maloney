@@ -2,21 +2,34 @@ package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.*;
 import ch.hsr.maloney.util.CustomClassLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
 /**
  * @author oniet
- *
  * Creates the Jobs which are to be run, registers them at the Framework, and then starts the Application.
  */
 public class FrameworkController {
+
+    private static ClassLoader myClassLoader;
+    private final Logger logger;
+
+    public FrameworkController() {
+        logger = LogManager.getLogger();
+        if (myClassLoader == null) {
+            try {
+                myClassLoader = CustomClassLoader.createPluginLoader();
+            } catch (MalformedURLException e) {
+                logger.warn("Failed to detect plugins. Proceeding without plugins.", e);
+                myClassLoader = ClassLoader.getSystemClassLoader();
+            }
+        }
+    }
+
     public static void run(String imagePath) {
         Framework framework = new Framework();
         // TODO rework how jobs are added and configured.
@@ -32,39 +45,25 @@ public class FrameworkController {
         framework.start();
     }
 
-    public static void run(FrameworkConfiguration config) {
+    public void run(FrameworkConfiguration config) {
         Framework framework = new Framework();
-        // TODO assign configuration specific to framework
+        // TODO configure framework with this configuration
 
-        URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-        CustomClassLoader myClassLoader = new CustomClassLoader(urlClassLoader);
-
-        try {
-            // Extracts the plugins folder which is a sibling of the application folder (like libs)
-            String path = FrameworkController.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-            File pluginFolder = new File(path).getParentFile().toPath().resolveSibling("plugins").toFile();
-            File[] jars = pluginFolder.listFiles((dir, filename) -> filename.endsWith(".jar"));
-            if(jars != null){
-                for (File jar : jars) {
-                    myClassLoader.addURL(jar.toURI().toURL());
-                }
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        logger.info("Starting with configuration");
 
         // load all implementations of interface Job using SPI
         Iterator<Job> iter = ServiceLoader.load(Job.class, myClassLoader).iterator();
         // configure jobs and assign them
         while (iter.hasNext()) {
-            // TODO assign configuration to each job
+            // TODO only register jobs which are configured to run
             Job job = iter.next();
-            job.setJobConfig(config.getJobConfigurationMap().getOrDefault(job.getJobName(),""));
-            System.out.println("Registering job " + job.getJobName());
+            job.setJobConfig(config.getJobConfigurationMap().getOrDefault(job.getJobName(), ""));
+            logger.debug("Registering job " + job.getJobName());
             framework.register(job);
         }
 
         framework.start();
+        logger.info("Framework has finished");
     }
 
     public static void runHashSet(String hashSetPath) {

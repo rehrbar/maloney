@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
@@ -32,8 +33,8 @@ public class MultithreadedJobProcessor extends JobProcessor{
     public MultithreadedJobProcessor(Context ctx){
         logger = LogManager.getLogger();
         this.ctx = ctx;
-        readyJobs = new LinkedList<>();
-        runningJobs = new LinkedList<>();
+        readyJobs = new ConcurrentLinkedQueue<>();
+        runningJobs = new ConcurrentLinkedQueue<>();
 
         stopProcessing = false;
     }
@@ -56,10 +57,15 @@ public class MultithreadedJobProcessor extends JobProcessor{
                         //Future<List<Event>> task = pool.submit(()-> {
                         pool.submit(()-> {
                             //return job.run(ctx, evt);
-                            notifyObservers(job.run(ctx, evt));
-                            //int number = countObservers();
+                            List<Event> result = job.run(ctx, evt);
+                            if(result != null && !result.isEmpty()){
+                                setChanged();
+                                notifyObservers(result);
+                            }
                             runningJobs.remove(jobExecution);
-                            setChanged();
+                            synchronized (readyJobs){
+                                readyJobs.notifyAll();
+                            }
                         });
                     }
                 }
@@ -68,6 +74,10 @@ public class MultithreadedJobProcessor extends JobProcessor{
                     while(readyJobs.isEmpty()){
                         try {
                             readyJobs.wait();
+                            if(readyJobs.isEmpty() && runningJobs.isEmpty()){
+                                stopProcessing = true;
+                                return;
+                            }
                         } catch (InterruptedException ignored) {
                         }
                     }

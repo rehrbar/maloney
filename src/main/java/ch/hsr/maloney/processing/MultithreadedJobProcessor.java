@@ -47,16 +47,14 @@ public class MultithreadedJobProcessor extends JobProcessor{
             ForkJoinPool pool = ForkJoinPool.commonPool();
 
             while(!stopProcessing){
-                while(!readyJobs.isEmpty()){
+                while(!readyJobs.isEmpty() && !stopProcessing){
                     JobExecution jobExecution = readyJobs.poll();
                     Job job = jobExecution.getJob();
                     Event evt = jobExecution.getEvent();
 
                     if(job.canRun(ctx, evt)){
                         runningJobs.add(jobExecution);
-                        //Future<List<Event>> task = pool.submit(()-> {
                         pool.submit(()-> {
-                            //return job.run(ctx, evt);
                             List<Event> result = job.run(ctx, evt);
                             if(result != null && !result.isEmpty()){
                                 setChanged();
@@ -71,12 +69,11 @@ public class MultithreadedJobProcessor extends JobProcessor{
                 }
 
                 synchronized (readyJobs){
-                    while(readyJobs.isEmpty()){
+                    while(readyJobs.isEmpty() && !stopProcessing){
                         try {
                             readyJobs.wait();
                             if(readyJobs.isEmpty() && runningJobs.isEmpty()){
                                 stopProcessing = true;
-                                return;
                             }
                         } catch (InterruptedException ignored) {
                         }

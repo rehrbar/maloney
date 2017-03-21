@@ -6,9 +6,7 @@ import ch.hsr.maloney.util.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
@@ -23,7 +21,9 @@ import java.util.concurrent.Future;
  */
 public class MultithreadedJobProcessor extends JobProcessor{
     private final Logger logger;
-    private final Queue<Tuple<Job, Event>> jobQueue; //TODO replace with better Queueing structure (persistent)
+    private final Queue<JobExecution> readyJobs; //TODO replace with better Queueing structure (persistent)
+    private final Queue<JobExecution> runningJobs; //TODO replace with better Queueing structure (persistent)
+
     private Context ctx;
 
     private Thread controllerThread;
@@ -32,70 +32,51 @@ public class MultithreadedJobProcessor extends JobProcessor{
     public MultithreadedJobProcessor(Context ctx){
         logger = LogManager.getLogger();
         this.ctx = ctx;
-        jobQueue = new LinkedList<>();
+        readyJobs = new LinkedList<>();
+        runningJobs = new LinkedList<>();
 
         stopProcessing = false;
     }
 
     @Override
     public void start() {
-        logger.debug("Starting JobProcessor with {} Event(s) queued", jobQueue.size());
+        logger.debug("Starting JobProcessor with {} Event(s) queued", readyJobs.size());
         controllerThread = new Thread(()->{
             logger.debug("Started controllerThread");
-            List<Future<List<Event>>> pendingEvents = new LinkedList<>();
             ForkJoinPool pool = ForkJoinPool.commonPool();
 
             while(!stopProcessing){
-                if(!jobQueue.isEmpty()){
-                    Tuple<Job, Event> tuple = jobQueue.poll();
-                    Job job = tuple.getLeft();
-                    Event evt = tuple.getRight();
+                while(!readyJobs.isEmpty()){
+                    JobExecution jobExecution = readyJobs.poll();
+                    Job job = jobExecution.getJob();
+                    Event evt = jobExecution.getEvent();
 
                     if(job.canRun(ctx, evt)){
-                        Future<List<Event>> createdEvents = pool.submit(()-> job.run(ctx, evt));
-                        pendingEvents.add(createdEvents);
-                    }
-                } else {
-                    pushFinishedEventsUp(pendingEvents);
-                    if(     jobQueue.isEmpty() &&
-                            pool.getQueuedSubmissionCount()==0 &&
-                            pool.getQueuedTaskCount()==0 &&
-                            pendingEvents.isEmpty()){
-                        stopProcessing = true;
+                        runningJobs.add(jobExecution);
+                        //Future<List<Event>> task = pool.submit(()-> {
+                        pool.submit(()-> {
+                            //return job.run(ctx, evt);
+                            notifyObservers(job.run(ctx, evt));
+                            //int number = countObservers();
+                            runningJobs.remove(jobExecution);
+                            setChanged();
+                        });
                     }
                 }
-                pushFinishedEventsUp(pendingEvents);
+
+                synchronized (readyJobs){
+                    while(readyJobs.isEmpty()){
+                        try {
+                            readyJobs.wait();
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                }
             }
             logger.debug("Nothing more to process or processing canceled");
         });
 
         controllerThread.start();
-    }
-
-    /**
-     * Check whether any Jobs have finished. If so, tell the framework and remove them from the list
-     *
-     * @param futureEventsList List of Future\<Event\> to check for completion
-     */
-    private void pushFinishedEventsUp(List<Future<List<Event>>> futureEventsList) {
-        List<Future<List<Event>>> finishedEventLists = new LinkedList<>();
-
-        for(Future<List<Event>> futureEvents : futureEventsList){
-            if(futureEvents.isDone()){
-                try {
-                    logger.debug("Notifying Framework about completed Events");
-                    setChanged();
-                    notifyObservers(futureEvents.get());
-                } catch (InterruptedException e) {
-                    logger.error("Job was interrupted",e);
-                } catch (ExecutionException e) {
-                    logger.error("Job caught exception",e);
-                }
-                finishedEventLists.add(futureEvents);
-            }
-        }
-
-        futureEventsList.removeAll(finishedEventLists);
     }
 
     @Override
@@ -116,7 +97,10 @@ public class MultithreadedJobProcessor extends JobProcessor{
     @Override
     public void enqueue(Job job, Event event) {
         logger.debug("Enqueued '{}' to '{}'", event.getName(), job.getJobName());
-        jobQueue.add(new Tuple<>(job, event));
+        synchronized (readyJobs){
+            readyJobs.add(new JobExecution(job, event));
+            readyJobs.notifyAll();
+        }
     }
 
     public void waitForFinish(){
@@ -127,6 +111,20 @@ public class MultithreadedJobProcessor extends JobProcessor{
                 joined = true;
             } catch (InterruptedException ignored) {
             }
+        }
+    }
+
+    class JobExecution extends Tuple<Job, Event>{
+        JobExecution(Job job, Event event) {
+            super(job, event);
+        }
+
+        public Job getJob() {
+            return getLeft();
+        }
+
+        public Event getEvent() {
+            return getRight();
         }
     }
 }

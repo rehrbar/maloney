@@ -17,18 +17,16 @@ import java.util.concurrent.Semaphore;
  *         <p>
  *         Handles the running of jobs.
  *         <p>
- *         Uses Threadpool (ForkJoinPool) and Futures and to run Jobs and the Observer Pattern to notify the Framwork.
+ *         Uses threads in a thread pool (ForkJoinPool) to run Jobs and the Observer Pattern to notify the Framwork.
  */
 public class MultithreadedJobProcessor extends JobProcessor {
-    private static final int CONCURRENTJOBS = 1000;
+    private static final int MAXCONCURRENTJOBS = 1000;
     private final Logger logger;
     private final Queue<JobExecution> readyJobs; //TODO replace with better Queueing structure (persistent)
-
-    private boolean isStarted =false;
-    private Context ctx;
-
-    private ForkJoinPool pool;
-    private Semaphore semaphore = new Semaphore(CONCURRENTJOBS);
+    private final Context ctx;
+    private final ForkJoinPool pool;
+    private final Semaphore semaphore = new Semaphore(MAXCONCURRENTJOBS);
+    private volatile boolean isStarted = false;
 
     public MultithreadedJobProcessor(Context ctx) {
         logger = LogManager.getLogger();
@@ -38,23 +36,21 @@ public class MultithreadedJobProcessor extends JobProcessor {
     }
 
     @Override
-    public void start() {
+    public synchronized void start() {
         logger.debug("Starting JobProcessor with {} Event(s) queued", readyJobs.size());
         try {
             semaphore.acquire();
+
+            isStarted = true;
+
+            while (!readyJobs.isEmpty()) {
+                JobExecution jobExecution = readyJobs.poll();
+                putInPool(jobExecution);
+            }
+            semaphore.release();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Could not properly start application",e);
         }
-        logger.debug("Started controllerThread");
-
-        isStarted = true;
-
-        while (!readyJobs.isEmpty()) {
-            JobExecution jobExecution = readyJobs.poll();
-            putInPool(jobExecution);
-        }
-        logger.debug("Nothing more to process or processing canceled");
-        semaphore.release();
     }
 
     private void putInPool(JobExecution jobExecution) {
@@ -62,7 +58,6 @@ public class MultithreadedJobProcessor extends JobProcessor {
         Event evt = jobExecution.getEvent();
 
         if (job.canRun(ctx, evt)) {
-
             try {
                 logger.debug("Trying to aqcuire token");
                 semaphore.acquire();
@@ -77,7 +72,7 @@ public class MultithreadedJobProcessor extends JobProcessor {
                     logger.debug("Released token");
                 });
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.error("Could not plan new Job",e);
             }
         }
     }
@@ -88,10 +83,10 @@ public class MultithreadedJobProcessor extends JobProcessor {
     }
 
     @Override
-    public void enqueue(Job job, Event event) {
+    public synchronized void enqueue(Job job, Event event) {
         logger.debug("Enqueued '{}' to '{}'", event.getName(), job.getJobName());
         JobExecution jobExecution = new JobExecution(job, event);
-        if(isStarted && !pool.isShutdown()){
+        if (isStarted && !pool.isShutdown()) {
             putInPool(jobExecution);
         } else {
             readyJobs.add(jobExecution);
@@ -101,9 +96,11 @@ public class MultithreadedJobProcessor extends JobProcessor {
     public void waitForFinish() {
         logger.debug("Waiting for JobProcessor to finish...");
         try {
-            semaphore.acquire(CONCURRENTJOBS);
+            semaphore.acquire(MAXCONCURRENTJOBS);
+            logger.debug("Nothing more to process or processing canceled");
+            semaphore.release(MAXCONCURRENTJOBS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error("Waiting for finish was interrupted",e);
         }
     }
 

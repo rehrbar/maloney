@@ -38,18 +38,11 @@ public class MultithreadedJobProcessor extends JobProcessor {
     @Override
     public synchronized void start() {
         logger.debug("Starting JobProcessor with {} Event(s) queued", readyJobs.size());
-        try {
-            semaphore.acquire();
+        isStarted = true;
 
-            isStarted = true;
-
-            while (!readyJobs.isEmpty()) {
-                JobExecution jobExecution = readyJobs.poll();
-                putInPool(jobExecution);
-            }
-            semaphore.release();
-        } catch (InterruptedException e) {
-            logger.error("Could not properly start application",e);
+        while (!readyJobs.isEmpty()) {
+            JobExecution jobExecution = readyJobs.poll();
+            putInPool(jobExecution);
         }
     }
 
@@ -72,7 +65,7 @@ public class MultithreadedJobProcessor extends JobProcessor {
                     logger.debug("Released token");
                 });
             } catch (InterruptedException e) {
-                logger.error("Could not plan new Job",e);
+                logger.error("Could not schedule new Job",e);
             }
         }
     }

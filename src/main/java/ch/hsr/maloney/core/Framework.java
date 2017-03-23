@@ -108,9 +108,11 @@ public class Framework implements EventObserver {
             logger.fatal("Cannot run all Jobs", e);
             return;
         }
+        long startTime = System.currentTimeMillis();
         jobProcessor.start();
         jobProcessor.waitForFinish();
         //TODO wait for abort command or for the application finish Event
+        logger.info("Completion time: {}", System.currentTimeMillis() - startTime);
     }
 
     /**

@@ -6,34 +6,37 @@ import ch.hsr.maloney.util.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author oniet
- *
- * Handles the running of jobs.
- *
- * Uses Threadpool (ForkJoinPool) and Futures and to run Jobs and the Observer Pattern to notify the Framwork.
- *
+ *         <p>
+ *         Handles the running of jobs.
+ *         <p>
+ *         Uses Threadpool (ForkJoinPool) and Futures and to run Jobs and the Observer Pattern to notify the Framwork.
  */
-public class MultithreadedJobProcessor extends JobProcessor{
+public class MultithreadedJobProcessor extends JobProcessor {
+    private static final int CONCURRENTJOBS = 1000;
     private final Logger logger;
     private final Queue<JobExecution> readyJobs; //TODO replace with better Queueing structure (persistent)
-    private final Queue<JobExecution> runningJobs; //TODO replace with better Queueing structure (persistent)
 
     private Context ctx;
 
     private Thread controllerThread;
     private boolean stopProcessing;
+    private ForkJoinPool pool;
+    Semaphore semaphore = new Semaphore(CONCURRENTJOBS);
 
-    public MultithreadedJobProcessor(Context ctx){
+    public MultithreadedJobProcessor(Context ctx) {
         logger = LogManager.getLogger();
         this.ctx = ctx;
         readyJobs = new ConcurrentLinkedQueue<>();
-        runningJobs = new ConcurrentLinkedQueue<>();
+        pool = new ForkJoinPool();
 
         stopProcessing = false;
     }
@@ -41,40 +44,37 @@ public class MultithreadedJobProcessor extends JobProcessor{
     @Override
     public void start() {
         logger.debug("Starting JobProcessor with {} Event(s) queued", readyJobs.size());
-        controllerThread = new Thread(()->{
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        controllerThread = new Thread(() -> {
             logger.debug("Started controllerThread");
-            ForkJoinPool pool = ForkJoinPool.commonPool();
 
-            while(!stopProcessing){
-                while(!readyJobs.isEmpty() && !stopProcessing){
+            while (!stopProcessing) {
+                while (!readyJobs.isEmpty() && !stopProcessing) {
                     JobExecution jobExecution = readyJobs.poll();
                     Job job = jobExecution.getJob();
                     Event evt = jobExecution.getEvent();
 
-                    if(job.canRun(ctx, evt)){
-                        runningJobs.add(jobExecution);
-                        pool.submit(()-> {
-                            List<Event> result = job.run(ctx, evt);
-                            if(result != null && !result.isEmpty()){
-                                setChanged();
-                                notifyObservers(result);
-                            }
-                            runningJobs.remove(jobExecution);
-                            synchronized (readyJobs){
-                                readyJobs.notifyAll();
-                            }
-                        });
-                    }
-                }
+                    if (job.canRun(ctx, evt)) {
 
-                synchronized (readyJobs){
-                    while(readyJobs.isEmpty() && !stopProcessing){
                         try {
-                            readyJobs.wait();
-                            if(readyJobs.isEmpty() && runningJobs.isEmpty()){
-                                stopProcessing = true;
-                            }
-                        } catch (InterruptedException ignored) {
+                            logger.debug("Trying to aqcuire token");
+                            semaphore.acquire();
+                            logger.debug("Acquired token");
+                            pool.submit(() -> {
+                                List<Event> result = job.run(ctx, evt);
+                                if (result != null && !result.isEmpty()) {
+                                    setChanged();
+                                    notifyObservers(result);
+                                }
+                                semaphore.release();
+                                logger.debug("Released token");
+                            });
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -83,11 +83,12 @@ public class MultithreadedJobProcessor extends JobProcessor{
         });
 
         controllerThread.start();
+        semaphore.release();
     }
 
     @Override
     public void stop() {
-        if(controllerThread.getState() != Thread.State.TERMINATED){
+        if (controllerThread.getState() != Thread.State.TERMINATED) {
             logger.debug("Terminating JobProcessor...");
             stopProcessing = true;
             try {
@@ -103,24 +104,23 @@ public class MultithreadedJobProcessor extends JobProcessor{
     @Override
     public void enqueue(Job job, Event event) {
         logger.debug("Enqueued '{}' to '{}'", event.getName(), job.getJobName());
-        synchronized (readyJobs){
+        //TODO enqueue directly in pool
+        synchronized (readyJobs) {
             readyJobs.add(new JobExecution(job, event));
             readyJobs.notifyAll();
         }
     }
 
-    public void waitForFinish(){
-        boolean joined = false;
-        while(!joined){
-            try {
-                controllerThread.join();
-                joined = true;
-            } catch (InterruptedException ignored) {
-            }
+    public void waitForFinish() {
+        logger.debug("Waiting for JobProcessor to finish...");
+        try {
+            semaphore.acquire(CONCURRENTJOBS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
-    class JobExecution extends Tuple<Job, Event>{
+    class JobExecution extends Tuple<Job, Event> {
         JobExecution(Job job, Event event) {
             super(job, event);
         }

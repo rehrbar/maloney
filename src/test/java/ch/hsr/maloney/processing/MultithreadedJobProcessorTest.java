@@ -46,7 +46,7 @@ public class MultithreadedJobProcessorTest{
         mtjp.start();
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void youHadOneJob(){
         logger.debug("Setting up 'youHadOneJob'...");
         MultithreadedJobProcessor mtjp = new MultithreadedJobProcessor(ctx);
@@ -63,17 +63,17 @@ public class MultithreadedJobProcessorTest{
         logger.debug("Starting MultiThreadedJobProcessor now...");
         mtjp.start();
 
-        waitMilliseconds(500);
+        mtjp.waitForFinish();
         logger.debug("Stopped waiting");
 
         Assert.assertSame(1, fakeObserver.caughtEvents.size());
     }
 
-    private void waitMilliseconds(long timeout) {;
+    private void waitMilliseconds(long timeout) {
         long time = System.currentTimeMillis()+timeout;
         while(time > System.currentTimeMillis()){
             try {
-                logger.debug("Test is waiting...");
+                //logger.debug("Test is waiting...");
                 Thread.sleep(timeout);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -81,7 +81,7 @@ public class MultithreadedJobProcessorTest{
         }
     }
 
-    @Test
+    @Test(timeout = 2000)
     public void twoJobsInSequence(){
         class FakeObserverEnqueuesNext extends FakeObserver{
             private JobProcessor jobProcessor;
@@ -111,12 +111,13 @@ public class MultithreadedJobProcessorTest{
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
 
         UUID someUuid = UUID.randomUUID();
-        mtjp.enqueue(fakeJobFactory.getAJob(),new Event("Nothing","Test", someUuid));
+        mtjp.enqueue(fakeJobFactory.getAJob(()->waitMilliseconds(1000)),new Event("Nothing","Test1", someUuid));
+        mtjp.enqueue(fakeJobFactory.getAJob(()->waitMilliseconds(1000)),new Event("Nothing2","Test2", someUuid));
 
         mtjp.start();
-        waitMilliseconds(500); //FakeObserver should add Job during waittime
+        mtjp.waitForFinish();
         logger.debug("Stopped waiting");
         mtjp.stop();
-        Assert.assertSame(2, fakeObserver.caughtEvents.size());
+        Assert.assertSame(4, fakeObserver.caughtEvents.size());
     }
 }

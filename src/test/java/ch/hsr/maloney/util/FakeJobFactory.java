@@ -15,14 +15,16 @@ public class FakeJobFactory {
     public static final String eventB = "eventB";
     public static final String eventC = "eventC";
 
-    private class FakeJob implements Job {
+    public class FakeJob implements Job {
         private final Logger logger;
         List<String> requiredEvents;
         List<String> createdEvents;
         String jobName;
         String jobConfig;
+        private Runnable jobBody;
 
-        FakeJob(List<String> requiresEvent, List<String> producesEvent, String jobName, String jobConfig) {
+        public FakeJob(List<String> requiresEvent, List<String> producesEvent, String jobName, String jobConfig, Runnable jobBody) {
+            this.jobBody = jobBody;
             if(requiresEvent != null){
                 this.requiredEvents = requiresEvent;
             } else {
@@ -47,6 +49,9 @@ public class FakeJobFactory {
 
         @Override
         public List<Event> run(Context ctx, Event evt) {
+            if(jobBody!=null){
+                jobBody.run();
+            }
             List<Event> createdEvents = new LinkedList<>();
             this.createdEvents.forEach((s -> createdEvents.add(new Event(s,jobName, evt.getFileUuid()))));
             logger.debug("Job '{}' will add {} new Events", jobName, createdEvents.size());
@@ -82,7 +87,13 @@ public class FakeJobFactory {
     public Job getAJob(){
         List<String> producedEvents =  new LinkedList<>();
         producedEvents.add(eventA);
-        return new FakeJob(null,producedEvents,"JobA","");
+        return new FakeJob(null,producedEvents,"JobA","", null);
+    }
+
+    public Job getAJob(Runnable jobBody){
+        List<String> producedEvents =  new LinkedList<>();
+        producedEvents.add(eventA);
+        return new FakeJob(null,producedEvents,"JobA","", jobBody);
     }
 
     public Job getAtoBJob(){
@@ -90,7 +101,7 @@ public class FakeJobFactory {
         requiredEvents.add(eventA);
         List<String> producedEvents =  new LinkedList<>();
         producedEvents.add(eventB);
-        return new FakeJob(requiredEvents,producedEvents,"JobAtoB","");
+        return new FakeJob(requiredEvents,producedEvents,"JobAtoB","", null);
     }
 
     public Job getBtoCJob(){
@@ -98,6 +109,6 @@ public class FakeJobFactory {
         requiredEvents.add(eventB);
         List<String> producedEvents =  new LinkedList<>();
         producedEvents.add(eventC);
-        return new FakeJob(requiredEvents,producedEvents,"JobBtoC","");
+        return new FakeJob(requiredEvents,producedEvents,"JobBtoC","", null);
     }
 }

@@ -1,4 +1,0 @@
-rootProject.name = 'maloney-cli'
-
-include ':maloney'
-project(':maloney').projectDir = new File(settingsDir, '../')

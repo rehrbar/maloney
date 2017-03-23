@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compile files('sleuthkit/bindings/java/dist/Tsk_DataModel.jar'){
+    compile files('../sleuthkit/bindings/java/dist/Tsk_DataModel.jar'){
         builtBy 'tsk-dist-SQLite' // Automatically build TSK first
     }
     testCompile group: 'junit', name: 'junit', version: '4.11'
@@ -41,6 +41,6 @@ test {
 }
 
 // Adding ant build commands and prefixing them with 'tsk-'
-ant.importBuild('sleuthkit/bindings/java/build.xml') { antTargetName ->
+ant.importBuild('../sleuthkit/bindings/java/build.xml') { antTargetName ->
     'tsk-' + antTargetName
 }

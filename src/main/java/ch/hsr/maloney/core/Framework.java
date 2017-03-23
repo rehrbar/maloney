@@ -1,9 +1,6 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.processing.Job;
-import ch.hsr.maloney.processing.JobProcessor;
-import ch.hsr.maloney.processing.SimpleProcessor;
-import ch.hsr.maloney.processing.TSKReadImageJob;
+import ch.hsr.maloney.processing.*;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
@@ -28,7 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Framework implements EventObserver {
     public static final String EVENT_ORIGIN = "ch.hsr.maloney.core";
     private final Logger logger;
-    private JobProcessor jobProcessor;
+    private MultithreadedJobProcessor jobProcessor;
     private Context context;
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
@@ -38,7 +35,7 @@ public class Framework implements EventObserver {
         initializeContext();
         this.registeredJobs = new LinkedList<>();
         this.eventQueue = new ConcurrentLinkedQueue<>();
-        this.jobProcessor = new SimpleProcessor(context);
+        this.jobProcessor = new MultithreadedJobProcessor(context);
         jobProcessor.addObserver(this);
     }
 
@@ -111,7 +108,11 @@ public class Framework implements EventObserver {
             logger.fatal("Cannot run all Jobs", e);
             return;
         }
+        long startTime = System.currentTimeMillis();
         jobProcessor.start();
+        jobProcessor.waitForFinish();
+        //TODO wait for abort command or for the application finish Event
+        logger.info("Completion time: {}", System.currentTimeMillis() - startTime);
     }
 
     /**

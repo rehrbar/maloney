@@ -1,0 +1,4 @@
+ch.hsr.maloney.processing.DiskImageJob
+ch.hsr.maloney.processing.CalculateHashesJob
+ch.hsr.maloney.processing.ImportRdsHashSetJob
+ch.hsr.maloney.processing.TSKReadImageJob

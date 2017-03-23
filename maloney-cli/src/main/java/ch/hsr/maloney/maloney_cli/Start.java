@@ -36,8 +36,8 @@ public class Start {
 
         options = new Options();
         options.addOption("v", "verbose", false, "enables verbose output");
-        //options.addOption("c", "configuration", true, "configuration to load");
-        //options.addOption("sc", "save-configuration", true, "saves an example configuration");
+        options.addOption("c", "configuration", true, "configuration to load");
+        options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
         options.addOption("rds", true, "indexes an rds hash set"); // TODO replace with job configuration
 
@@ -74,7 +74,7 @@ public class Start {
                 // TODO pass job configurations
                 // TODO pass jobs to execute
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
-                FrameworkController.run(frameworkConfiguration);
+                (new FrameworkController()).run(frameworkConfiguration);
                 return;
             }
             if (line.hasOption("rds")) {

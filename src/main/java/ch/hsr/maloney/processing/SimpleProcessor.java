@@ -2,42 +2,13 @@ package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-
-/**
- * @author oniet
- *
- * Should handle the running of jobs.
- *
- * The stuff inside of method start() somewhat resembles the Reactor Pattern
- * https://en.wikipedia.org/wiki/Reactor_pattern
- *
- * In the end, this should be a Proactor (asynchronous), but it's still very much work in progress.
- */
-
-class Tuple<K,V>{
-    final private K left;
-    final private V right;
-
-    Tuple(K left, V right) {
-        this.left = left;
-        this.right = right;
-    }
-
-    K getLeft() {
-        return left;
-    }
-
-    V getRight() {
-        return right;
-    }
-
-}
 
 // TODO phrasing!
 public class SimpleProcessor extends JobProcessor {

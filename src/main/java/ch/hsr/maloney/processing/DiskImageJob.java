@@ -17,7 +17,7 @@ import java.util.UUID;
  * A job which can process disk images. Mainly, it adds the image and generates the necessary events for ohter modules.
  */
 public class DiskImageJob implements Job {
-    private static final String JOB_NAME = "ImportRdsHashSetJob";
+    private static final String JOB_NAME = "DiskImageJob";
     private static final String NewDiskImageEventName = "newDiskImage";
     private LinkedList<String> producedEvents;
     private LinkedList<String> requiredEvents;

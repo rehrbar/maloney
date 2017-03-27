@@ -70,8 +70,7 @@ public class ElasticHashStore implements HashStore {
         boolean wasCreated = false;
         IndicesExistsResponse existsResponse = client.admin().indices().prepareExists(INDEX_NAME).get();
         if (!existsResponse.isExists()) {
-            client.admin().indices().prepareCreate(INDEX_NAME).get();
-            wasCreated = true; // TODO add this also in MetadataStore
+            wasCreated = client.admin().indices().prepareCreate(INDEX_NAME).get().isAcknowledged();
         }
         if (wasCreated || force) {
             // Index has to be created to work.

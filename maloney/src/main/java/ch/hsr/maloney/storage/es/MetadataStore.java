@@ -66,7 +66,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         boolean wasCreated = false;
         IndicesExistsResponse existsResponse = client.admin().indices().prepareExists(indexName).get();
         if (!existsResponse.isExists()) {
-            client.admin().indices().prepareCreate(indexName).get();
+            wasCreated = client.admin().indices().prepareCreate(indexName).get().isAcknowledged();
         }
         if (wasCreated || force) {
             // Index has to be created to work.

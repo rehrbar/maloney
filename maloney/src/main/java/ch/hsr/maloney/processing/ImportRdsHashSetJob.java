@@ -123,9 +123,9 @@ public class ImportRdsHashSetJob implements Job {
             String os = osList.get(matcher.group("osCode")); // TODO default values?
             String product = productList.get(matcher.group("productCode"));
             HashRecord record = new HashRecord(HashType.GOOD, zipFile.getFileName().toString(), os, product);
-            record.getHashes().put(HashAlgorithm.SHA1, matcher.group("sha1"));
-            record.getHashes().put(HashAlgorithm.MD5, matcher.group("md5"));
-            record.getHashes().put(HashAlgorithm.CRC32, matcher.group("crc32"));
+            record.getHashes().put(HashAlgorithm.SHA1, matcher.group("sha1").toLowerCase());
+            record.getHashes().put(HashAlgorithm.MD5, matcher.group("md5").toLowerCase());
+            record.getHashes().put(HashAlgorithm.CRC32, matcher.group("crc32").toLowerCase());
             buffer.add(record);
         } catch (IllegalStateException | UncheckedIOException e) {
             logger.warn("Could not parse line: {}", s);

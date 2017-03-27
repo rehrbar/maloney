@@ -9,11 +9,11 @@ import ch.hsr.maloney.storage.hash.HashRecord;
 import ch.hsr.maloney.storage.hash.HashStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.LinkedList;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class IdentifyKnownFilesJob implements Job {
     private static final String JOB_NAME = "IdentifyKnownFilesJob";
@@ -26,7 +26,7 @@ public class IdentifyKnownFilesJob implements Job {
     private final LinkedList<String> requiredEvents;
     private final Logger logger;
 
-    public IdentifyKnownFilesJob(){
+    public IdentifyKnownFilesJob() {
         producedEvents = new LinkedList<String>() {{
             push(KNOWN_FILE_EVENT_NAME);
         }};
@@ -36,6 +36,7 @@ public class IdentifyKnownFilesJob implements Job {
         }};
         logger = LogManager.getLogger();
     }
+
     @Override
     public boolean canRun(Context ctx, Event evt) {
         return true;
@@ -59,17 +60,24 @@ public class IdentifyKnownFilesJob implements Job {
         String currentHashType = null;
         HashAlgorithm hashAlgorithm = null;
         String hashToSearch = null;
-        switch (evt.getName()){
-            case MD_5_HASH_CALCULATED: currentHashType = MD_5_HASH_TYPE; hashAlgorithm = HashAlgorithm.MD5; break;
-            case SHA_1_HASH_CALCULATED: currentHashType = SHA_1_HASH_TYPE; hashAlgorithm = HashAlgorithm.SHA1; break;
+        switch (evt.getName()) {
+            case MD_5_HASH_CALCULATED:
+                currentHashType = MD_5_HASH_TYPE;
+                hashAlgorithm = HashAlgorithm.MD5;
+                break;
+            case SHA_1_HASH_CALCULATED:
+                currentHashType = SHA_1_HASH_TYPE;
+                hashAlgorithm = HashAlgorithm.SHA1;
+                break;
         }
         for (Artifact artifact : artifacts) {
-            if(artifact.getType().equals(currentHashType)){
-                hashToSearch = artifact.getValue().toString().replace("\"","");
+            if (artifact.getType().equals(currentHashType)) {
+                // Simple deserialization of escaped string
+                hashToSearch = artifact.getValue().toString().replace("\"", "").toLowerCase();
                 logger.debug("Hash found for type {}: {}", currentHashType, hashToSearch);
             }
         }
-        if(hashToSearch == null || hashAlgorithm == null){
+        if (hashToSearch == null || hashAlgorithm == null) {
             logger.warn("Could not detect the hash to look up. File: {}", evt.getFileUuid());
             return null;
         }
@@ -79,7 +87,13 @@ public class IdentifyKnownFilesJob implements Job {
         if (record == null) {
             logger.debug("No matching hash found. File {} is unknown.", evt.getFileUuid());
         } else {
-            metadataStore.addArtifact(evt.getFileUuid(), new Artifact(getJobName(), record, HashRecord.class.getTypeName()));
+            logger.info("Found matching known hash for file UUID '{}'", evt.getFileUuid());
+            List<Artifact> newArtifacts = new LinkedList<>();
+            newArtifacts.add(new Artifact(getJobName(), record, HashRecord.class.getTypeName()));
+            // Additional denormalization to improve performance with Elasticsearch
+            newArtifacts.add(new Artifact(getJobName(), record.getType(), HashRecord.class.getTypeName() + "$type"));
+            newArtifacts.add(new Artifact(getJobName(), record.getSourceName(), HashRecord.class.getTypeName() + "$sourceName"));
+            metadataStore.addArtifacts(evt.getFileUuid(), newArtifacts);
             events.add(new Event(KNOWN_FILE_EVENT_NAME, getJobName(), evt.getFileUuid()));
         }
         return events;

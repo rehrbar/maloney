@@ -57,35 +57,35 @@ public class ElasticHashStorageTest {
     @Test
     public void searchGenericHashTest(){
         String hashValue = "68CE322D8A896B6E4E7E3F18339EC85C"; // MD5 hash
-        HashRecord match = es.findHash(hashValue);
+        List<HashRecord> match = es.findHash(hashValue);
         Assert.assertNotEquals(null, match);
-        Assert.assertEquals(hashValue, match.getHashes().get(HashAlgorithm.MD5));
-        Assert.assertEquals("rds_254u", match.getSourceName());
+        Assert.assertEquals(1,match.size());
+        Assert.assertEquals(hashValue, match.get(0).getHashes().get(HashAlgorithm.MD5));
+        Assert.assertEquals("rds_254u", match.get(0).getSourceName());
     }
 
     @Test
     public void searchSpecificHashTest(){
         String hashValue = "68CE322D8A896B6E4E7E3F18339EC85C"; // MD5 hash
-        HashRecord match = es.findHash(hashValue, HashAlgorithm.MD5);
+        List<HashRecord> match = es.findHash(hashValue, HashAlgorithm.MD5);
         Assert.assertNotEquals(null, match);
-        Assert.assertEquals(hashValue, match.getHashes().get(HashAlgorithm.MD5));
-        Assert.assertEquals("rds_254u", match.getSourceName());
+        Assert.assertEquals(1,match.size());
+        Assert.assertEquals(hashValue, match.get(0).getHashes().get(HashAlgorithm.MD5));
+        Assert.assertEquals("rds_254u", match.get(0).getSourceName());
     }
 
     @Test
     public void searchUnknownGenericHashTest(){
-        // TODO should an exception be expected or null?
         String hashValue = "0000034C9033333F8F58D9C7A64800F509962F3A"; // SHA1
-        HashRecord match = es.findHash(hashValue);
-        Assert.assertEquals(null, match);
+        List<HashRecord> match = es.findHash(hashValue);
+        Assert.assertTrue(match.isEmpty());
     }
 
     @Test
     public void searchUnknownSpecificHashTest(){
-        // TODO should an exception be expected or null?
         String hashValue = "0000034C9033333F8F58D9C7A64800F509962F3A"; // SHA1
-        HashRecord match = es.findHash(hashValue, HashAlgorithm.MD5);
-        Assert.assertEquals(null, match);
+        List<HashRecord> match = es.findHash(hashValue, HashAlgorithm.MD5);
+        Assert.assertTrue(match.isEmpty());
     }
 
     @Test

@@ -1,5 +1,7 @@
 package ch.hsr.maloney.storage.hash;
 
+import java.util.List;
+
 /**
  * Interface for a store which can manage hashes and perform lookups.
  */
@@ -32,16 +34,16 @@ public interface HashStore {
      * This lookup might take longer because all algorithms need to be checked.
      *
      * @param hashValue Hash string to look up.
-     * @return Matched record or null, if it was not found.
+     * @return List of matched records or empty list, if it was not found.
      */
-    HashRecord findHash(String hashValue);
+    List<HashRecord> findHash(String hashValue);
 
     /**
      * Finds a record in the store based on the hash string.
      *
      * @param hashValue Hash string to look up.
      * @param algorithm Hash algorithm to narrow the search.
-     * @return Matched record or null, if it was not found.
+     * @return List of matched records or empty list, if it was not found.
      */
-    HashRecord findHash(String hashValue, HashAlgorithm algorithm);
+    List<HashRecord> findHash(String hashValue, HashAlgorithm algorithm);
 }

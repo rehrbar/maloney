@@ -19,6 +19,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
@@ -159,28 +160,34 @@ public class ElasticHashStore implements HashStore {
 
 
     @Override
-    public HashRecord findHash(String hashValue) {
+    public List<HashRecord> findHash(String hashValue) {
         SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
                 .setTypes(HASHRECORD_TYPE)
-                .setQuery(QueryBuilders.multiMatchQuery(hashValue, "hashes.*").type(MultiMatchQueryBuilder.Type.BEST_FIELDS))
-                .setFrom(0).setSize(1).get();
-        if (searchResponse.getHits().getTotalHits() != 1) {
-            logger.info("None or multiple results found for hash '{}'", hashValue);
-            return null;
+                .setQuery(QueryBuilders.multiMatchQuery(hashValue, "hashes.*").type(MultiMatchQueryBuilder.Type.BEST_FIELDS)).get();
+        if (searchResponse.getHits().getTotalHits() == 0) {
+            logger.info("No match found for hash '{}'", hashValue);
+            return new LinkedList<>();
         }
-        return getHashRecord(searchResponse.getHits().getAt(0).id());
+        List<HashRecord> records = new LinkedList<>();
+        for(SearchHit hit:searchResponse.getHits()){
+            records.add(getHashRecord(hit.id()));
+        }
+        return records;
     }
 
     @Override
-    public HashRecord findHash(String hashValue, HashAlgorithm algorithm) {
+    public List<HashRecord> findHash(String hashValue, HashAlgorithm algorithm) {
         SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
                 .setTypes(HASHRECORD_TYPE)
-                .setQuery(QueryBuilders.termQuery("hashes." + algorithm, hashValue))
-                .setFrom(0).setSize(1).get();
-        if (searchResponse.getHits().getTotalHits() != 1) {
-            logger.info("None or multiple results found for hash '{}'", hashValue);
-            return null;
+                .setQuery(QueryBuilders.termQuery("hashes." + algorithm, hashValue)).get();
+        if (searchResponse.getHits().getTotalHits() == 0) {
+            logger.info("No match found for hash '{}'", hashValue);
+            return new LinkedList<>();
         }
-        return getHashRecord(searchResponse.getHits().getAt(0).id());
+        List<HashRecord> records = new LinkedList<>();
+        for(SearchHit hit:searchResponse.getHits()){
+            records.add(getHashRecord(hit.id()));
+        }
+        return records;
     }
 }

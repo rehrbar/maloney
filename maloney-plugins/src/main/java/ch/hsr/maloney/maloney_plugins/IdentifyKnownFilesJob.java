@@ -83,16 +83,18 @@ public class IdentifyKnownFilesJob implements Job {
         }
 
         // Look up hash and add it, if found, as artifact
-        HashRecord record = hashStore.findHash(hashToSearch, hashAlgorithm);
-        if (record == null) {
+        List<HashRecord> records = hashStore.findHash(hashToSearch, hashAlgorithm);
+        if (records.isEmpty()) {
             logger.debug("No matching hash found. File {} is unknown.", evt.getFileUuid());
         } else {
             logger.info("Found matching known hash for file UUID '{}'", evt.getFileUuid());
             List<Artifact> newArtifacts = new LinkedList<>();
-            newArtifacts.add(new Artifact(getJobName(), record, HashRecord.class.getTypeName()));
-            // Additional denormalization to improve performance with Elasticsearch
-            newArtifacts.add(new Artifact(getJobName(), record.getType(), HashRecord.class.getTypeName() + "$type"));
-            newArtifacts.add(new Artifact(getJobName(), record.getSourceName(), HashRecord.class.getTypeName() + "$sourceName"));
+            for(HashRecord record:records) {
+                newArtifacts.add(new Artifact(getJobName(), record, HashRecord.class.getTypeName()));
+                // Additional denormalization to improve performance with Elasticsearch
+                newArtifacts.add(new Artifact(getJobName(), record.getType(), HashRecord.class.getTypeName() + "$type"));
+                newArtifacts.add(new Artifact(getJobName(), record.getSourceName(), HashRecord.class.getTypeName() + "$sourceName"));
+            }
             metadataStore.addArtifacts(evt.getFileUuid(), newArtifacts);
             events.add(new Event(KNOWN_FILE_EVENT_NAME, getJobName(), evt.getFileUuid()));
         }

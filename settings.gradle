@@ -1,1 +1,3 @@
 rootProject.name = 'maloney'
+include 'maloney','maloney-cli','maloney-plugins'
+

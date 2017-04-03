@@ -88,8 +88,7 @@ public class IdentifyKnownFilesJob implements Job {
         if (records.isEmpty()) {
             logger.info("No matching hash found. File {} is unknown.", evt.getFileUuid());
 
-            // TODO add hash information
-            metadataStore.addArtifact(evt.getFileUuid(), new Artifact(getJobName(), UNKNOWN_FILE_EVENT_NAME, String.class.getTypeName()));
+            metadataStore.addArtifact(evt.getFileUuid(), new Artifact(getJobName(), String.format("%s:%s",UNKNOWN_FILE_EVENT_NAME, hashAlgorithm), String.class.getTypeName()));
             events.add(new Event(UNKNOWN_FILE_EVENT_NAME, getJobName(), evt.getFileUuid()));
         } else {
             logger.info("Found matching known hash for file UUID '{}'", evt.getFileUuid());

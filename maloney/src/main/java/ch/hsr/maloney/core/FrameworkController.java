@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import java.net.MalformedURLException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.*;
 
@@ -22,7 +21,8 @@ import java.util.concurrent.*;
 public class FrameworkController {
 
     private static final int START_TIME = 0;
-    private static final int CONSOLE_UPDATE_FREQUENCY_IN_SECONDS = 5;
+    private static final int CONSOLE_UPDATE_FREQUENCY_IN_SECONDS = 3;
+    private static final int THREE_TABULATORS = 15;
 
     private static ClassLoader myClassLoader;
     private final Logger logger;
@@ -67,12 +67,19 @@ public class FrameworkController {
             public void run() {
                 StringBuilder stringBuilder = new StringBuilder();
                 for (ProgressInfoType infoType: ProgressInfoType.values()) {
+                    String fieldDescription = infoType.getFieldDescription();
                     stringBuilder
-                            .append(infoType.getFieldDescription())
-                            .append(":\t\t")
+                            .append(fieldDescription);
+                    if(fieldDescription.length() > THREE_TABULATORS){
+                        stringBuilder.append(":\t");
+                    } else {
+                        stringBuilder.append(":\t\t");
+                    }
+                    stringBuilder
                             .append(progressTracker.getProcessedAmount(infoType))
                             .append("\n\r");
                 }
+                //TODO perhaps write this information somewhere else
                 System.out.println(stringBuilder.toString());
             }
         }, START_TIME, CONSOLE_UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);

@@ -3,10 +3,7 @@ package ch.hsr.maloney.core;
 import ch.hsr.maloney.processing.*;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.EventObserver;
-import ch.hsr.maloney.util.SimpleProgressTracker;
+import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,9 +28,9 @@ public class Framework implements Observer {
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
-    public Framework() {
+    public Framework(ProgressTracker progressTracker) {
         this.logger = LogManager.getLogger();
-        initializeContext();
+        initializeContext(progressTracker);
         this.registeredJobs = new LinkedList<>();
         this.eventQueue = new ConcurrentLinkedQueue<>();
         this.jobProcessor = new MultithreadedJobProcessor(context);
@@ -41,7 +38,7 @@ public class Framework implements Observer {
         jobProcessor.addObserver(this);
     }
 
-    private void initializeContext() {
+    private void initializeContext(ProgressTracker progressTracker) {
         MetadataStore metadataStore = null;
         try {
             metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();
@@ -49,6 +46,13 @@ public class Framework implements Observer {
             logger.fatal("Elasticsearch host not found. Terminating...", e);
             System.exit(0);
         }
+        if(progressTracker != null){
+            this.context = new Context(
+                    metadataStore,
+                    progressTracker,
+                    new LocalDataSource(metadataStore)
+            );
+        } else
         this.context = new Context(
                 metadataStore,
                 new SimpleProgressTracker(), //TODO Implement and add Progress Tracker

@@ -15,7 +15,11 @@ public class SimpleProgressTracker implements ProgressTracker {
 
     public SimpleProgressTracker() {
         this.logger = LogManager.getLogger();
+
         this.progressMap = new HashMap<>();
+        for (ProgressInfoType infoType :ProgressInfoType.values()) {
+            progressMap.put(infoType,0);
+        }
     }
 
     @Override

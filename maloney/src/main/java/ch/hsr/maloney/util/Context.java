@@ -7,9 +7,9 @@ import ch.hsr.maloney.storage.MetadataStore;
  * Created by olive_000 on 25.10.2016.
  */
 public class Context {
-    private MetadataStore metadataStore;
-    private ProgressTracker progressTracker;
-    private DataSource dataSource;
+    private final MetadataStore metadataStore;
+    private final ProgressTracker progressTracker;
+    private final DataSource dataSource;
 
     public Context(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource) {
         this.metadataStore = metadataStore;

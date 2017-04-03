@@ -5,6 +5,8 @@ import ch.hsr.maloney.storage.FileExtractor;
 import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.ProgressInfo;
+import ch.hsr.maloney.util.ProgressInfoType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sleuthkit.datamodel.*;
@@ -82,6 +84,7 @@ public class TSKReadImageJob implements Job {
             // push all files into DataSource
             sk.findAllFilesWhere("name NOT IN ('.', '..')").forEach(abstractFile -> { // Low-key SQL Injection
                 addToDataSource(ctx, evt, events, abstractFile);
+                ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.FILE, 1));
             });
         } catch (TskCoreException e) {
             logger.fatal("Failed to read image in '" + IMAGE_PATH + "' with sleuthkit.", e);

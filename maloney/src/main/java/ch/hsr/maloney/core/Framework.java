@@ -6,6 +6,7 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.EventObserver;
+import ch.hsr.maloney.util.SimpleProgressTracker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *  - Enqueues new Events to interested Jobs
  *  - ATM: Creates new Event on start (should be moved to a seperate Job...)
  */
-public class Framework implements EventObserver {
+public class Framework implements Observer {
     public static final String EVENT_ORIGIN = "ch.hsr.maloney.core";
     private final Logger logger;
     private MultithreadedJobProcessor jobProcessor;
@@ -36,6 +37,7 @@ public class Framework implements EventObserver {
         this.registeredJobs = new LinkedList<>();
         this.eventQueue = new ConcurrentLinkedQueue<>();
         this.jobProcessor = new MultithreadedJobProcessor(context);
+
         jobProcessor.addObserver(this);
     }
 
@@ -49,7 +51,7 @@ public class Framework implements EventObserver {
         }
         this.context = new Context(
                 metadataStore,
-                null, //TODO Implement and add Progress Tracker
+                new SimpleProgressTracker(), //TODO Implement and add Progress Tracker
                 new LocalDataSource(metadataStore)
         );
     }
@@ -133,15 +135,12 @@ public class Framework implements EventObserver {
     @Override
     public void update(Observable o, Object arg) {
         try {
-            ((List<Event>)arg).forEach(evt -> update(o, evt));
+            ((List) arg).forEach((evt)->{
+                enqueueToInterestedJobs((Event)evt);
+            });
         } catch (ClassCastException e){
-            throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
+            logger.error("Could not handle result", e);
         }
-    }
-
-    @Override
-    public void update(Observable o, Event evt) {
-        enqueueToInterestedJobs(evt);
     }
 
     private void enqueueToInterestedJobs(Event evt) {

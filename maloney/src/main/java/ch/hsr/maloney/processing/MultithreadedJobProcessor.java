@@ -1,8 +1,6 @@
 package ch.hsr.maloney.processing;
 
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.Tuple;
+import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -52,17 +50,18 @@ public class MultithreadedJobProcessor extends JobProcessor {
 
         if (job.canRun(ctx, evt)) {
             try {
-                logger.debug("Trying to aqcuire token");
                 semaphore.acquire();
-                logger.debug("Acquired token");
                 pool.submit(() -> {
                     List<Event> result = job.run(ctx, evt);
                     if (result != null && !result.isEmpty()) {
                         setChanged();
                         notifyObservers(result);
+                        ctx.getProgressTracker().processInfo(
+                                new ProgressInfo(ProgressInfoType.NEWEVENTS,result.size())
+                        );
                     }
+                    ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSEDEVENT,1));
                     semaphore.release();
-                    logger.debug("Released token");
                 });
             } catch (InterruptedException e) {
                 logger.error("Could not schedule new Job",e);

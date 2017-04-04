@@ -18,6 +18,7 @@ import java.util.List;
 public class IdentifyKnownFilesJob implements Job {
     private static final String JOB_NAME = "IdentifyKnownFilesJob";
     private static final String KNOWN_FILE_EVENT_NAME = "KnownFileFound";
+    private static final String UNKNOWN_FILE_EVENT_NAME = "KnownFileNotFound";
     private static final String MD_5_HASH_TYPE = "MD5Hash"; // TODO define hash types in a common place
     private static final String SHA_1_HASH_TYPE = "SHA1Hash";
     public static final String MD_5_HASH_CALCULATED = "MD5HashCalculated";
@@ -85,7 +86,10 @@ public class IdentifyKnownFilesJob implements Job {
         // Look up hash and add it, if found, as artifact
         List<HashRecord> records = hashStore.findHash(hashToSearch, hashAlgorithm);
         if (records.isEmpty()) {
-            logger.debug("No matching hash found. File {} is unknown.", evt.getFileUuid());
+            logger.info("No matching hash found. File {} is unknown.", evt.getFileUuid());
+
+            metadataStore.addArtifact(evt.getFileUuid(), new Artifact(getJobName(), String.format("%s:%s",UNKNOWN_FILE_EVENT_NAME, hashAlgorithm), String.class.getTypeName()));
+            events.add(new Event(UNKNOWN_FILE_EVENT_NAME, getJobName(), evt.getFileUuid()));
         } else {
             logger.info("Found matching known hash for file UUID '{}'", evt.getFileUuid());
             List<Artifact> newArtifacts = new LinkedList<>();

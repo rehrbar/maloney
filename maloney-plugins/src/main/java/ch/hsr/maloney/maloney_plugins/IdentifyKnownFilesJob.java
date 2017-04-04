@@ -9,6 +9,8 @@ import ch.hsr.maloney.storage.hash.HashRecord;
 import ch.hsr.maloney.storage.hash.HashStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.ProgressInfo;
+import ch.hsr.maloney.util.ProgressInfoType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -88,10 +90,13 @@ public class IdentifyKnownFilesJob implements Job {
         if (records.isEmpty()) {
             logger.info("No matching hash found. File {} is unknown.", evt.getFileUuid());
 
+            ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.UNKNOWN_FILE, 1));
             metadataStore.addArtifact(evt.getFileUuid(), new Artifact(getJobName(), String.format("%s:%s",UNKNOWN_FILE_EVENT_NAME, hashAlgorithm), String.class.getTypeName()));
             events.add(new Event(UNKNOWN_FILE_EVENT_NAME, getJobName(), evt.getFileUuid()));
         } else {
             logger.info("Found matching known hash for file UUID '{}'", evt.getFileUuid());
+
+            ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.KNOWN_GOOD_FILE,1));
             List<Artifact> newArtifacts = new LinkedList<>();
             for(HashRecord record:records) {
                 newArtifacts.add(new Artifact(getJobName(), record, HashRecord.class.getTypeName()));

@@ -57,10 +57,10 @@ public class MultithreadedJobProcessor extends JobProcessor {
                         setChanged();
                         notifyObservers(result);
                         ctx.getProgressTracker().processInfo(
-                                new ProgressInfo(ProgressInfoType.NEWEVENTS,result.size())
+                                new ProgressInfo(ProgressInfoType.NEW_EVENTS,result.size())
                         );
                     }
-                    ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSEDEVENT,1));
+                    ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSED_EVENT,1));
                     semaphore.release();
                 });
             } catch (InterruptedException e) {

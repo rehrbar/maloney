@@ -57,7 +57,7 @@ public class MultithreadedJobProcessor extends JobProcessor {
                         setChanged();
                         notifyObservers(result);
                         ctx.getProgressTracker().processInfo(
-                                new ProgressInfo(ProgressInfoType.NEW_EVENTS,result.size())
+                                new ProgressInfo(ProgressInfoType.NEW_EVENT,result.size())
                         );
                     }
                     ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSED_EVENT,1));

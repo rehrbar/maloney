@@ -4,32 +4,50 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by oliver on 28.03.17.
  */
 public class SimpleProgressTracker implements ProgressTracker {
     private final Logger logger;
-    private final Map<ProgressInfoType, Integer> progressMap;
+    private final Map<String, Integer> progressMap;
 
     public SimpleProgressTracker() {
         this.logger = LogManager.getLogger();
 
         this.progressMap = new HashMap<>();
-        for (ProgressInfoType infoType :ProgressInfoType.values()) {
-            progressMap.put(infoType,0);
+    }
+
+    @Override
+    public void processInfo(ProgressInfo progressInfo) {
+        update(progressInfo.getType().toString(), progressInfo.getAmount());
+    }
+
+    public void processInfo(Event event){
+        update(event.getName(), 1);
+    }
+
+    private synchronized void update(String type, int amount) {
+        if(progressMap.get(type) != null){
+            int newAmount = progressMap.get(type) + amount;
+            progressMap.put(type, newAmount);
+        } else {
+            progressMap.put(type, amount);
         }
     }
 
+
+
     @Override
-    public synchronized void processInfo(ProgressInfo progressInfo) {
-        int amount = progressMap.get(progressInfo.getType()) + progressInfo.getAmount();
-        progressMap.put(progressInfo.getType(), amount);
+    public int getProcessedAmount(String type) {
+        return progressMap.get(type);
     }
 
     @Override
-    public int getProcessedAmount(ProgressInfoType type) {
-        return progressMap.get(type);
+    public Set<String> getTypes() {
+        return progressMap.keySet();
     }
 }

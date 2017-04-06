@@ -22,7 +22,7 @@ public class FrameworkController {
 
     private static final int START_TIME = 0;
     private static final int CONSOLE_UPDATE_FREQUENCY_IN_SECONDS = 3;
-    private static final int THREE_TABULATORS = 15;
+    private static final int THREE_TABULATORS = 16;
 
     private static ClassLoader myClassLoader;
     private final Logger logger;
@@ -62,26 +62,22 @@ public class FrameworkController {
     }
 
     private static void scheduleProgressTracker(final ProgressTracker progressTracker) {
-        scheduledThreadPoolExecutor.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                StringBuilder stringBuilder = new StringBuilder();
-                for (ProgressInfoType infoType: ProgressInfoType.values()) {
-                    String fieldDescription = infoType.getFieldDescription();
-                    stringBuilder
-                            .append(fieldDescription);
-                    if(fieldDescription.length() > THREE_TABULATORS){
-                        stringBuilder.append(":\t");
-                    } else {
-                        stringBuilder.append(":\t\t");
-                    }
-                    stringBuilder
-                            .append(progressTracker.getProcessedAmount(infoType))
-                            .append("\n\r");
+        scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (String type: progressTracker.getTypes()) {
+                stringBuilder
+                        .append(type);
+                if(type.length() > THREE_TABULATORS){
+                    stringBuilder.append(":\t");
+                } else {
+                    stringBuilder.append(":\t\t");
                 }
-                //TODO perhaps write this information somewhere else
-                System.out.println(stringBuilder.toString());
+                stringBuilder
+                        .append(progressTracker.getProcessedAmount(type))
+                        .append("\n\r");
             }
+            //TODO perhaps write this information somewhere else
+            System.out.println(stringBuilder.toString());
         }, START_TIME, CONSOLE_UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);
     }
 

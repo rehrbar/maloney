@@ -5,6 +5,7 @@ import ch.hsr.maloney.storage.SimpleMetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeJobFactory;
+import ch.hsr.maloney.util.FakeProgressTracker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -36,7 +37,7 @@ public class MultithreadedJobProcessorTest{
     @Before
     public void setUp(){
         SimpleMetadataStore store = new SimpleMetadataStore();
-        Context ctx = new Context(store,null,new PlainSource(store));
+        ctx = new Context(store,new FakeProgressTracker(), new PlainSource(store));
     }
 
     @Test
@@ -81,7 +82,7 @@ public class MultithreadedJobProcessorTest{
         }
     }
 
-    @Test(timeout = 2000)
+    @Test(timeout = 5000)
     public void twoJobsInSequence(){
         class FakeObserverEnqueuesNext extends FakeObserver{
             private JobProcessor jobProcessor;

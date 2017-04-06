@@ -12,7 +12,7 @@ public class FrameworkTest {
 
     @Test
     public void simpleDependencyTest(){
-        Framework framework = new Framework();
+        Framework framework = new Framework(null);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());
@@ -26,7 +26,7 @@ public class FrameworkTest {
 
     @Test(expected = Framework.UnrunnableJobException.class)
     public void advancedDependencyTest() throws Framework.UnrunnableJobException{
-        Framework framework = new Framework();
+        Framework framework = new Framework(null);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());

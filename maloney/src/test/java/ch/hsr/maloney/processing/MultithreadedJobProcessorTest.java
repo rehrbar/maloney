@@ -5,7 +5,6 @@ import ch.hsr.maloney.storage.SimpleMetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeJobFactory;
-import ch.hsr.maloney.util.FakeProgressTracker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;

@@ -8,15 +8,6 @@ task wrapper(type: Wrapper) {
     distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
 }
 
-apply plugin: 'java'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     compile files('../sleuthkit/bindings/java/dist/Tsk_DataModel.jar'){
         builtBy 'tsk-dist-SQLite' // Automatically build TSK first
@@ -29,6 +20,7 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.8.11.2'
     compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
+    compile group: 'com.squareup.tape2', name: 'tape', version: '2.0.0-SNAPSHOT'
 }
 
 test {

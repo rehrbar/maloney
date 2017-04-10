@@ -40,11 +40,12 @@ public class MultithreadedJobProcessorTest{
         ctx = new Context(store,new FakeProgressTracker(), new PlainSource(store));
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void emptyStart(){
         logger.debug("Setting up 'emptyStart'...");
         MultithreadedJobProcessor mtjp = new MultithreadedJobProcessor(ctx);
         mtjp.start();
+        mtjp.waitForFinish();
     }
 
     @Test(timeout = 1000)

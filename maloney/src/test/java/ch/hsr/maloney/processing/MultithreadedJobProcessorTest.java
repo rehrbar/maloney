@@ -2,10 +2,7 @@ package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.storage.PlainSource;
 import ch.hsr.maloney.storage.SimpleMetadataStore;
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.FakeJobFactory;
-import ch.hsr.maloney.util.FakeProgressTracker;
+import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -27,7 +24,7 @@ public class MultithreadedJobProcessorTest{
 
         @Override
         public void update(Observable o, Object arg) {
-            caughtEvents.addAll((List<Event>)arg);
+            caughtEvents.addAll(((JobExecution)arg).getResults());
         }
     }
 
@@ -96,7 +93,7 @@ public class MultithreadedJobProcessorTest{
             public void update(Observable o, Object arg) {
                 logger.debug("Fake Observer is adding an Event to its memory");
 
-                List<Event> events = (List<Event>)arg;
+                List<Event> events = ((JobExecution)arg).getResults();
                 if(events.get(0).getName().equals(FakeJobFactory.eventA)){
                     FakeJobFactory fakeJobFactory = new FakeJobFactory();
                     jobProcessor.enqueue(fakeJobFactory.getAtoBJob(),events.get(0));

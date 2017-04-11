@@ -1,11 +1,14 @@
 package ch.hsr.maloney.util;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Created by oliver on 06.04.17.
  */
 public class FakeProgressTracker implements ProgressTracker {
+    Set<String> types = new HashSet<>();
+
     @Override
     public void processInfo(ProgressInfo progressInfo) {
 
@@ -23,6 +26,9 @@ public class FakeProgressTracker implements ProgressTracker {
 
     @Override
     public Set<String> getTypes() {
-        return null;
+        if(types == null){
+            types = new HashSet<>();
+        }
+        return types;
     }
 }

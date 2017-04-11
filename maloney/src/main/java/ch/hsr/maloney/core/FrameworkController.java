@@ -1,14 +1,16 @@
 package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.*;
-import ch.hsr.maloney.util.CustomClassLoader;
-import ch.hsr.maloney.util.ProgressInfoType;
-import ch.hsr.maloney.util.ProgressTracker;
-import ch.hsr.maloney.util.SimpleProgressTracker;
+import ch.hsr.maloney.storage.DataSource;
+import ch.hsr.maloney.storage.LocalDataSource;
+import ch.hsr.maloney.storage.MetadataStore;
+import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.TimerTask;
@@ -25,11 +27,10 @@ public class FrameworkController {
     private static final int THREE_TABULATORS = 16;
 
     private static ClassLoader myClassLoader;
-    private final Logger logger;
+    private static final Logger logger = LogManager.getLogger();;
     private static final ScheduledExecutorService scheduledThreadPoolExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public FrameworkController() {
-        logger = LogManager.getLogger();
         if (myClassLoader == null) {
             try {
                 myClassLoader = CustomClassLoader.createPluginLoader();
@@ -42,8 +43,9 @@ public class FrameworkController {
 
     public static void run(String imagePath) {
         ProgressTracker progressTracker = new SimpleProgressTracker();
+        Context ctx = initializeContext(null, progressTracker, null);
+        Framework framework = new Framework(ctx);
 
-        Framework framework = new Framework(progressTracker);
         // TODO rework how jobs are added and configured.
         DiskImageJob diskImageJob = new DiskImageJob();
         diskImageJob.setJobConfig(imagePath);
@@ -59,6 +61,37 @@ public class FrameworkController {
         framework.start();
 
         scheduledThreadPoolExecutor.shutdown();
+    }
+
+    /**
+     *
+     * @param metadataStore     Specify DataStore, if null the default is taken (Elasticsearch)
+     * @param progressTracker   Specify ProgressTracker, if null the default is taken (SimpleProgressTracker)
+     * @param dataSource        Specify DataSource, if null the default is taken (LocalDataSource)
+     * @return                  Created Context with specified parameters
+     */
+    private static Context initializeContext(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource) {
+        if(metadataStore == null){
+            try {
+                metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();
+            } catch (UnknownHostException e) {
+                logger.fatal("Elasticsearch host not found. Terminating...", e);
+                System.exit(0);
+            }
+        }
+
+        if(progressTracker == null){
+            progressTracker = new SimpleProgressTracker();
+        }
+
+        if(dataSource == null){
+            dataSource = new LocalDataSource(metadataStore);
+        }
+        return new Context(
+                metadataStore,
+                progressTracker,
+                dataSource
+        );
     }
 
     private static void scheduleProgressTracker(final ProgressTracker progressTracker) {
@@ -81,10 +114,11 @@ public class FrameworkController {
         }, START_TIME, CONSOLE_UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);
     }
 
+
     public void run(FrameworkConfiguration config) {
         ProgressTracker progressTracker = new SimpleProgressTracker();
-
-        Framework framework = new Framework(progressTracker);
+        Context ctx = initializeContext(null, progressTracker, null);
+        Framework framework = new Framework(ctx);
         // TODO configure framework with this configuration
 
         logger.info("Starting with configuration");
@@ -109,8 +143,9 @@ public class FrameworkController {
     public static void runHashSet(String hashSetPath) {
         // TODO replace through run(FrameworkConfiguration config)
         ProgressTracker progressTracker = new SimpleProgressTracker();
+        Context ctx = initializeContext(null, progressTracker, null);
+        Framework framework = new Framework(ctx);
 
-        Framework framework = new Framework(progressTracker);
         ImportRdsHashSetJob importRdsHashSetJob = new ImportRdsHashSetJob();
         importRdsHashSetJob.setJobConfig(hashSetPath);
         framework.register(importRdsHashSetJob);

@@ -18,7 +18,7 @@ import java.util.concurrent.Semaphore;
  *         Uses threads in a thread pool (ForkJoinPool) to run Jobs and the Observer Pattern to notify the Framwork.
  */
 public class MultithreadedJobProcessor extends JobProcessor {
-    private static final int MAXCONCURRENTJOBS = 1000;
+    private static final int MAXCONCURRENTJOBS = Integer.MAX_VALUE;
     private final Logger logger;
     private final Queue<JobExecution> readyJobs; //TODO replace with better Queueing structure (persistent)
     private final Context ctx;
@@ -46,21 +46,15 @@ public class MultithreadedJobProcessor extends JobProcessor {
 
     private void putInPool(JobExecution jobExecution) {
         Job job = jobExecution.getJob();
-        Event evt = jobExecution.getEvent();
+        Event evt = jobExecution.getTrigger();
 
         if (job.canRun(ctx, evt)) {
             try {
                 semaphore.acquire();
                 pool.submit(() -> {
-                    List<Event> result = job.run(ctx, evt);
-                    if (result != null && !result.isEmpty()) {
-                        setChanged();
-                        notifyObservers(result);
-                        ctx.getProgressTracker().processInfo(
-                                new ProgressInfo(ProgressInfoType.NEW_EVENT,result.size())
-                        );
-                    }
-                    ctx.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSED_EVENT,1));
+                    jobExecution.setResults( job.run(ctx, evt));
+                    setChanged();
+                    notifyObservers(jobExecution);
                     semaphore.release();
                 });
             } catch (InterruptedException e) {
@@ -96,17 +90,4 @@ public class MultithreadedJobProcessor extends JobProcessor {
         }
     }
 
-    class JobExecution extends Tuple<Job, Event> {
-        JobExecution(Job job, Event event) {
-            super(job, event);
-        }
-
-        public Job getJob() {
-            return getLeft();
-        }
-
-        public Event getEvent() {
-            return getRight();
-        }
-    }
 }

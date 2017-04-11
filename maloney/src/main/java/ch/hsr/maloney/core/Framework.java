@@ -36,7 +36,7 @@ public class Framework implements Observer {
         this.logger = LogManager.getLogger();
         initializeContext();
         this.registeredJobs = new LinkedList<>();
-        //this.eventQueue = new EventQueue();
+        this.eventQueue = new EventQueue();
         this.jobProcessor = new MultithreadedJobProcessor(context);
         jobProcessor.addObserver(this);
     }
@@ -134,16 +134,19 @@ public class Framework implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         if (arg instanceof JobExecution) {
-            ((JobExecution) arg).getResults().forEach(this::enqueueToInterestedJobs);
+            JobExecution jobExecution = (JobExecution) arg;
+            jobExecution.getResults().forEach(this::enqueueToInterestedJobs);
+            eventQueue.remove(jobExecution);
             return;
         }
         throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
     }
 
     private void enqueueToInterestedJobs(Event evt) {
+        eventQueue.add(evt);
         registeredJobs.forEach((job) -> {
             if (job.getRequiredEvents().contains(evt.getName())) {
-                jobProcessor.enqueue(job, evt);
+                jobProcessor.enqueue(eventQueue.peek(job));
             }
         });
     }

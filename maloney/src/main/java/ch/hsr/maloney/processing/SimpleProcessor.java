@@ -2,6 +2,7 @@ package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.JobExecution;
 import ch.hsr.maloney.util.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +14,7 @@ import java.util.Queue;
 // TODO phrasing!
 public class SimpleProcessor extends JobProcessor {
     private final Logger logger;
-    private final Queue<Tuple<Job, Event>> jobQueue; //TODO replace with better Queueing structure (persistent)
+    private final Queue<JobExecution> jobQueue; //TODO replace with better Queueing structure (persistent)
     private Context ctx;
 
     public SimpleProcessor(Context ctx) {
@@ -28,16 +29,14 @@ public class SimpleProcessor extends JobProcessor {
         //TODO add the stuff below into a thread(pool)
         while(!jobQueue.isEmpty()){
             // while there are still jobs to be run...
-            Tuple<Job, Event> tuple = jobQueue.poll();
-            Job job = tuple.getLeft();
-            Event evt = tuple.getRight();
+            JobExecution jobExecution = jobQueue.poll();
+            Job job = jobExecution.getJob();
+            Event evt = jobExecution.getTrigger();
 
             if(job.canRun(ctx, evt)){
-                List<Event> createdEvents = job.run(ctx, evt);
-                if(createdEvents != null && !createdEvents.isEmpty()){
-                    setChanged();
-                    notifyObservers(createdEvents);
-                }
+                jobExecution.setResults(job.run(ctx, evt));
+                setChanged();
+                notifyObservers(jobExecution);
             }
         }
         logger.debug("Nothing more to process");
@@ -49,8 +48,8 @@ public class SimpleProcessor extends JobProcessor {
     }
 
     @Override
-    public void enqueue(Job job, Event event) {
-        logger.debug("Job '{}' enqueued with new event '{}'", job.getJobName(), event.getName());
-        jobQueue.add(new Tuple<>(job, event));
+    public void enqueue(JobExecution jobExecution) {
+        logger.debug("Job '{}' enqueued with new event '{}'", jobExecution.getJob().getJobName(), jobExecution.getTrigger().getName());
+        jobQueue.add(jobExecution);
     }
 }

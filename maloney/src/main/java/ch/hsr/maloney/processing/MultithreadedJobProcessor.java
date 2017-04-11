@@ -7,7 +7,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
@@ -74,9 +73,8 @@ public class MultithreadedJobProcessor extends JobProcessor {
     }
 
     @Override
-    public synchronized void enqueue(Job job, Event event) {
-        logger.debug("Enqueued '{}' to '{}'", event.getName(), job.getJobName());
-        JobExecution jobExecution = new JobExecution(job, event);
+    public synchronized void enqueue(JobExecution jobExecution) {
+        logger.debug("Enqueued '{}' to '{}'", jobExecution.getTrigger().getName(), jobExecution.getJob().getJobName());
         if (isStarted && !pool.isShutdown()) {
             putInPool(jobExecution);
         } else {

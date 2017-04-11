@@ -10,6 +10,10 @@ public class Event {
     private String origin; //Job Name
     private UUID fileUuid;
 
+    private Event(){
+        // Keep for serialization
+    }
+
     /**
      * Constructor.
      *

@@ -1,11 +1,11 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeJobFactory;
+import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -14,7 +14,6 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.Test;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Observable;
 import java.util.UUID;
 
@@ -79,7 +78,9 @@ public class FrameworkTest {
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());
-        framework.update(new Observable(), events);
+        JobExecution jobExecution = new JobExecution(null, null);
+        jobExecution.setResults(events);
+        framework.update(new Observable(), jobExecution);
         framework.start();
     }
 

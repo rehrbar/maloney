@@ -2,7 +2,7 @@ package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.Tuple;
+import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,7 +48,7 @@ public class MultithreadedJobProcessor extends JobProcessor {
 
     private void putInPool(JobExecution jobExecution) {
         Job job = jobExecution.getJob();
-        Event evt = jobExecution.getEvent();
+        Event evt = jobExecution.getTrigger();
 
         if (job.canRun(ctx, evt)) {
             try {
@@ -56,11 +56,9 @@ public class MultithreadedJobProcessor extends JobProcessor {
                 semaphore.acquire();
                 logger.debug("Acquired token");
                 pool.submit(() -> {
-                    List<Event> result = job.run(ctx, evt);
-                    if (result != null && !result.isEmpty()) {
-                        setChanged();
-                        notifyObservers(result);
-                    }
+                    jobExecution.setResults( job.run(ctx, evt));
+                    setChanged();
+                    notifyObservers(jobExecution);
                     semaphore.release();
                     logger.debug("Released token");
                 });
@@ -97,17 +95,4 @@ public class MultithreadedJobProcessor extends JobProcessor {
         }
     }
 
-    class JobExecution extends Tuple<Job, Event> {
-        JobExecution(Job job, Event event) {
-            super(job, event);
-        }
-
-        public Job getJob() {
-            return getLeft();
-        }
-
-        public Event getEvent() {
-            return getRight();
-        }
-    }
 }

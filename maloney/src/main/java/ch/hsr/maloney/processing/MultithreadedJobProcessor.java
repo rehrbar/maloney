@@ -20,7 +20,7 @@ import java.util.concurrent.Semaphore;
  *         Uses threads in a thread pool (ForkJoinPool) to run Jobs and the Observer Pattern to notify the Framwork.
  */
 public class MultithreadedJobProcessor extends JobProcessor {
-    private static final int MAXCONCURRENTJOBS = 1000;
+    private static final int MAXCONCURRENTJOBS = Integer.MAX_VALUE;
     private final Logger logger;
     private final Queue<JobExecution> readyJobs; //TODO replace with better Queueing structure (persistent)
     private final Context ctx;

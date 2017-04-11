@@ -30,7 +30,6 @@ test {
     exclude "ch/hsr/maloney/storage/es/**"
     exclude "ch/hsr/maloney/storage/hash/**"
     exclude "ch/hsr/maloney/processing/ImportRdsHashSetJobTest*"
-    exclude "ch/hsr/maloney/core/**"
 }
 
 // Adding ant build commands and prefixing them with 'tsk-'

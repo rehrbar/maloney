@@ -26,7 +26,7 @@ public class Framework implements EventObserver {
     public static final String EVENT_ORIGIN = "ch.hsr.maloney.core";
     private final Logger logger;
     private MultithreadedJobProcessor jobProcessor;
-    private Context context;
+    protected Context context;
     private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
@@ -39,7 +39,7 @@ public class Framework implements EventObserver {
         jobProcessor.addObserver(this);
     }
 
-    private void initializeContext() {
+    protected void initializeContext() {
         MetadataStore metadataStore = null;
         try {
             metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();

@@ -113,7 +113,10 @@ public class Framework implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         if (arg instanceof JobExecution) {
-            ((JobExecution) arg).getResults().forEach(this::enqueueToInterestedJobs);
+            context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSED_EVENT, 1));
+            List<Event> newEvents = ((JobExecution) arg).getResults();
+            newEvents.forEach(this::enqueueToInterestedJobs);
+            context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.NEW_EVENT, newEvents.size()));
             return;
         }
         throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");

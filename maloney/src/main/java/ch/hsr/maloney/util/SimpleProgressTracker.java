@@ -43,7 +43,11 @@ public class SimpleProgressTracker implements ProgressTracker {
 
     @Override
     public int getProcessedAmount(String type) {
-        return progressMap.get(type);
+        if(progressMap.get(type) == null){
+            return 0;
+        } else {
+            return progressMap.get(type);
+        }
     }
 
     @Override

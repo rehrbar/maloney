@@ -7,13 +7,16 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
+import org.joda.time.DateTime;
+import org.joda.time.DurationFieldType;
+import org.joda.time.LocalDateTime;
 
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.util.TimerTask;
 import java.util.concurrent.*;
 
 /**
@@ -23,7 +26,7 @@ import java.util.concurrent.*;
 public class FrameworkController {
 
     private static final int START_TIME = 0;
-    private static final int CONSOLE_UPDATE_FREQUENCY_IN_SECONDS = 3;
+    private static final int UPDATE_FREQUENCY_IN_SECONDS = 3;
     private static final int THREE_TABULATORS = 16;
 
     private static ClassLoader myClassLoader;
@@ -95,6 +98,8 @@ public class FrameworkController {
     }
 
     private static void scheduleProgressTracker(final ProgressTracker progressTracker) {
+        final long startTime = System.currentTimeMillis();
+
         scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
             StringBuilder stringBuilder = new StringBuilder();
             for (String type: progressTracker.getTypes()) {
@@ -109,9 +114,31 @@ public class FrameworkController {
                         .append(progressTracker.getProcessedAmount(type))
                         .append("\n\r");
             }
-            //TODO perhaps write this information somewhere else
+
+            //TODO time estimation
+            //TODO use counter class
+            //TODO aging of time calculations
+            int processing = progressTracker.getProcessedAmount(ProgressInfoType.NEW_EVENT.toString());
+            int finished = progressTracker.getProcessedAmount(ProgressInfoType.PROCESSED_EVENT.toString());
+
+            final long currentTime = System.currentTimeMillis();
+
+            double speed = (finished)/(currentTime - startTime); //Tasks per milliseconds
+
+            if(speed == 0){
+                speed = 0.001; // Low-Ball so that the estimation is higher at first
+            }
+
+            long remainingTime = (long)(processing / speed);
+
+            LocalDateTime eta = LocalDateTime.now().withFieldAdded(DurationFieldType.minutes(),1);
+
+            eta.withFieldAdded(DurationFieldType.millis(), (int)remainingTime);
+
+            stringBuilder.append("ETA: ").append(eta.toString("dd.MM.yyyy HH:mm"));
+
             System.out.println(stringBuilder.toString());
-        }, START_TIME, CONSOLE_UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);
+        }, START_TIME, UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);
     }
 
 

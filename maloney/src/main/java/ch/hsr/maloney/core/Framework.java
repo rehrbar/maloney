@@ -143,10 +143,11 @@ public class Framework implements Observer {
     }
 
     private void enqueueToInterestedJobs(Event evt) {
-        eventQueue.add(evt);
         registeredJobs.forEach((job) -> {
             if (job.getRequiredEvents().contains(evt.getName())) {
-                jobProcessor.enqueue(eventQueue.peek(job));
+                JobExecution jobExecution = new JobExecution(job, evt);
+                eventQueue.add(jobExecution);
+                jobProcessor.enqueue(jobExecution);
             }
         });
     }

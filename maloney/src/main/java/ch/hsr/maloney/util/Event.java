@@ -1,11 +1,12 @@
 package ch.hsr.maloney.util;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Created by olive_000 on 01.11.2016.
  */
-public class Event {
+public class Event{
     private String name;
     private String origin; //Job Name
     private UUID fileUuid;
@@ -46,5 +47,10 @@ public class Event {
      */
     public String getName() {
         return name;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, origin, fileUuid);
     }
 }

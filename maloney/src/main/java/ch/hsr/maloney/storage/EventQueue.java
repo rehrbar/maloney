@@ -5,12 +5,12 @@ import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.JobExecution;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.*;
 
-import java.io.DataOutput;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -18,55 +18,60 @@ import java.util.*;
  */
 public class EventQueue {
 
+    private final Logger logger;
     private HTreeMap.KeySet<Event> events;
     DB db;
-    Map<JobExecution, Event> checkedOutEvents = new HashMap<>();
+    Map<Event, Set<JobExecution>> checkedOutEvents = new HashMap<>();
 
     public EventQueue(){
+        this.logger = LogManager.getLogger();
         File file = null;
         try {
             file = File.createTempFile("maloney",".db");
             file.delete();
+            // TODO use some management of db files
             db = DBMaker.fileDB(file).make();// TODO do we need memory mapped or custom serializer?
             events = db.hashSet("events", new MySerializer()).createOrOpen();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        // TODO add queue for running/checked out events
 
     }
 
     /**
-     * Adds a new event to the store.
-     * @param evt Event to add.
+     * Adds the event of the job execution to the queue.
      */
-    public void add(Event evt){
-        events.add(evt);
-    }
+    public void add(JobExecution jobExecution){
+        Event event = jobExecution.getTrigger();
+        events.add(event);
+        // TODO improve speed of inserts
+        Set<JobExecution> executions = checkedOutEvents.get(event);
 
-    /**
-     * Removes the top most element which is not checked.
-     * @return Top most element.
-     */
-    public JobExecution peek(Job job){
-        Collection<Event> values = checkedOutEvents.values();
-        for (Event event : events) {
-            if(!values.contains(event)){
-                JobExecution jobExecution = new JobExecution(job, event);
-                checkedOutEvents.put(jobExecution, event);
-                return jobExecution;
-            }
+        // Create list if it  does not exist.
+        if(executions == null){
+            executions = new LinkedHashSet<>();
+            checkedOutEvents.put(event, executions);
         }
-        return null; // TODO throw an error?
+        executions.add(jobExecution);
     }
 
     /**
-     * Removes the element from the collection and deletes checkout flag.
-     * @param execution execution to remove.
+     * Removes the job execution from the persistent storage.
      */
     public void remove(JobExecution execution){
-        Event evt = checkedOutEvents.remove(execution);
-        events.remove(evt);
+        Set<JobExecution> executions = checkedOutEvents.get(execution.getTrigger());
+        if(executions == null){
+            // TODO throw an error or put assertions here?
+            logger.warn("Tried to remove a not queued job execution.");
+            return;
+        }
+
+        executions.remove(execution);
+
+        if(executions.isEmpty()){
+            checkedOutEvents.remove(executions);
+            events.remove(execution.getTrigger());
+        }
     }
 
     /**
@@ -77,8 +82,6 @@ public class EventQueue {
     }
 
     private class MySerializer implements Serializer<Event> {
-        // TODO fix java.lang.IllegalArgumentException: Key.hashCode() changed after serialization, make sure to use correct Key Serializer
-
         final ObjectMapper mapper = new ObjectMapper();
 
         @Override

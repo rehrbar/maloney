@@ -3,7 +3,7 @@ package ch.hsr.maloney.core;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.MultithreadedJobProcessor;
 import ch.hsr.maloney.processing.TSKReadImageJob;
-import ch.hsr.maloney.storage.EventQueue;
+import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
@@ -29,14 +29,14 @@ public class Framework implements Observer {
     private final Logger logger;
     private MultithreadedJobProcessor jobProcessor;
     protected Context context;
-    private EventQueue eventQueue; //TODO Better Queue with nice persistence
+    private EventStore eventStore; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
     public Framework() {
         this.logger = LogManager.getLogger();
         initializeContext();
         this.registeredJobs = new LinkedList<>();
-        this.eventQueue = new EventQueue();
+        this.eventStore = new EventStore();
         this.jobProcessor = new MultithreadedJobProcessor(context);
         jobProcessor.addObserver(this);
     }
@@ -136,7 +136,7 @@ public class Framework implements Observer {
         if (arg instanceof JobExecution) {
             JobExecution jobExecution = (JobExecution) arg;
             jobExecution.getResults().forEach(this::enqueueToInterestedJobs);
-            eventQueue.remove(jobExecution);
+            eventStore.remove(jobExecution);
             return;
         }
         throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
@@ -146,7 +146,7 @@ public class Framework implements Observer {
         registeredJobs.forEach((job) -> {
             if (job.getRequiredEvents().contains(evt.getName())) {
                 JobExecution jobExecution = new JobExecution(job, evt);
-                eventQueue.add(jobExecution);
+                eventStore.add(jobExecution);
                 jobProcessor.enqueue(jobExecution);
             }
         });

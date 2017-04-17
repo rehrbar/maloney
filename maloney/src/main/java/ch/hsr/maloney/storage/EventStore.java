@@ -7,26 +7,27 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.*;
+import org.mapdb.serializer.GroupSerializerObjectArray;
+import org.mapdb.serializer.SerializerJava;
+import org.mapdb.serializer.SerializerUUID;
 
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by roman on 10.04.17.
  */
-public class EventQueue {
+public class EventStore {
 
     private final Logger logger;
-    private HTreeMap.KeySet<Event> events;
+    private BTreeMap<UUID, Event> events;
     DB db;
     Map<Event, Set<JobExecution>> checkedOutEvents = new HashMap<>();
+    Map<Event, UUID> eventKeys = new HashMap<>();
 
-    public EventQueue() {
+    public EventStore() {
         this.logger = LogManager.getLogger();
         File file = null;
         try {
@@ -38,8 +39,9 @@ public class EventQueue {
                     .transactionEnable()
                     .allocateStartSize(1 * 1024 * 1024 * 1024)  // 1GB
                     .allocateIncrement(512 * 1024 * 1024)       // 512MB
+                    .closeOnJvmShutdown()
                     .make();
-            events = db.hashSet("events", new MySerializer()).createOrOpen();
+            events = db.treeMap("events", new SerializerUUID(), new MySerializer()).createOrOpen();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -51,7 +53,9 @@ public class EventQueue {
      */
     public void add(JobExecution jobExecution) {
         Event event = jobExecution.getTrigger();
-        events.add(event);
+        UUID id = UUID.randomUUID();
+        eventKeys.put(event, id);
+        events.put(id, event);
         // TODO improve speed of inserts
         Set<JobExecution> executions = checkedOutEvents.get(event);
 
@@ -79,7 +83,8 @@ public class EventQueue {
 
         if (executions.isEmpty()) {
             checkedOutEvents.remove(executions);
-            events.remove(execution.getTrigger());
+            //events.remove(execution.getTrigger());
+            events.remove(eventKeys.get(execution.getTrigger()));
         }
         db.commit();
     }
@@ -91,7 +96,7 @@ public class EventQueue {
         db.close();
     }
 
-    private class MySerializer implements Serializer<Event> {
+    private class MySerializer extends GroupSerializerObjectArray<Event> implements Serializer<Event> {
         final ObjectMapper mapper = new ObjectMapper();
 
         @Override

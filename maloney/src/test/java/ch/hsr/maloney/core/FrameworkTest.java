@@ -81,7 +81,7 @@ public class FrameworkTest {
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());
-        JobExecution jobExecution = new JobExecution(null, null);
+        JobExecution jobExecution = new JobExecution(null, new Event(FrameworkEventNames.STARTUP,"Test", fileUuid));
         jobExecution.setResults(events);
         System.out.printf("starting insertion at %1$tF %1$tT.%1$tL\n", new Date());
         framework.update(new Observable(), jobExecution);

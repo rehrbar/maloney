@@ -143,21 +143,28 @@ public class Framework implements Observer {
     public void update(Observable o, Object arg) {
         if (arg instanceof JobExecution) {
             JobExecution jobExecution = (JobExecution) arg;
-            jobExecution.getResults().forEach(this::enqueueToInterestedJobs);
+            enqueueToInterestedJobs(jobExecution.getResults());
             eventStore.remove(jobExecution);
             return;
         }
         throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
     }
 
+
     private void enqueueToInterestedJobs(Event evt) {
-        registeredJobs.forEach((job) -> {
-            if (job.getRequiredEvents().contains(evt.getName())) {
-                JobExecution jobExecution = new JobExecution(job, evt);
-                eventStore.add(jobExecution);
-                jobProcessor.enqueue(jobExecution);
-            }
-        });
+        this.enqueueToInterestedJobs(new LinkedList<Event>(){{push(evt);}});
+    }
+
+    private void enqueueToInterestedJobs(Collection<Event> events) {
+        Collection<JobExecution> plannedExecutions = new LinkedList<>();
+        for (Event evt : events) {
+            registeredJobs.stream()
+                    .filter(j -> j.getRequiredEvents().contains(evt.getName()))
+                    .map(j -> new JobExecution(j, evt)).forEach(j -> plannedExecutions.add(j));
+        }
+
+        eventStore.add(plannedExecutions);
+        plannedExecutions.forEach(j -> jobProcessor.enqueue(j));
     }
 
     /**

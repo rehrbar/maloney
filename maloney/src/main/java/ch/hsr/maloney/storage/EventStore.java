@@ -8,7 +8,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.*;
 import org.mapdb.serializer.GroupSerializerObjectArray;
-import org.mapdb.serializer.SerializerJava;
 import org.mapdb.serializer.SerializerUUID;
 
 import java.io.DataOutput;
@@ -16,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by roman on 10.04.17.
@@ -39,7 +39,7 @@ public class EventStore {
             db = DBMaker.fileDB(file)
                     .fileMmapEnableIfSupported()
                     .transactionEnable()
-                    .allocateStartSize(1 * 1024 * 1024 * 1024)  // 1GB
+                    .allocateStartSize(1024 * 1024 * 1024)  // 1GB
                     .allocateIncrement(512 * 1024 * 1024)       // 512MB
                     .closeOnJvmShutdown()
                     .make();
@@ -54,21 +54,23 @@ public class EventStore {
      * Adds the event of the job execution to the queue.
      */
     public void add(JobExecution jobExecution) {
-        // TODO add support for bulk imports
-        Event event = jobExecution.getTrigger();
+        add(new LinkedList<JobExecution>(){{push(jobExecution);}});
+    }
 
-        // Only update if really necessary
-        events.putIfAbsent(event.getId(), event);
-        // TODO improve speed of inserts
-        Set<JobExecution> executions = checkedOutEvents.get(event);
+    /**
+     * Adds events of the job executions to the queue.
+     */
+    public void add(Collection<JobExecution> jobExecutions){
+        for(JobExecution jobExecution:jobExecutions){
+            Event event = jobExecution.getTrigger();
 
-        // Create list if it  does not exist.
-        if (executions == null) {
-            executions = new LinkedHashSet<>();
-            checkedOutEvents.put(event, executions);
+            // Create and insert list if it  does not exist.
+            Set<JobExecution> executions = checkedOutEvents.computeIfAbsent(event, k -> new LinkedHashSet<>());
+
+            executions.add(jobExecution);
         }
+        events.putAll(jobExecutions.stream().collect(Collectors.toMap(j -> j.getTrigger().getId(), j-> j.getTrigger())));
         db.commit();
-        executions.add(jobExecution);
     }
 
     /**

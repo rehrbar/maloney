@@ -1,17 +1,20 @@
 package ch.hsr.maloney.storage;
 
-import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.JobExecution;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.mapdb.*;
 
-import java.io.*;
-import java.util.*;
+import java.io.DataOutput;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by roman on 10.04.17.
@@ -23,14 +26,19 @@ public class EventQueue {
     DB db;
     Map<Event, Set<JobExecution>> checkedOutEvents = new HashMap<>();
 
-    public EventQueue(){
+    public EventQueue() {
         this.logger = LogManager.getLogger();
         File file = null;
         try {
-            file = File.createTempFile("maloney",".db");
+            file = File.createTempFile("maloney", ".db");
             file.delete();
             // TODO use some management of db files
-            db = DBMaker.fileDB(file).make();// TODO do we need memory mapped or custom serializer?
+            db = DBMaker.fileDB(file)
+                    .fileMmapEnableIfSupported()
+                    .transactionEnable()
+                    .allocateStartSize(1 * 1024 * 1024 * 1024)  // 1GB
+                    .allocateIncrement(512 * 1024 * 1024)       // 512MB
+                    .make();
             events = db.hashSet("events", new MySerializer()).createOrOpen();
         } catch (IOException e) {
             e.printStackTrace();
@@ -41,26 +49,27 @@ public class EventQueue {
     /**
      * Adds the event of the job execution to the queue.
      */
-    public void add(JobExecution jobExecution){
+    public void add(JobExecution jobExecution) {
         Event event = jobExecution.getTrigger();
         events.add(event);
         // TODO improve speed of inserts
         Set<JobExecution> executions = checkedOutEvents.get(event);
 
         // Create list if it  does not exist.
-        if(executions == null){
+        if (executions == null) {
             executions = new LinkedHashSet<>();
             checkedOutEvents.put(event, executions);
         }
+        db.commit();
         executions.add(jobExecution);
     }
 
     /**
      * Removes the job execution from the persistent storage.
      */
-    public void remove(JobExecution execution){
+    public void remove(JobExecution execution) {
         Set<JobExecution> executions = checkedOutEvents.get(execution.getTrigger());
-        if(executions == null){
+        if (executions == null) {
             // TODO throw an error or put assertions here?
             logger.warn("Tried to remove a not queued job execution.");
             return;
@@ -68,16 +77,17 @@ public class EventQueue {
 
         executions.remove(execution);
 
-        if(executions.isEmpty()){
+        if (executions.isEmpty()) {
             checkedOutEvents.remove(executions);
             events.remove(execution.getTrigger());
         }
+        db.commit();
     }
 
     /**
      * Closes the underlying db.
      */
-    public void close(){
+    public void close() {
         db.close();
     }
 
@@ -86,7 +96,7 @@ public class EventQueue {
 
         @Override
         public void serialize(@NotNull DataOutput2 out, @NotNull Event value) throws IOException {
-            mapper.writeValue((DataOutput)out, value);
+            mapper.writeValue((DataOutput) out, value);
         }
 
         @Override

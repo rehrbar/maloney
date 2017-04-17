@@ -7,17 +7,15 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.DurationFieldType;
 import org.joda.time.LocalDateTime;
 
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author oniet
@@ -27,6 +25,7 @@ public class FrameworkController {
 
     private static final int START_TIME = 0;
     private static final int UPDATE_FREQUENCY_IN_SECONDS = 3;
+    private static final int RELEVANT_CYCLES = 5;
     private static final int THREE_TABULATORS = 16;
 
     private static ClassLoader myClassLoader;
@@ -98,7 +97,7 @@ public class FrameworkController {
     }
 
     private static void scheduleProgressTracker(final ProgressTracker progressTracker) {
-        final long startTime = System.currentTimeMillis();
+        ETACalculator etaCalculator = new ETACalculator(RELEVANT_CYCLES);
 
         scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
             StringBuilder stringBuilder = new StringBuilder();
@@ -116,28 +115,21 @@ public class FrameworkController {
             }
 
             //TODO time estimation
-            //TODO use counter class
-            //TODO aging of time calculations
+
             int processing = progressTracker.getProcessedAmount(ProgressInfoType.NEW_EVENT.toString());
             int finished = progressTracker.getProcessedAmount(ProgressInfoType.PROCESSED_EVENT.toString());
 
-            final long currentTime = System.currentTimeMillis();
+            etaCalculator.addPoint(processing, finished, System.currentTimeMillis());
 
-            double speed = (finished)/(currentTime - startTime); //Tasks per milliseconds
+            LocalDateTime eta = etaCalculator.getETA();
 
-            if(speed == 0){
-                speed = 0.001; // Low-Ball so that the estimation is higher at first
+            if(eta == null){
+                stringBuilder.append("ETA: Calculating...");
+            } else {
+                stringBuilder.append("ETA: ").append(eta.toString("dd.MM.yyyy HH:mm"));
             }
 
-            long remainingTime = (long)(processing / speed);
-
-            LocalDateTime eta = LocalDateTime.now().withFieldAdded(DurationFieldType.minutes(),1);
-
-            eta.withFieldAdded(DurationFieldType.millis(), (int)remainingTime);
-
-            stringBuilder.append("ETA: ").append(eta.toString("dd.MM.yyyy HH:mm"));
-
-            System.out.println(stringBuilder.toString());
+            System.out.println(stringBuilder.append("\r\n").toString());
         }, START_TIME, UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);
     }
 

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Observable;
 import java.util.UUID;
@@ -66,7 +67,9 @@ public class FrameworkTest {
         setLogVerbosity();
 
         // actual test
-        int increment = 11000000;
+        // TODO increase increment again to the maximum after implementing bulk updates of EventStore
+        //int increment = 11000000;
+        int increment = 100;
 
         LinkedList<Event> events = new LinkedList<>();
         UUID fileUuid = UUID.randomUUID();
@@ -80,7 +83,9 @@ public class FrameworkTest {
         framework.register(fakeJobFactory.getAtoBJob());
         JobExecution jobExecution = new JobExecution(null, null);
         jobExecution.setResults(events);
+        System.out.printf("starting insertion at %1$tF %1$tT.%1$tL\n", new Date());
         framework.update(new Observable(), jobExecution);
+        System.out.printf("starting framework at %1$tF %1$tT.%1$tL\n", new Date());
         framework.start();
     }
 

@@ -14,6 +14,7 @@ import org.mapdb.serializer.SerializerUUID;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -25,15 +26,16 @@ public class EventStore {
     private BTreeMap<UUID, Event> events;
     DB db;
     Map<Event, Set<JobExecution>> checkedOutEvents = new HashMap<>();
-    Map<Event, UUID> eventKeys = new HashMap<>();
 
     public EventStore() {
+        this(true);
+    }
+
+    public EventStore(boolean persistent) {
         this.logger = LogManager.getLogger();
-        File file = null;
-        try {
-            file = File.createTempFile("maloney", ".db");
-            file.delete();
-            // TODO use some management of db files
+        if(persistent) {
+            File file = Paths.get(System.getProperty("java.io.tmpdir"), "maloney-events.db").toFile();
+            // TODO use memoryDB for some unittests/allow configuration if persistent or not
             db = DBMaker.fileDB(file)
                     .fileMmapEnableIfSupported()
                     .transactionEnable()
@@ -41,21 +43,22 @@ public class EventStore {
                     .allocateIncrement(512 * 1024 * 1024)       // 512MB
                     .closeOnJvmShutdown()
                     .make();
-            events = db.treeMap("events", new SerializerUUID(), new MySerializer()).createOrOpen();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } else {
+            db = DBMaker.memoryDB().closeOnJvmShutdown().make();
         }
-
+        // TODO use different set names for different cases
+        events = db.treeMap("events", new SerializerUUID(), new MySerializer()).createOrOpen();
     }
 
     /**
      * Adds the event of the job execution to the queue.
      */
     public void add(JobExecution jobExecution) {
+        // TODO add support for bulk imports
         Event event = jobExecution.getTrigger();
-        UUID id = UUID.randomUUID();
-        eventKeys.put(event, id);
-        events.put(id, event);
+
+        // Only update if really necessary
+        events.putIfAbsent(event.getId(), event);
         // TODO improve speed of inserts
         Set<JobExecution> executions = checkedOutEvents.get(event);
 
@@ -83,10 +86,25 @@ public class EventStore {
 
         if (executions.isEmpty()) {
             checkedOutEvents.remove(executions);
-            //events.remove(execution.getTrigger());
-            events.remove(eventKeys.get(execution.getTrigger()));
+            events.remove(execution.getTrigger().getId());
         }
         db.commit();
+    }
+
+    /**
+     * Gets all stored events.
+     * @return All stored events.
+     */
+    public Collection<Event> getEvents(){
+        return events.getValues();
+    }
+
+    /**
+     * Checks if there are stored events.
+     * @return True if the store has events.
+     */
+    public boolean hasEvents(){
+        return !events.isEmpty();
     }
 
     /**
@@ -94,6 +112,7 @@ public class EventStore {
      */
     public void close() {
         db.close();
+        // TODO delete db after successful run
     }
 
     private class MySerializer extends GroupSerializerObjectArray<Event> implements Serializer<Event> {

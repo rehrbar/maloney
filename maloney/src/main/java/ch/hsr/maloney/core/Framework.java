@@ -68,6 +68,7 @@ public class Framework implements Observer {
         logger.debug("Checking if registered Jobs can be run...");
 
         availableEvents.add(FrameworkEventNames.STARTUP);
+        // TODO add event names of recovered events
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
         runnableJobs.add(new TSKReadImageJob());
@@ -102,7 +103,14 @@ public class Framework implements Observer {
      * Starts the framework.
      */
     public void start() {
-        enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
+        if(eventStore.hasEvents()){
+            // TODO ask user whether to restore events or remove them.
+            // TODO find another way to prevent startup event or introduce some new ones (RESTART/FRESHSTART)
+            Collection<Event> recoveredEvents = eventStore.getEvents();
+            recoveredEvents.forEach(event -> enqueueToInterestedJobs(event));
+        } else {
+            enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
+        }
         try {
             checkDependencies();
         } catch (UnrunnableJobException e) {

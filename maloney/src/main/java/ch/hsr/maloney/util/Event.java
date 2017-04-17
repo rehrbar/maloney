@@ -7,6 +7,7 @@ import java.util.UUID;
  * Created by olive_000 on 01.11.2016.
  */
 public class Event{
+    private UUID id;
     private String name;
     private String origin; //Job Name
     private UUID fileUuid;
@@ -23,6 +24,7 @@ public class Event{
      * @param fileUuid Uuid of the file concerned
      */
     public Event(String name, String origin, UUID fileUuid) {
+        id = UUID.randomUUID();
         this.name = name;
         this.origin = origin;
         this.fileUuid = fileUuid;
@@ -52,5 +54,12 @@ public class Event{
     @Override
     public int hashCode() {
         return Objects.hash(name, origin, fileUuid);
+    }
+
+    /**
+     * @return Identifier of this event.
+     */
+    public UUID getId() {
+        return id;
     }
 }

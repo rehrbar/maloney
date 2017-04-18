@@ -121,6 +121,7 @@ public class Framework implements Observer {
         jobProcessor.start();
         jobProcessor.waitForFinish();
         //TODO wait for abort command or for the application finish Event
+        eventStore.close();
         logger.info("Completion time: {}", System.currentTimeMillis() - startTime);
     }
 

@@ -46,8 +46,8 @@ public class EventStore {
             db = DBMaker.fileDB(file)
                     .fileMmapEnableIfSupported()
                     .transactionEnable()
-                    .allocateStartSize(1024 * 1024 * 1024)  // 1GB
-                    .allocateIncrement(512 * 1024 * 1024)       // 512MB
+                    .allocateStartSize(128 * 1024 * 1024) // 128MB
+                    .allocateIncrement(64 * 1024 * 1024)  // 64MB
                     .closeOnJvmShutdown()
                     .make();
         } else {
@@ -106,6 +106,12 @@ public class EventStore {
         scheduleCommitIfNecessary();
     }
 
+    public synchronized void clear(){
+        checkedOutEvents.clear();
+        events.clear();
+        commit();
+    }
+
     private void scheduleCommitIfNecessary() {
         if (deferredCommit == null || deferredCommit.isDone()) {
             deferredCommit = scheduler.schedule(this::commit, COMMIT_INTERVAL, COMMIT_INTERVAL_UNIT);
@@ -134,9 +140,13 @@ public class EventStore {
      * Closes the underlying db.
      */
     public synchronized void close() {
+        deferredCommit.cancel(false);
+        scheduler.shutdown();
+
+        // Commit to clean up all write ahead logs.
+        commit();
         db.close();
         // TODO delete db after successful run
-        // TODO stop deferred commit
     }
 
     private class MySerializer extends GroupSerializerObjectArray<Event> implements Serializer<Event> {

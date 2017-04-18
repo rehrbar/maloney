@@ -12,11 +12,11 @@ import java.util.List;
 public class ETACalculator {
     private final int RELEVANT_CYCLES;
 
-    private List<Calculation> calculationList;
+    private List<Measurement> measurementList;
 
     public ETACalculator(final int relevantCycles){
         this.RELEVANT_CYCLES = relevantCycles;
-        calculationList = new LinkedList<>();
+        measurementList = new LinkedList<>();
     }
 
     /**
@@ -28,7 +28,7 @@ public class ETACalculator {
         int lastFinished = 0;
         long lastTime = 0;
 
-        for (Calculation c : calculationList) {
+        for (Measurement c : measurementList) {
             // First calculation has to be ignored if it isn't the first time this gets executed
             // Otherwise the it would get miraculous speed
             // e.g.: 0 finished --> 500 finished, when instead actually 460 finished --> 500 finished
@@ -41,10 +41,10 @@ public class ETACalculator {
             lastTime = c.getTime();
         }
         // ... calculate average (first entry in list does not count)
-        if(calculationList.size() == RELEVANT_CYCLES){
-            avgSpeed /= (calculationList.size()-1);
+        if(measurementList.size() == RELEVANT_CYCLES){
+            avgSpeed /= (measurementList.size()-1);
         } else {
-            avgSpeed /= calculationList.size()-2;
+            avgSpeed /= measurementList.size()-2;
         }
         return avgSpeed;
     }
@@ -54,10 +54,10 @@ public class ETACalculator {
      * @return  Estimated time of arrival/finish
      */
     public LocalDateTime getETA(){
-        if(calculationList.size() > 0){
+        if(measurementList.size() > 0){
             return LocalDateTime.now().withFieldAdded(
                     DurationFieldType.millis(),
-                    (int)(calculationList.get(calculationList.size()-1).getPending() / getAverageSpeed()));
+                    (int)(measurementList.get(measurementList.size()-1).getPending() / getAverageSpeed()));
         }
         return null;
     }
@@ -68,22 +68,22 @@ public class ETACalculator {
      * @param finished      Number of finished Jobs
      * @param currentTimeInMillis   Current time corresponding to the other parameters
      */
-    public void addCycle(int started, int finished, long currentTimeInMillis){
-        Calculation calculation = new Calculation(started, finished, currentTimeInMillis);
-        if(calculationList.size() == RELEVANT_CYCLES){
-            calculationList.add(calculation);
-            calculationList.remove(0);
+    public void addMeasurement(int started, int finished, long currentTimeInMillis){
+        Measurement measurement = new Measurement(started, finished, currentTimeInMillis);
+        if(measurementList.size() == RELEVANT_CYCLES){
+            measurementList.add(measurement);
+            measurementList.remove(0);
         } else {
-            calculationList.add(calculation);
+            measurementList.add(measurement);
         }
     }
 
-    class Calculation {
+    class Measurement {
         final int started;
         final int finished;
         final long time;
 
-        Calculation(int started, int finished, long time) {
+        Measurement(int started, int finished, long time) {
             this.started = started;
             this.finished = finished;
             this.time = time;

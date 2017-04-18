@@ -119,7 +119,7 @@ public class FrameworkController {
             int processing = progressTracker.getProcessedAmount(ProgressInfoType.NEW_EVENT.toString());
             int finished = progressTracker.getProcessedAmount(ProgressInfoType.PROCESSED_EVENT.toString());
 
-            etaCalculator.addCycle(processing, finished, System.currentTimeMillis());
+            etaCalculator.addMeasurement(processing, finished, System.currentTimeMillis());
 
             LocalDateTime eta = etaCalculator.getETA();
 
@@ -127,6 +127,7 @@ public class FrameworkController {
                 stringBuilder.append("ETA: Calculating...");
             } else {
                 stringBuilder
+                        .append("\r\n")
                         .append("Average Finished Events per ").append(UPDATE_FREQUENCY_IN_SECONDS)
                         .append(" seconds: ").append(etaCalculator.getAverageSpeed()).append("\r\n")
                         .append("ETA: ").append(eta.toString("dd.MM.yyyy HH:mm")).append("\r\n");

@@ -23,7 +23,7 @@ public class ETACalculator {
      * Calculates the average speed over all submitted points
      * @return  Average speed over all submitted points
      */
-    double getAverageSpeed(){
+    public double getAverageSpeed(){
         double avgSpeed = 0;
         int lastFinished = 0;
         long lastTime = 0;

@@ -114,7 +114,7 @@ public class FrameworkController {
                         .append("\n\r");
             }
 
-            //TODO time estimation
+            //time estimation
 
             int processing = progressTracker.getProcessedAmount(ProgressInfoType.NEW_EVENT.toString());
             int finished = progressTracker.getProcessedAmount(ProgressInfoType.PROCESSED_EVENT.toString());
@@ -126,10 +126,13 @@ public class FrameworkController {
             if(eta == null){
                 stringBuilder.append("ETA: Calculating...");
             } else {
-                stringBuilder.append("ETA: ").append(eta.toString("dd.MM.yyyy HH:mm"));
+                stringBuilder
+                        .append("Average Finished Events per ").append(UPDATE_FREQUENCY_IN_SECONDS)
+                        .append(" seconds: ").append(etaCalculator.getAverageSpeed()).append("\r\n")
+                        .append("ETA: ").append(eta.toString("dd.MM.yyyy HH:mm")).append("\r\n");
             }
 
-            System.out.println(stringBuilder.append("\r\n").toString());
+            System.out.println(stringBuilder.toString());
         }, START_TIME, UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);
     }
 

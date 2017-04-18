@@ -15,17 +15,22 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * Created by roman on 10.04.17.
  */
 public class EventStore {
-
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final Logger logger;
-    private BTreeMap<UUID, Event> events;
     DB db;
     Map<Event, Set<JobExecution>> checkedOutEvents = new HashMap<>();
+    private ScheduledFuture deferredCommit;
+    private BTreeMap<UUID, Event> events;
 
     public EventStore() {
         this(true);
@@ -33,7 +38,7 @@ public class EventStore {
 
     public EventStore(boolean persistent) {
         this.logger = LogManager.getLogger();
-        if(persistent) {
+        if (persistent) {
             File file = Paths.get(System.getProperty("java.io.tmpdir"), "maloney-events.db").toFile();
             // TODO use memoryDB for some unittests/allow configuration if persistent or not
             db = DBMaker.fileDB(file)
@@ -54,14 +59,16 @@ public class EventStore {
      * Adds the event of the job execution to the queue.
      */
     public void add(JobExecution jobExecution) {
-        add(new LinkedList<JobExecution>(){{push(jobExecution);}});
+        add(new LinkedList<JobExecution>() {{
+            push(jobExecution);
+        }});
     }
 
     /**
      * Adds events of the job executions to the queue.
      */
-    public void add(Collection<JobExecution> jobExecutions){
-        for(JobExecution jobExecution:jobExecutions){
+    public synchronized void add(Collection<JobExecution> jobExecutions) {
+        for (JobExecution jobExecution : jobExecutions) {
             Event event = jobExecution.getTrigger();
 
             // Create and insert list if it  does not exist.
@@ -69,14 +76,18 @@ public class EventStore {
 
             executions.add(jobExecution);
         }
-        events.putAll(jobExecutions.stream().collect(Collectors.toMap(j -> j.getTrigger().getId(), j-> j.getTrigger())));
+        events.putAll(jobExecutions.stream().collect(Collectors.toMap(j -> j.getTrigger().getId(), j -> j.getTrigger())));
+        scheduleCommitIfNecessary();
+    }
+
+    private synchronized void commit() {
         db.commit();
     }
 
     /**
      * Removes the job execution from the persistent storage.
      */
-    public void remove(JobExecution execution) {
+    public synchronized void remove(JobExecution execution) {
         Set<JobExecution> executions = checkedOutEvents.get(execution.getTrigger());
         if (executions == null) {
             // TODO throw an error or put assertions here?
@@ -90,31 +101,40 @@ public class EventStore {
             checkedOutEvents.remove(executions);
             events.remove(execution.getTrigger().getId());
         }
-        db.commit();
+        scheduleCommitIfNecessary();
+    }
+
+    private void scheduleCommitIfNecessary() {
+        if (deferredCommit == null || deferredCommit.isDone()) {
+            scheduler.schedule(this::commit, 5, TimeUnit.SECONDS);
+        }
     }
 
     /**
      * Gets all stored events.
+     *
      * @return All stored events.
      */
-    public Collection<Event> getEvents(){
+    public synchronized Collection<Event> getEvents() {
         return events.getValues();
     }
 
     /**
      * Checks if there are stored events.
+     *
      * @return True if the store has events.
      */
-    public boolean hasEvents(){
+    public synchronized boolean hasEvents() {
         return !events.isEmpty();
     }
 
     /**
      * Closes the underlying db.
      */
-    public void close() {
+    public synchronized void close() {
         db.close();
         // TODO delete db after successful run
+        // TODO stop deferred commit
     }
 
     private class MySerializer extends GroupSerializerObjectArray<Event> implements Serializer<Event> {

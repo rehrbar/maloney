@@ -4,16 +4,19 @@ import ch.hsr.maloney.processing.Job;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by roman on 11.04.17.
  */
 public class JobExecution {
+    private UUID id;
     private Job current;
     private Event trigger;
     private List<Event> results;
 
     public JobExecution(Job job, Event event) {
+        this.id = UUID.randomUUID();
         this.current = job;
         this.trigger = event;
     }
@@ -36,5 +39,9 @@ public class JobExecution {
 
     public Job getJob() {
         return current;
+    }
+
+    public UUID getId() {
+        return id;
     }
 }

@@ -25,10 +25,12 @@ import java.util.stream.Collectors;
  * Created by roman on 10.04.17.
  */
 public class EventStore {
+    private static final int COMMIT_INTERVAL = 5;
+    private static final TimeUnit COMMIT_INTERVAL_UNIT = TimeUnit.SECONDS;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final Logger logger;
-    DB db;
-    Map<Event, Set<JobExecution>> checkedOutEvents = new HashMap<>();
+    private DB db;
+    private Map<UUID, Set<UUID>> checkedOutEvents = new HashMap<>();
     private ScheduledFuture deferredCommit;
     private BTreeMap<UUID, Event> events;
 
@@ -72,9 +74,9 @@ public class EventStore {
             Event event = jobExecution.getTrigger();
 
             // Create and insert list if it  does not exist.
-            Set<JobExecution> executions = checkedOutEvents.computeIfAbsent(event, k -> new LinkedHashSet<>());
+            Set<UUID> executions = checkedOutEvents.computeIfAbsent(event.getId(), k -> new LinkedHashSet<>());
 
-            executions.add(jobExecution);
+            executions.add(jobExecution.getId());
         }
         events.putAll(jobExecutions.stream().collect(Collectors.toMap(j -> j.getTrigger().getId(), j -> j.getTrigger())));
         scheduleCommitIfNecessary();
@@ -88,17 +90,17 @@ public class EventStore {
      * Removes the job execution from the persistent storage.
      */
     public synchronized void remove(JobExecution execution) {
-        Set<JobExecution> executions = checkedOutEvents.get(execution.getTrigger());
+        Set<UUID> executions = checkedOutEvents.get(execution.getTrigger().getId());
         if (executions == null) {
             // TODO throw an error or put assertions here?
             logger.warn("Tried to remove a not queued job execution.");
             return;
         }
 
-        executions.remove(execution);
+        executions.remove(execution.getId());
 
         if (executions.isEmpty()) {
-            checkedOutEvents.remove(executions);
+            checkedOutEvents.remove(execution.getTrigger().getId());
             events.remove(execution.getTrigger().getId());
         }
         scheduleCommitIfNecessary();
@@ -106,7 +108,7 @@ public class EventStore {
 
     private void scheduleCommitIfNecessary() {
         if (deferredCommit == null || deferredCommit.isDone()) {
-            scheduler.schedule(this::commit, 5, TimeUnit.SECONDS);
+            deferredCommit = scheduler.schedule(this::commit, COMMIT_INTERVAL, COMMIT_INTERVAL_UNIT);
         }
     }
 

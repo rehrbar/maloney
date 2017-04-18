@@ -69,7 +69,7 @@ public class FrameworkTest {
         // actual test
         // TODO increase increment again to the maximum after implementing bulk updates of EventStore
         //int increment = 11000000;
-        int increment = 100;
+        int increment = 100000;
 
         LinkedList<Event> events = new LinkedList<>();
         UUID fileUuid = UUID.randomUUID();

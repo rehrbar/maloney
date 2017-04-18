@@ -50,7 +50,7 @@ public class ETACalculator {
     }
 
     /**
-     * Calulates an estimated time of arrival(/finish) using the previous processing speeds as defined by relevantCycles
+     * Calculates an estimated time of arrival(/finish) using the previous processing speeds as defined by relevantCycles
      * @return  Estimated time of arrival/finish
      */
     public LocalDateTime getETA(){
@@ -63,12 +63,12 @@ public class ETACalculator {
     }
 
     /**
-     * Adds a point to the calculator
+     * Adds a point to the calculator which it uses to later calculate the average
      * @param started       Number of started Jobs
      * @param finished      Number of finished Jobs
      * @param currentTimeInMillis   Current time corresponding to the other parameters
      */
-    public void addPoint(int started, int finished, long currentTimeInMillis){
+    public void addCycle(int started, int finished, long currentTimeInMillis){
         Calculation calculation = new Calculation(started, finished, currentTimeInMillis);
         if(calculationList.size() == RELEVANT_CYCLES){
             calculationList.add(calculation);

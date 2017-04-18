@@ -25,7 +25,7 @@ public class FrameworkController {
 
     private static final int START_TIME = 0;
     private static final int UPDATE_FREQUENCY_IN_SECONDS = 3;
-    private static final int RELEVANT_CYCLES = 5;
+    private static final int RELEVANT_CYCLES = 10;
     private static final int THREE_TABULATORS = 16;
 
     private static ClassLoader myClassLoader;
@@ -119,7 +119,7 @@ public class FrameworkController {
             int processing = progressTracker.getProcessedAmount(ProgressInfoType.NEW_EVENT.toString());
             int finished = progressTracker.getProcessedAmount(ProgressInfoType.PROCESSED_EVENT.toString());
 
-            etaCalculator.addPoint(processing, finished, System.currentTimeMillis());
+            etaCalculator.addCycle(processing, finished, System.currentTimeMillis());
 
             LocalDateTime eta = etaCalculator.getETA();
 

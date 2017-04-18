@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 public class ETACalculatorTest {
     private void linearFill(ETACalculator etaCalculator, int cycles) {
         for(int i = 0; i < cycles + 1; i++){
-            etaCalculator.addPoint(i, i, i);
+            etaCalculator.addCycle(i, i, i);
         }
     }
 

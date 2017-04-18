@@ -81,7 +81,7 @@ public class MultithreadedJobProcessorTest{
         }
     }
 
-    @Test
+    @Test(timeout = 10000)
     public void twoJobsInSequence(){
         class FakeObserverEnqueuesNext extends FakeObserver{
             private JobProcessor jobProcessor;

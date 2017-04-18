@@ -33,10 +33,15 @@ public class Framework implements Observer {
     private List<Job> registeredJobs;
 
     public Framework() {
+        // TODO get rid of this ctor, just for compatability
+        this(new EventStore());
+    }
+
+    public Framework(EventStore eventStore) {
         this.logger = LogManager.getLogger();
         initializeContext();
         this.registeredJobs = new LinkedList<>();
-        this.eventStore = new EventStore();
+        this.eventStore = eventStore;
         this.jobProcessor = new MultithreadedJobProcessor(context);
         jobProcessor.addObserver(this);
     }
@@ -71,11 +76,8 @@ public class Framework implements Observer {
         // TODO add event names of recovered events
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
-        runnableJobs.add(new TSKReadImageJob());
-        // Added some random Job that gets cleared out
-        // just so that the following while loop can be started
 
-        while (runnableJobs.size() > 0) {
+        do{
             runnableJobs.clear();
             for (Job job : unresolvedDependencies) {
                 if (availableEvents.containsAll(job.getRequiredEvents())) {
@@ -84,7 +86,7 @@ public class Framework implements Observer {
                 }
             }
             unresolvedDependencies.removeAll(runnableJobs);
-        }
+        } while (runnableJobs.size() > 0);
 
         if (unresolvedDependencies.size() > 0) {
             StringBuilder stringBuilder = new StringBuilder();

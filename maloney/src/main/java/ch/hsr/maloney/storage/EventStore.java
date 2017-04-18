@@ -78,7 +78,8 @@ public class EventStore {
 
             executions.add(jobExecution.getId());
         }
-        events.putAll(jobExecutions.stream().collect(Collectors.toMap(j -> j.getTrigger().getId(), j -> j.getTrigger())));
+        // If duplicated events are found, inserting only the first occurrence and dismiss others.
+        events.putAll(jobExecutions.stream().collect(Collectors.toMap(j -> j.getTrigger().getId(), j -> j.getTrigger(), (v1, v2) -> v1)));
         scheduleCommitIfNecessary();
     }
 
@@ -146,7 +147,6 @@ public class EventStore {
         // Commit to clean up all write ahead logs.
         commit();
         db.close();
-        // TODO delete db after successful run
     }
 
     private class MySerializer extends GroupSerializerObjectArray<Event> implements Serializer<Event> {

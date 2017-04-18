@@ -1,8 +1,5 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.storage.FakeDataSource;
-import ch.hsr.maloney.storage.FakeMetaDataStore;
-import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeJobFactory;
 import ch.hsr.maloney.util.JobExecution;
@@ -25,18 +22,9 @@ import static org.junit.Assert.fail;
  */
 public class FrameworkTest {
 
-    private class FakeFramework extends Framework{
-        @Override
-        protected void initializeContext() {
-            // TODO replace with parameters passed by framework controller
-            // TODO create fake progress tracker and add it
-            this.context = new Context(new FakeMetaDataStore(), null, new FakeDataSource());
-        }
-    }
-
     @Test
     public void simpleDependencyTest(){
-        Framework framework = new FakeFramework();
+        Framework framework = new FakeFramework(false);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());
@@ -50,7 +38,7 @@ public class FrameworkTest {
 
     @Test(expected = Framework.UnrunnableJobException.class)
     public void advancedDependencyTest() throws Framework.UnrunnableJobException{
-        Framework framework = new FakeFramework();
+        Framework framework = new FakeFramework(false);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getBtoCJob());
@@ -77,7 +65,7 @@ public class FrameworkTest {
             events.add(new Event(FakeJobFactory.eventA,"Test", fileUuid));
         }
 
-        Framework framework = new FakeFramework();
+        Framework framework = new FakeFramework(true);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());
@@ -87,6 +75,8 @@ public class FrameworkTest {
         framework.update(new Observable(), jobExecution);
         System.out.printf("starting framework at %1$tF %1$tT.%1$tL\n", new Date());
         framework.start();
+
+        FakeFramework.deleteEventStore();
     }
 
     /**
@@ -126,3 +116,6 @@ public class FrameworkTest {
         ctx.updateLoggers();
     }
 }
+
+
+

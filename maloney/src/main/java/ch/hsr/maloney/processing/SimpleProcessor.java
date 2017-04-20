@@ -33,14 +33,31 @@ public class SimpleProcessor extends JobProcessor {
             Job job = jobExecution.getJob();
             Event evt = jobExecution.getTrigger();
 
-            if(job.canRun(ctx, evt)){
-                jobExecution.setResults(job.run(ctx, evt));
-                setChanged();
-                notifyObservers(jobExecution);
+            if(job.shouldRun(ctx, evt)){
+                if(job.canRun(ctx, evt)){
+                    try {
+                        jobExecution.setResults(job.run(ctx, evt));
+                        notifyInterested(jobExecution);
+                    } catch (JobCancelledException e) {
+                        // TODO store failed executions somewhere
+                        logger.info("Job {} cancelled the execution of event {}: file {}", e.getJobName(), e.getEventId(), e.getFileId());
+                    } catch (RuntimeException  e){
+                        logger.error("Job processing failed.", e);
+                    }
+                }
+            } else {
+                // Finish job without producing a result/events.
+                notifyInterested(jobExecution);
             }
         }
         logger.debug("Nothing more to process");
     }
+
+    private void notifyInterested(JobExecution jobExecution) {
+        setChanged();
+        notifyObservers(jobExecution);
+    }
+
 
     @Override
     public void stop() {

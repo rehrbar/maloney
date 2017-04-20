@@ -13,6 +13,11 @@ import java.util.*;
 class FakeJobA implements Job {
 
     @Override
+    public boolean shouldRun(Context ctx, Event evt) {
+        return true;
+    }
+
+    @Override
     public boolean canRun(Context ctx, Event evt) {
         return true;
     }
@@ -51,6 +56,11 @@ class FakeJobA implements Job {
 }
 
 class FakeJobB implements Job{
+
+    @Override
+    public boolean shouldRun(Context ctx, Event evt) {
+        return true;
+    }
 
     @Override
     public boolean canRun(Context ctx, Event evt) {

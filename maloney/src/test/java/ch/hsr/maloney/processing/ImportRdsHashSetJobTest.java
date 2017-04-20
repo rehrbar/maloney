@@ -16,7 +16,7 @@ import static ch.hsr.maloney.processing.ImportRdsHashSetJob.FILE_PATTERN;
  */
 public class ImportRdsHashSetJobTest {
     @Test
-    public void runTest(){
+    public void runTest() throws JobCancelledException {
         Job job = new ImportRdsHashSetJob();
         job.setJobConfig("D:\\hash_lists\\rds_254u_100k.zip");
         Assert.assertTrue(job.canRun(null, null));

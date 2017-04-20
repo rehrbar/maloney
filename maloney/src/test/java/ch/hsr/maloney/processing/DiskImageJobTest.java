@@ -41,7 +41,7 @@ public class DiskImageJobTest {
     }
 
     @Test
-    public void run() throws IOException {
+    public void run() throws IOException, JobCancelledException {
         Event startupEvent = new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null);
         testImage = Files.createTempFile("maloney", null);
         Job job = new DiskImageJob();

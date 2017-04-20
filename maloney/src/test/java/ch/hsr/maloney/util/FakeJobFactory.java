@@ -43,6 +43,11 @@ public class FakeJobFactory {
         }
 
         @Override
+        public boolean shouldRun(Context ctx, Event evt) {
+            return true;
+        }
+
+        @Override
         public boolean canRun(Context ctx, Event evt) {
             return true;
         }

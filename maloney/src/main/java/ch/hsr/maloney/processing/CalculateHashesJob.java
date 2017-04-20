@@ -45,13 +45,13 @@ public class CalculateHashesJob implements Job {
     }
 
     @Override
+    public boolean shouldRun(Context ctx, Event evt) {
+        return true;
+    }
+
+    @Override
     public boolean canRun(Context ctx, Event evt) {
-        for(String jobName:requiredEvents){
-            if(jobName.equals(evt.getName())){
-                return true;
-            }
-        }
-        return false;
+        return true;
     }
 
     @Override

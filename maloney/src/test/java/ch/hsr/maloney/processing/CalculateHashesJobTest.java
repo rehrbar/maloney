@@ -59,7 +59,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void singleFileTest() {
+    public void singleFileTest() throws JobCancelledException {
         Job job = new CalculateHashesJob();
         Event evt = new Event("newFile", "singleFileTest", tempFileUuid);
 
@@ -70,7 +70,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void checkMD5Hash() {
+    public void checkMD5Hash() throws JobCancelledException {
         Job job = new CalculateHashesJob();
         Event evt = new Event("newFile", "singleFileTest", tempFileUuid);
 
@@ -83,7 +83,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void checkSHA1Hash() {
+    public void checkSHA1Hash() throws JobCancelledException {
         Job job = new CalculateHashesJob();
         Event evt = new Event("newFile", "singleFileTest", tempFileUuid);
 
@@ -96,7 +96,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void checkFileWithContentHash() throws IOException {
+    public void checkFileWithContentHash() throws IOException, JobCancelledException {
         FileOutputStream fos = new FileOutputStream(tempFilePath.toFile(),false);
         fos.write("Hello world!".getBytes());
         fos.close();

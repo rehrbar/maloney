@@ -5,6 +5,7 @@ import ch.hsr.maloney.storage.SimpleMetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeJobFactory;
+import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -26,7 +27,9 @@ public class MultithreadedJobProcessorTest{
 
         @Override
         public void update(Observable o, Object arg) {
-            caughtEvents.addAll((List<Event>)arg);
+            if(arg instanceof JobExecution) {
+                caughtEvents.addAll(((JobExecution) arg).getResults());
+            }
         }
     }
 
@@ -94,12 +97,14 @@ public class MultithreadedJobProcessorTest{
             public void update(Observable o, Object arg) {
                 logger.debug("Fake Observer is adding an Event to its memory");
 
-                List<Event> events = (List<Event>)arg;
-                if(events.get(0).getName().equals(FakeJobFactory.eventA)){
-                    FakeJobFactory fakeJobFactory = new FakeJobFactory();
-                    jobProcessor.enqueue(fakeJobFactory.getAtoBJob(),events.get(0));
+                if(arg instanceof JobExecution) {
+                    List<Event> events = ((JobExecution) arg).getResults();
+                    if (events.get(0).getName().equals(FakeJobFactory.eventA)) {
+                        FakeJobFactory fakeJobFactory = new FakeJobFactory();
+                        jobProcessor.enqueue(fakeJobFactory.getAtoBJob(), events.get(0));
+                    }
+                    caughtEvents.addAll(events);
                 }
-                caughtEvents.addAll(events);
             }
         }
 

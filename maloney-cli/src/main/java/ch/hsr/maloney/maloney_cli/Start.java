@@ -40,6 +40,7 @@ public class Start {
         options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
         options.addOption("rds", true, "indexes an rds hash set"); // TODO replace with job configuration
+        options.addOption(null, "clear-events", false,"clears stored events before start"); // TODO replace with job configuration
 
         try {
             CommandLine line = parser.parse(options, args);
@@ -74,7 +75,17 @@ public class Start {
                 // TODO pass job configurations
                 // TODO pass jobs to execute
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
-                (new FrameworkController()).run(frameworkConfiguration);
+                FrameworkController controller = new FrameworkController();
+                if(line.hasOption("clear-events")){
+                    controller.clearEvents();
+                } else {
+                    if(controller.isRestarting()){
+                        logger.info("Not finished events were found, which will be restarted."
+                                +"To clear pending events, use switch --{} instead.","clear-events");
+                    }
+                }
+
+                controller.run(frameworkConfiguration);
                 return;
             }
             if (line.hasOption("rds")) {

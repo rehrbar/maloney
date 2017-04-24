@@ -10,7 +10,6 @@ import org.junit.Test;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
@@ -19,85 +18,11 @@ import static org.junit.Assert.assertTrue;
 public class CalculateHashesJobTest {
     private Path tempFilePath;
     private UUID tempFileUuid;
-    private fakeMetaDataStore fakeMetaDataStore;
-    private fakeDataSource fakeDataSource;
+    private FakeMetaDataStore fakeMetaDataStore;
+    private FakeDataSource fakeDataSource;
     private Context ctx;
     public static final String ZERO_LENGTH_SHA_1_HASH = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
     public static final String ZERO_LENGTH_MD5_HASH = "d41d8cd98f00b204e9800998ecf8427e";
-
-    private class fakeMetaDataStore implements MetadataStore {
-
-        Map<UUID, List<Artifact>> artifacts = new HashMap<>();
-
-        @Override
-        public FileAttributes getFileAttributes(UUID fileID) {
-            return null;
-        }
-
-        @Override
-        public void addFileAttributes(FileAttributes fileAttributes) {
-
-        }
-
-        @Override
-        public List<Artifact> getArtifacts(UUID fileId) {
-            return artifacts.get(fileId);
-        }
-
-        @Override
-        public void addArtifact(UUID fileId, Artifact artifact) {
-            List<Artifact> artifactList = artifacts.get(fileId);
-            if (artifactList == null) {
-                artifactList = new LinkedList<>();
-            }
-            artifactList.add(artifact);
-            artifacts.put(fileId, artifactList);
-        }
-
-        @Override
-        public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
-            for (Artifact a : artifacts) {
-                addArtifact(fileId, a);
-            }
-        }
-
-    }
-
-    private class fakeDataSource implements DataSource {
-
-        Map<UUID, Path> fileUuidToPath = new HashMap<>();
-
-        @Override
-        public File getFile(UUID fileID) {
-            return fileUuidToPath.get(fileID).toFile();
-        }
-
-        @Override
-        public FileInputStream getFileStream(UUID fileID) {
-            try {
-                return new FileInputStream(fileUuidToPath.get(fileID).toFile());
-            } catch (FileNotFoundException e) {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        @Override
-        public UUID addFile(UUID parentId, FileExtractor fileExtractor) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Path getJobWorkingDir(Class job) {
-            throw new UnsupportedOperationException();
-        }
-
-        public UUID addFile(Path path) {
-            UUID uuid = UUID.randomUUID();
-            fileUuidToPath.put(uuid, path);
-            return uuid;
-        }
-
-    }
 
     @Before
     public void prepare() {
@@ -106,15 +31,15 @@ public class CalculateHashesJobTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        fakeMetaDataStore = new fakeMetaDataStore();
-        fakeDataSource = new fakeDataSource();
+        fakeMetaDataStore = new FakeMetaDataStore();
+        fakeDataSource = new FakeDataSource();
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
         tempFileUuid = fakeDataSource.addFile(tempFilePath);
     }
 
     @After
     public void cleanUp() {
-        fakeDataSource.fileUuidToPath.forEach((uuid, path) -> {
+        fakeDataSource.getFiles().forEach(path -> {
             try {
                 Files.deleteIfExists(path);
             } catch (IOException e) {
@@ -134,7 +59,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void singleFileTest() {
+    public void singleFileTest() throws JobCancelledException {
         Job job = new CalculateHashesJob();
         Event evt = new Event("newFile", "singleFileTest", tempFileUuid);
 
@@ -145,7 +70,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void checkMD5Hash() {
+    public void checkMD5Hash() throws JobCancelledException {
         Job job = new CalculateHashesJob();
         Event evt = new Event("newFile", "singleFileTest", tempFileUuid);
 
@@ -158,7 +83,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void checkSHA1Hash() {
+    public void checkSHA1Hash() throws JobCancelledException {
         Job job = new CalculateHashesJob();
         Event evt = new Event("newFile", "singleFileTest", tempFileUuid);
 
@@ -171,7 +96,7 @@ public class CalculateHashesJobTest {
     }
 
     @Test
-    public void checkFileWithContentHash() throws IOException {
+    public void checkFileWithContentHash() throws IOException, JobCancelledException {
         FileOutputStream fos = new FileOutputStream(tempFilePath.toFile(),false);
         fos.write("Hello world!".getBytes());
         fos.close();

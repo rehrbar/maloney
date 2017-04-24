@@ -33,8 +33,13 @@ public class DiskImageJob implements Job {
     }
 
     @Override
-    public boolean canRun(Context ctx, Event evt) {
+    public boolean shouldRun(Context ctx, Event evt) {
         return Files.exists(path);
+    }
+
+    @Override
+    public boolean canRun(Context ctx, Event evt) {
+        return true;
     }
 
     @Override

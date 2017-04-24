@@ -2,6 +2,7 @@ package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.JobExecution;
 import ch.hsr.maloney.util.Tuple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +14,7 @@ import java.util.Queue;
 // TODO phrasing!
 public class SimpleProcessor extends JobProcessor {
     private final Logger logger;
-    private final Queue<Tuple<Job, Event>> jobQueue; //TODO replace with better Queueing structure (persistent)
+    private final Queue<JobExecution> jobQueue; //TODO replace with better Queueing structure (persistent)
     private Context ctx;
 
     public SimpleProcessor(Context ctx) {
@@ -28,20 +29,35 @@ public class SimpleProcessor extends JobProcessor {
         //TODO add the stuff below into a thread(pool)
         while(!jobQueue.isEmpty()){
             // while there are still jobs to be run...
-            Tuple<Job, Event> tuple = jobQueue.poll();
-            Job job = tuple.getLeft();
-            Event evt = tuple.getRight();
+            JobExecution jobExecution = jobQueue.poll();
+            Job job = jobExecution.getJob();
+            Event evt = jobExecution.getTrigger();
 
-            if(job.canRun(ctx, evt)){
-                List<Event> createdEvents = job.run(ctx, evt);
-                if(createdEvents != null && !createdEvents.isEmpty()){
-                    setChanged();
-                    notifyObservers(createdEvents);
+            if(job.shouldRun(ctx, evt)){
+                if(job.canRun(ctx, evt)){
+                    try {
+                        jobExecution.setResults(job.run(ctx, evt));
+                        notifyInterested(jobExecution);
+                    } catch (JobCancelledException e) {
+                        // TODO store failed executions somewhere
+                        logger.info("Job {} cancelled the execution of event {}: file {}", e.getJobName(), e.getEventId(), e.getFileId());
+                    } catch (RuntimeException  e){
+                        logger.error("Job processing failed.", e);
+                    }
                 }
+            } else {
+                // Finish job without producing a result/events.
+                notifyInterested(jobExecution);
             }
         }
         logger.debug("Nothing more to process");
     }
+
+    private void notifyInterested(JobExecution jobExecution) {
+        setChanged();
+        notifyObservers(jobExecution);
+    }
+
 
     @Override
     public void stop() {
@@ -49,8 +65,8 @@ public class SimpleProcessor extends JobProcessor {
     }
 
     @Override
-    public void enqueue(Job job, Event event) {
-        logger.debug("Job '{}' enqueued with new event '{}'", job.getJobName(), event.getName());
-        jobQueue.add(new Tuple<>(job, event));
+    public void enqueue(JobExecution jobExecution) {
+        logger.debug("Job '{}' enqueued with new event '{}'", jobExecution.getJob().getJobName(), jobExecution.getTrigger().getName());
+        jobQueue.add(jobExecution);
     }
 }

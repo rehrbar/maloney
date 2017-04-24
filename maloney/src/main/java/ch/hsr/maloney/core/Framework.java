@@ -1,45 +1,52 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.processing.*;
+import ch.hsr.maloney.processing.Job;
+import ch.hsr.maloney.processing.MultithreadedJobProcessor;
+import ch.hsr.maloney.processing.TSKReadImageJob;
+import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.EventObserver;
+import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author oniet
- *
- * Framework for the whole applicaton:
- *  - Initializes all needed classes (DataSource, MetadataStore, ProgressTracker)
- *  - Checks dependencies on registered Jobs on initialization
- *  - Enqueues new Events to interested Jobs
- *  - ATM: Creates new Event on start (should be moved to a seperate Job...)
+ *         <p>
+ *         Framework for the whole applicaton:
+ *         - Initializes all needed classes (DataSource, MetadataStore, ProgressTracker)
+ *         - Checks dependencies on registered Jobs on initialization
+ *         - Enqueues new Events to interested Jobs
+ *         - ATM: Creates new Event on start (should be moved to a seperate Job...)
  */
-public class Framework implements EventObserver {
+public class Framework implements Observer {
     public static final String EVENT_ORIGIN = "ch.hsr.maloney.core";
     private final Logger logger;
     private MultithreadedJobProcessor jobProcessor;
-    private Context context;
-    private Queue<Event> eventQueue; //TODO Better Queue with nice persistence
+    protected Context context;
+    private EventStore eventStore; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
     public Framework() {
+        // TODO get rid of this ctor, just for compatability
+        this(new EventStore());
+    }
+
+    public Framework(EventStore eventStore) {
         this.logger = LogManager.getLogger();
         initializeContext();
         this.registeredJobs = new LinkedList<>();
-        this.eventQueue = new ConcurrentLinkedQueue<>();
+        this.eventStore = eventStore;
         this.jobProcessor = new MultithreadedJobProcessor(context);
         jobProcessor.addObserver(this);
     }
 
-    private void initializeContext() {
+    protected void initializeContext() {
         MetadataStore metadataStore = null;
         try {
             metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();
@@ -57,7 +64,7 @@ public class Framework implements EventObserver {
     /**
      * Checks whether all registered Jobs can be run by looking through all produced and required Events.
      *
-     * @throws UnrunnableJobException   If one or multiple registered Jobs cannot be run, this Exception is thrown
+     * @throws UnrunnableJobException If one or multiple registered Jobs cannot be run, this Exception is thrown
      */
     public void checkDependencies() throws UnrunnableJobException {
         Set<String> availableEvents = new HashSet<>();
@@ -66,24 +73,22 @@ public class Framework implements EventObserver {
         logger.debug("Checking if registered Jobs can be run...");
 
         availableEvents.add(FrameworkEventNames.STARTUP);
+        // TODO add event names of recovered events
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
-        runnableJobs.add(new TSKReadImageJob());
-        // Added some random Job that gets cleared out
-        // just so that the following while loop can be started
 
-        while(runnableJobs.size() > 0){
+        do{
             runnableJobs.clear();
-            for(Job job : unresolvedDependencies){
-                if(availableEvents.containsAll(job.getRequiredEvents())){
+            for (Job job : unresolvedDependencies) {
+                if (availableEvents.containsAll(job.getRequiredEvents())) {
                     availableEvents.addAll(job.getProducedEvents());
                     runnableJobs.add(job);
                 }
             }
             unresolvedDependencies.removeAll(runnableJobs);
-        }
+        } while (runnableJobs.size() > 0);
 
-        if(unresolvedDependencies.size() > 0){
+        if (unresolvedDependencies.size() > 0) {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("Error with following Jobs:\r\n");
             unresolvedDependencies.forEach(job -> {
@@ -98,10 +103,16 @@ public class Framework implements EventObserver {
 
     /**
      * Starts the framework.
-     *
      */
     public void start() {
-        enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
+        if(eventStore.hasEvents()){
+            // TODO ask user whether to restore events or remove them.
+            // TODO find another way to prevent startup event or introduce some new ones (RESTART/FRESHSTART)
+            Collection<Event> recoveredEvents = eventStore.getEvents();
+            recoveredEvents.forEach(event -> enqueueToInterestedJobs(event));
+        } else {
+            enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
+        }
         try {
             checkDependencies();
         } catch (UnrunnableJobException e) {
@@ -112,13 +123,15 @@ public class Framework implements EventObserver {
         jobProcessor.start();
         jobProcessor.waitForFinish();
         //TODO wait for abort command or for the application finish Event
+        //TODO not all events are removed from eventStore when reaching this point.
+        eventStore.close();
         logger.info("Completion time: {}", System.currentTimeMillis() - startTime);
     }
 
     /**
      * Register a Job on the Framework to be run if the required Event is created.
      *
-     * @param job   Job to be registered and run when required Event is created.
+     * @param job Job to be registered and run when required Event is created.
      */
     public void register(Job job) {
         registeredJobs.add(job);
@@ -132,24 +145,30 @@ public class Framework implements EventObserver {
 
     @Override
     public void update(Observable o, Object arg) {
-        try {
-            ((List<Event>)arg).forEach(evt -> update(o, evt));
-        } catch (ClassCastException e){
-            throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
+        if (arg instanceof JobExecution) {
+            JobExecution jobExecution = (JobExecution) arg;
+            enqueueToInterestedJobs(jobExecution.getResults());
+            eventStore.remove(jobExecution);
+            return;
         }
+        throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
     }
 
-    @Override
-    public void update(Observable o, Event evt) {
-        enqueueToInterestedJobs(evt);
-    }
 
     private void enqueueToInterestedJobs(Event evt) {
-        registeredJobs.forEach((job)->{
-            if(job.getRequiredEvents().contains(evt.getName())){
-                jobProcessor.enqueue(job, evt);
-            }
-        });
+        this.enqueueToInterestedJobs(new LinkedList<Event>(){{push(evt);}});
+    }
+
+    private void enqueueToInterestedJobs(Collection<Event> events) {
+        Collection<JobExecution> plannedExecutions = new LinkedList<>();
+        for (Event evt : events) {
+            registeredJobs.stream()
+                    .filter(j -> j.getRequiredEvents().contains(evt.getName()))
+                    .map(j -> new JobExecution(j, evt)).forEach(j -> plannedExecutions.add(j));
+        }
+
+        eventStore.add(plannedExecutions);
+        plannedExecutions.forEach(j -> jobProcessor.enqueue(j));
     }
 
     /**
@@ -157,7 +176,7 @@ public class Framework implements EventObserver {
      * this Exception is thrown.
      */
     public class UnrunnableJobException extends Exception {
-        public UnrunnableJobException(){
+        public UnrunnableJobException() {
         }
 
         public UnrunnableJobException(String msg) {

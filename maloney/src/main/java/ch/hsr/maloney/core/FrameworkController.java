@@ -130,7 +130,7 @@ public class FrameworkController {
                         .append("\r\n")
                         .append("Average Finished Events per ").append(UPDATE_FREQUENCY_IN_SECONDS)
                         .append(" seconds: ").append(etaCalculator.getAverageSpeed()).append("\r\n")
-                        .append("ETA: ").append(eta.toString("dd.MM.yyyy HH:mm")).append("\r\n");
+                        .append("ETA: ").append(eta.toString("yyyy-MM-dd HH:mm")).append("\r\n");
             }
 
             System.out.println(stringBuilder.toString());

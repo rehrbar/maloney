@@ -2,6 +2,7 @@ package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.*;
 import ch.hsr.maloney.storage.DataSource;
+import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
@@ -31,6 +32,8 @@ public class FrameworkController {
     private static ClassLoader myClassLoader;
     private static final Logger logger = LogManager.getLogger();;
     private static final ScheduledExecutorService scheduledThreadPoolExecutor = Executors.newSingleThreadScheduledExecutor();
+    private static EventStore eventStore;
+    private final boolean isRestarting;
 
     public FrameworkController() {
         if (myClassLoader == null) {
@@ -41,12 +44,14 @@ public class FrameworkController {
                 myClassLoader = ClassLoader.getSystemClassLoader();
             }
         }
+        eventStore = new EventStore();
+        isRestarting = eventStore.hasEvents();
     }
 
     public static void run(String imagePath) {
         ProgressTracker progressTracker = new SimpleProgressTracker();
         Context ctx = initializeContext(null, progressTracker, null);
-        Framework framework = new Framework(ctx);
+        Framework framework = new Framework(eventStore, ctx);
 
         // TODO rework how jobs are added and configured.
         DiskImageJob diskImageJob = new DiskImageJob();
@@ -141,7 +146,7 @@ public class FrameworkController {
     public void run(FrameworkConfiguration config) {
         ProgressTracker progressTracker = new SimpleProgressTracker();
         Context ctx = initializeContext(null, progressTracker, null);
-        Framework framework = new Framework(ctx);
+        Framework framework = new Framework(eventStore, ctx);
         // TODO configure framework with this configuration
 
         logger.info("Starting with configuration");
@@ -168,7 +173,7 @@ public class FrameworkController {
         // TODO replace through run(FrameworkConfiguration config)
         ProgressTracker progressTracker = new SimpleProgressTracker();
         Context ctx = initializeContext(null, progressTracker, null);
-        Framework framework = new Framework(ctx);
+        Framework framework = new Framework(eventStore, ctx);
 
         ImportRdsHashSetJob importRdsHashSetJob = new ImportRdsHashSetJob();
         importRdsHashSetJob.setJobConfig(hashSetPath);
@@ -176,5 +181,13 @@ public class FrameworkController {
 
         framework.start();
         scheduledThreadPoolExecutor.shutdown();
+    }
+
+    public boolean isRestarting() {
+        return isRestarting;
+    }
+
+    public void clearEvents(){
+        eventStore.clear();
     }
 }

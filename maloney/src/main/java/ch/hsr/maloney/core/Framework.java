@@ -2,9 +2,8 @@ package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.MultithreadedJobProcessor;
-import ch.hsr.maloney.processing.TSKReadImageJob;
-import ch.hsr.maloney.storage.EventQueue;
 import ch.hsr.maloney.util.*;
+import ch.hsr.maloney.storage.EventStore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,14 +21,14 @@ public class Framework implements Observer {
     private final Logger logger;
     private MultithreadedJobProcessor jobProcessor;
     protected Context context;
-    private EventQueue eventQueue; //TODO Better Queue with nice persistence
+    private EventStore eventStore; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
-    public Framework(Context ctx) {
+    public Framework(EventStore eventStore, Context ctx) {
         this.logger = LogManager.getLogger();
         this.context = ctx;
         this.registeredJobs = new LinkedList<>();
-        //this.eventQueue = new EventQueue();
+        this.eventStore = eventStore;
         this.jobProcessor = new MultithreadedJobProcessor(context);
 
         jobProcessor.addObserver(this);
@@ -47,13 +46,11 @@ public class Framework implements Observer {
         logger.debug("Checking if registered Jobs can be run...");
 
         availableEvents.add(FrameworkEventNames.STARTUP);
+        // TODO add event names of recovered events
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
-        runnableJobs.add(new TSKReadImageJob());
-        // Added some random Job that gets cleared out
-        // just so that the following while loop can be started
 
-        while (runnableJobs.size() > 0) {
+        do{
             runnableJobs.clear();
             for (Job job : unresolvedDependencies) {
                 if (availableEvents.containsAll(job.getRequiredEvents())) {
@@ -62,7 +59,7 @@ public class Framework implements Observer {
                 }
             }
             unresolvedDependencies.removeAll(runnableJobs);
-        }
+        } while (runnableJobs.size() > 0);
 
         if (unresolvedDependencies.size() > 0) {
             StringBuilder stringBuilder = new StringBuilder();
@@ -81,7 +78,14 @@ public class Framework implements Observer {
      * Starts the framework.
      */
     public void start() {
-        enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
+        if(eventStore.hasEvents()){
+            // TODO ask user whether to restore events or remove them.
+            // TODO find another way to prevent startup event or introduce some new ones (RESTART/FRESHSTART)
+            Collection<Event> recoveredEvents = eventStore.getEvents();
+            recoveredEvents.forEach(event -> enqueueToInterestedJobs(event));
+        } else {
+            enqueueToInterestedJobs(new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null));
+        }
         try {
             checkDependencies();
         } catch (UnrunnableJobException e) {
@@ -92,6 +96,8 @@ public class Framework implements Observer {
         jobProcessor.start();
         jobProcessor.waitForFinish();
         //TODO wait for abort command or for the application finish Event
+        //TODO not all events are removed from eventStore when reaching this point.
+        eventStore.close();
         logger.info("Completion time: {}", System.currentTimeMillis() - startTime);
     }
 
@@ -113,21 +119,31 @@ public class Framework implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         if (arg instanceof JobExecution) {
+            JobExecution jobExecution = (JobExecution) arg;
+            enqueueToInterestedJobs(jobExecution.getResults());
+            eventStore.remove(jobExecution);
             context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSED_EVENT, 1));
-            List<Event> newEvents = ((JobExecution) arg).getResults();
-            newEvents.forEach(this::enqueueToInterestedJobs);
-            context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.NEW_EVENT, newEvents.size()));
             return;
         }
         throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
     }
 
+
     private void enqueueToInterestedJobs(Event evt) {
-        registeredJobs.forEach((job) -> {
-            if (job.getRequiredEvents().contains(evt.getName())) {
-                jobProcessor.enqueue(job, evt);
-            }
-        });
+        this.enqueueToInterestedJobs(new LinkedList<Event>(){{push(evt);}});
+    }
+
+    private void enqueueToInterestedJobs(Collection<Event> events) {
+        Collection<JobExecution> plannedExecutions = new LinkedList<>();
+        for (Event evt : events) {
+            registeredJobs.stream()
+                    .filter(j -> j.getRequiredEvents().contains(evt.getName()))
+                    .map(j -> new JobExecution(j, evt)).forEach(j -> plannedExecutions.add(j));
+        }
+
+        eventStore.add(plannedExecutions);
+        plannedExecutions.forEach(j -> jobProcessor.enqueue(j));
+        context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.NEW_EVENT, plannedExecutions.size()));
     }
 
     /**

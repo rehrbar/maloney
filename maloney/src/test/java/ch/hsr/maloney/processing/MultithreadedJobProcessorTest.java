@@ -24,7 +24,9 @@ public class MultithreadedJobProcessorTest{
 
         @Override
         public void update(Observable o, Object arg) {
-            caughtEvents.addAll(((JobExecution)arg).getResults());
+            if(arg instanceof JobExecution) {
+                caughtEvents.addAll(((JobExecution) arg).getResults());
+            }
         }
     }
 
@@ -80,7 +82,7 @@ public class MultithreadedJobProcessorTest{
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 10000)
     public void twoJobsInSequence(){
         class FakeObserverEnqueuesNext extends FakeObserver{
             private JobProcessor jobProcessor;
@@ -93,12 +95,14 @@ public class MultithreadedJobProcessorTest{
             public void update(Observable o, Object arg) {
                 logger.debug("Fake Observer is adding an Event to its memory");
 
-                List<Event> events = ((JobExecution)arg).getResults();
-                if(events.get(0).getName().equals(FakeJobFactory.eventA)){
-                    FakeJobFactory fakeJobFactory = new FakeJobFactory();
-                    jobProcessor.enqueue(fakeJobFactory.getAtoBJob(),events.get(0));
+                if(arg instanceof JobExecution) {
+                    List<Event> events = ((JobExecution) arg).getResults();
+                    if (events.get(0).getName().equals(FakeJobFactory.eventA)) {
+                        FakeJobFactory fakeJobFactory = new FakeJobFactory();
+                        jobProcessor.enqueue(fakeJobFactory.getAtoBJob(), events.get(0));
+                    }
+                    caughtEvents.addAll(events);
                 }
-                caughtEvents.addAll(events);
             }
         }
 

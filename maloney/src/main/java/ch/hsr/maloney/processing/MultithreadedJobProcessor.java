@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
@@ -48,19 +47,36 @@ public class MultithreadedJobProcessor extends JobProcessor {
         Job job = jobExecution.getJob();
         Event evt = jobExecution.getTrigger();
 
-        if (job.canRun(ctx, evt)) {
-            try {
-                semaphore.acquire();
-                pool.submit(() -> {
-                    jobExecution.setResults( job.run(ctx, evt));
-                    setChanged();
-                    notifyObservers(jobExecution);
-                    semaphore.release();
-                });
-            } catch (InterruptedException e) {
-                logger.error("Could not schedule new Job",e);
+        if (job.shouldRun(ctx, evt)) {
+            if (job.canRun(ctx, evt)) {
+                try {
+                    semaphore.acquire();
+                    pool.submit(() -> {
+                        try {
+                            jobExecution.setResults(job.run(ctx, evt));
+                            notifyInterested(jobExecution);
+                        } catch (JobCancelledException e) {
+                            // TODO store failed executions somewhere
+                            logger.info("Job {} cancelled the execution of event {}: file {}", e.getJobName(), e.getEventId(), e.getFileId());
+                        } catch (RuntimeException e) {
+                            logger.error("Job processing failed.", e);
+                        }
+
+                        semaphore.release();
+                    });
+                } catch (InterruptedException e) {
+                    logger.error("Could not schedule new Job", e);
+                }
             }
+        } else {
+            // Finish job without producing a result/events.
+            notifyInterested(jobExecution);
         }
+    }
+
+    private void notifyInterested(JobExecution jobExecution) {
+        setChanged();
+        notifyObservers(jobExecution);
     }
 
     @Override
@@ -69,9 +85,8 @@ public class MultithreadedJobProcessor extends JobProcessor {
     }
 
     @Override
-    public synchronized void enqueue(Job job, Event event) {
-        logger.debug("Enqueued '{}' to '{}'", event.getName(), job.getJobName());
-        JobExecution jobExecution = new JobExecution(job, event);
+    public synchronized void enqueue(JobExecution jobExecution) {
+        logger.debug("Enqueued '{}' to '{}'", jobExecution.getTrigger().getName(), jobExecution.getJob().getJobName());
         if (isStarted && !pool.isShutdown()) {
             putInPool(jobExecution);
         } else {
@@ -86,7 +101,7 @@ public class MultithreadedJobProcessor extends JobProcessor {
             logger.debug("Nothing more to process or processing canceled");
             semaphore.release(MAXCONCURRENTJOBS);
         } catch (InterruptedException e) {
-            logger.error("Waiting for finish was interrupted",e);
+            logger.error("Waiting for finish was interrupted", e);
         }
     }
 

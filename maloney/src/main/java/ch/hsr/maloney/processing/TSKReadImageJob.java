@@ -46,13 +46,13 @@ public class TSKReadImageJob implements Job {
     }
 
     @Override
+    public boolean shouldRun(Context ctx, Event evt) {
+        return true;
+    }
+
+    @Override
     public boolean canRun(Context ctx, Event evt) {
-        for (String eventName : requiredEvents) {
-            if (evt.getName().equals(eventName)) {
-                return true;
-            }
-        }
-        return false;
+        return true;
     }
 
     @Override

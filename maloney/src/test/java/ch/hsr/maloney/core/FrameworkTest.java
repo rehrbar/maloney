@@ -1,8 +1,8 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.storage.FakeDataSource;
-import ch.hsr.maloney.storage.FakeMetaDataStore;
-import ch.hsr.maloney.util.*;
+import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.FakeJobFactory;
+import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -10,6 +10,7 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Observable;
 import java.util.UUID;
@@ -21,15 +22,9 @@ import static org.junit.Assert.fail;
  */
 public class FrameworkTest {
 
-    private class FakeFramework extends Framework{
-        public FakeFramework() {
-            super(new Context(new FakeMetaDataStore(), new FakeProgressTracker(), new FakeDataSource()));
-        }
-    }
-
     @Test
     public void simpleDependencyTest(){
-        Framework framework = new FakeFramework();
+        Framework framework = new FakeFramework(false);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());
@@ -43,7 +38,7 @@ public class FrameworkTest {
 
     @Test(expected = Framework.UnrunnableJobException.class)
     public void advancedDependencyTest() throws Framework.UnrunnableJobException{
-        Framework framework = new FakeFramework();
+        Framework framework = new FakeFramework(false);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getBtoCJob());
@@ -60,7 +55,9 @@ public class FrameworkTest {
         setLogVerbosity();
 
         // actual test
-        int increment = 1000000;
+        // TODO increase increment again to the maximum after implementing bulk updates of EventStore
+        //int increment = 11000000;
+        int increment = 100000;
 
         LinkedList<Event> events = new LinkedList<>();
         UUID fileUuid = UUID.randomUUID();
@@ -68,14 +65,18 @@ public class FrameworkTest {
             events.add(new Event(FakeJobFactory.eventA,"Test", fileUuid));
         }
 
-        Framework framework = new FakeFramework();
+        Framework framework = new FakeFramework(true);
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
         framework.register(fakeJobFactory.getAJob());
         framework.register(fakeJobFactory.getAtoBJob());
-        JobExecution jobExecution = new JobExecution(null, null);
+        JobExecution jobExecution = new JobExecution(null, new Event(FrameworkEventNames.STARTUP,"Test", fileUuid));
         jobExecution.setResults(events);
+        System.out.printf("starting insertion at %1$tF %1$tT.%1$tL\n", new Date());
         framework.update(new Observable(), jobExecution);
+        System.out.printf("starting framework at %1$tF %1$tT.%1$tL\n", new Date());
         framework.start();
+
+        FakeFramework.deleteEventStore();
     }
 
     /**
@@ -115,3 +116,6 @@ public class FrameworkTest {
         ctx.updateLoggers();
     }
 }
+
+
+

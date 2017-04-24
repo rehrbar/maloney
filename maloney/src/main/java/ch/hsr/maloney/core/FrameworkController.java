@@ -161,6 +161,7 @@ public class FrameworkController {
 
         framework.start();
         logger.info("Framework has finished");
+        scheduledThreadPoolExecutor.shutdown();
     }
 
     public static void runHashSet(String hashSetPath) {
@@ -174,5 +175,6 @@ public class FrameworkController {
         framework.register(importRdsHashSetJob);
 
         framework.start();
+        scheduledThreadPoolExecutor.shutdown();
     }
 }

@@ -1,26 +1,20 @@
 package ch.hsr.maloney.processing;
 
-import ch.hsr.maloney.storage.hash.HashAlgorithm;
-import ch.hsr.maloney.storage.hash.HashRecord;
-import ch.hsr.maloney.storage.hash.HashType;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static ch.hsr.maloney.processing.ImportRdsHashSetJob.FILE_PATTERN;
 
-/**
- * Created by r1ehrbar on 28.11.2016.
- */
 public class ImportRdsHashSetJobTest {
     @Test
     public void runTest() throws JobCancelledException {
         Job job = new ImportRdsHashSetJob();
         job.setJobConfig("D:\\hash_lists\\rds_254u_100k.zip");
-        Assert.assertTrue(job.canRun(null, null));
-        job.run(null, null);
+        // TODO prepare fixtures and make run() testable (inject hash store)
+//        Assert.assertTrue(job.canRun(null, null));
+//        job.run(null, null);
     }
 
     @Test
@@ -32,5 +26,21 @@ public class ImportRdsHashSetJobTest {
         Assert.assertEquals("0000000F8527DCCAB6642252BBCFA1B8072D33EE", matcher.group("sha1"));
         Assert.assertEquals("68CE322D8A896B6E4E7E3F18339EC85C", matcher.group("md5"));
         Assert.assertEquals("E39149E4", matcher.group("crc32"));
+    }
+
+    @Test
+    public void setNullConfigTest(){
+        Job job = new ImportRdsHashSetJob();
+        job.setJobConfig(null);
+        Assert.assertFalse(job.shouldRun(null, null));
+        Assert.assertFalse(job.canRun(null, null));
+    }
+
+    @Test
+    public void setEmptyConfigTest(){
+        Job job = new ImportRdsHashSetJob();
+        job.setJobConfig("");
+        Assert.assertFalse(job.shouldRun(null, null));
+        Assert.assertFalse(job.canRun(null, null));
     }
 }

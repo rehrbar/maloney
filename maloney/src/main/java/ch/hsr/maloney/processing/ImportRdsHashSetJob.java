@@ -46,13 +46,13 @@ public class ImportRdsHashSetJob implements Job {
     @Override
     public boolean shouldRun(Context ctx, Event evt) {
         // TODO verify correct implementation of this shouldRun
-        return !zipFile.getRoot().equals(zipFile);
+        return zipFile != null && zipFile.getRoot() != null;
     }
 
     @Override
     public boolean canRun(Context ctx, Event evt) {
-        if (!zipFile.toFile().exists()) {
-            logger.error("RDS file not found at '{}', will not import any hashes.", zipFile.toAbsolutePath().toString());
+        if (zipFile == null || !zipFile.toFile().exists()) {
+            logger.error("RDS file not found at '{}', will not import any hashes.", zipFile == null ? "n/a" : zipFile.toAbsolutePath().toString());
             return false;
         }
         return true;
@@ -245,6 +245,7 @@ public class ImportRdsHashSetJob implements Job {
      */
     @Override
     public void setJobConfig(String config) {
+        if(config == null) return;
         zipFile = Paths.get(config);
     }
 }

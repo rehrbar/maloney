@@ -190,15 +190,24 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         return new ElasticsearchIterator();
     }
 
+    public Iterator<UUID> iterator(int expiryTimeMillis){
+        return new ElasticsearchIterator(expiryTimeMillis);
+    }
+
     private class ElasticsearchIterator implements Iterator<UUID> {
         //TODO delete search on index
-        final int expiry_time_millis = 60000;
+        final int expiry_time_millis;
 
         List<UUID> uuids;
         Iterator<UUID> iterator;
         SearchResponse scrollResp;
 
         ElasticsearchIterator(){
+            this(60000);
+        }
+
+        ElasticsearchIterator(int expiryTimeMillis){
+            this.expiry_time_millis = expiryTimeMillis;
             //QueryBuilder qb = termQuery("multi", "test");
             scrollResp = client.prepareSearch(indexName)
                     //.addSort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)

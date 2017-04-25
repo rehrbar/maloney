@@ -211,7 +211,12 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         private void extractResults() {
             uuids = new LinkedList<>();
             for (SearchHit hit : scrollResp.getHits().getHits()) {
-                uuids.add(hit.field("fileId").getValue());
+                try {
+                    final FileAttributes fileAttributes = mapper.readValue(hit.getSourceAsString(),FileAttributes.class);
+                    uuids.add(fileAttributes.getFileId());
+                } catch (IOException e) {
+                    logger.error("Could not parse FileAttributes retrieved from elasticsearch.", e);
+                }
             }
             iterator = uuids.iterator();
         }

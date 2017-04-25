@@ -21,12 +21,17 @@ public class ETACalculator {
 
     /**
      * Calculates the average speed over all submitted points
-     * @return  Average speed over all submitted points
+     * @return  Average speed over all submitted points in task per millisecond.
      */
     public double getAverageSpeed(){
-        double avgSpeed = 0;
+        if(measurementList.size() < 2){
+            return 0.0;
+        }
+
+        double speedSum = 0;
         int lastFinished = 0;
         long lastTime = 0;
+        int avgElements = 0;
 
         for (Measurement c : measurementList) {
             // First calculation has to be ignored if it isn't the first time this gets executed
@@ -34,19 +39,14 @@ public class ETACalculator {
             // e.g.: 0 finished --> 500 finished, when instead actually 460 finished --> 500 finished
             // but wasn't tracked anymore
             if(lastFinished != 0 || lastTime != 0){
-                // Add up and later...
-                avgSpeed += ((c.getFinished() - lastFinished) / (c.getTime() - lastTime));
+                // Multiply by 1.0 to prevent implicit integer conversion
+                speedSum += ((c.getFinished() - lastFinished) / (c.getTime() - lastTime * 1.0));
+                avgElements++;
             }
             lastFinished = c.getFinished();
             lastTime = c.getTime();
         }
-        // ... calculate average (first entry in list does not count)
-        if(measurementList.size() == RELEVANT_CYCLES){
-            avgSpeed /= (measurementList.size()-1);
-        } else {
-            avgSpeed /= measurementList.size()-2;
-        }
-        return avgSpeed;
+        return speedSum / avgElements;
     }
 
     /**
@@ -54,10 +54,11 @@ public class ETACalculator {
      * @return  Estimated time of arrival/finish
      */
     public LocalDateTime getETA(){
-        if(measurementList.size() > 0){
+        double averageSpeed = getAverageSpeed();
+        if(averageSpeed > 0){
             return LocalDateTime.now().withFieldAdded(
                     DurationFieldType.millis(),
-                    (int)(measurementList.get(measurementList.size()-1).getPending() / getAverageSpeed()));
+                    (int)(measurementList.get(measurementList.size()-1).getPending() / averageSpeed));
         }
         return null;
     }

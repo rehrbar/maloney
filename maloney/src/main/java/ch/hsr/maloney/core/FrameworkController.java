@@ -121,22 +121,18 @@ public class FrameworkController {
 
             //time estimation
 
-            int processing = progressTracker.getProcessedAmount(ProgressInfoType.NEW_EVENT.toString());
-            int finished = progressTracker.getProcessedAmount(ProgressInfoType.PROCESSED_EVENT.toString());
+            int processing = progressTracker.getProcessedAmount(ProgressInfoType.TASK_QUEUED.toString());
+            int finished = progressTracker.getProcessedAmount(ProgressInfoType.TASK_FINISHED.toString());
 
             etaCalculator.addMeasurement(processing, finished, System.currentTimeMillis());
 
             LocalDateTime eta = etaCalculator.getETA();
 
-            if(eta == null){
-                stringBuilder.append("ETA: Calculating...");
-            } else {
-                stringBuilder
-                        .append("\r\n")
-                        .append("Average Finished Events per ").append(UPDATE_FREQUENCY_IN_SECONDS)
-                        .append(" seconds: ").append(etaCalculator.getAverageSpeed()).append("\r\n")
-                        .append("ETA: ").append(eta.toString("yyyy-MM-dd HH:mm")).append("\r\n");
-            }
+            stringBuilder
+                    .append("\r\n")
+                    .append("Average Speed: ")
+                    .append(String.format("%.2f", etaCalculator.getAverageSpeed() * 1000)).append(" Tasks/Second\r\n")
+                    .append("ETA: ").append(eta == null ? "n/a" : eta.toString("yyyy-MM-dd HH:mm")).append("\r\n");
 
             System.out.println(stringBuilder.toString());
         }, START_TIME, UPDATE_FREQUENCY_IN_SECONDS, TimeUnit.SECONDS);

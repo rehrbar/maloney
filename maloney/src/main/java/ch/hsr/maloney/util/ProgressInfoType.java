@@ -4,8 +4,8 @@ package ch.hsr.maloney.util;
  * Created by oliver on 28.03.17.
  */
 public enum ProgressInfoType {
-    NEW_EVENT("Created Events"),
-    PROCESSED_EVENT("Processed Events");
+    TASK_QUEUED("Created Tasks"),
+    TASK_FINISHED("Finished Tasks");
 
     private final String name;
 

@@ -43,6 +43,16 @@ public class ETACalculatorTest {
     }
 
     @Test
+    public void calculateAverageSpeed(){
+        ETACalculator calculator = new ETACalculator(3);
+        calculator.addMeasurement(3,0, 1000);
+        calculator.addMeasurement(3,1, 2000);
+        calculator.addMeasurement(3,2, 3000);
+        calculator.addMeasurement(3,3, 4000);
+        assertEquals(0.001, calculator.getAverageSpeed(), 0.0001);
+    }
+
+    @Test
     public void noEntries() {
         ETACalculator etaCalculator = new ETACalculator(5);
         assertEquals(0, etaCalculator.getAverageSpeed(), 0.01);

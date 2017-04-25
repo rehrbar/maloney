@@ -122,7 +122,7 @@ public class Framework implements Observer {
             JobExecution jobExecution = (JobExecution) arg;
             enqueueToInterestedJobs(jobExecution.getResults());
             eventStore.remove(jobExecution);
-            context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.PROCESSED_EVENT, 1));
+            context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.TASK_FINISHED, 1));
             return;
         }
         throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
@@ -143,7 +143,7 @@ public class Framework implements Observer {
 
         eventStore.add(plannedExecutions);
         plannedExecutions.forEach(j -> jobProcessor.enqueue(j));
-        context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.NEW_EVENT, plannedExecutions.size()));
+        context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.TASK_QUEUED, plannedExecutions.size()));
     }
 
     /**

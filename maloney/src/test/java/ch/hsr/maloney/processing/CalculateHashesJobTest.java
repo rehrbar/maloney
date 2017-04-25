@@ -3,7 +3,7 @@ package ch.hsr.maloney.processing;
 import ch.hsr.maloney.storage.*;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.FakeMetaDataStore;
+import ch.hsr.maloney.storage.FakeMetaDataStore;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

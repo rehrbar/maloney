@@ -38,4 +38,9 @@ public class FakeMetaDataStore implements MetadataStore {
         }
     }
 
+    @Override
+    public Iterator<UUID> iterator() {
+        return artifacts.keySet().iterator();
+    }
+
 }

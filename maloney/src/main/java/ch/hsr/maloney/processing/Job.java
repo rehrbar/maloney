@@ -10,11 +10,19 @@ import java.util.List;
  */
 public interface Job {
     /**
-     * Check whether or not the Job can, or should, execute
+     * Check whether or not the Job should execute.
+     * @param ctx Context on which the Job will execute
+     * @param evt Event on which the Job is based on
+     * @return True if the Job should run, false if not
+     */
+    boolean shouldRun(Context ctx, Event evt);
+
+    /**
+     * Check whether or not the Job can execute.
      *
      * @param ctx Context on which the Job will execute
      * @param evt Event on which the Job is based on
-     * @return True if the Job can and should run, false if not
+     * @return True if the Job can, false if not
      */
     boolean canRun(Context ctx, Event evt);
 
@@ -24,8 +32,9 @@ public interface Job {
      * @param ctx Context on which the Job will execute
      * @param evt Event on which the Job is based on
      * @return List of Events which created by this Job
+     * @throws JobCancelledException If the job wants to cancel, but may be able to finish at another time.
      */
-    List<Event> run(Context ctx, Event evt);
+    List<Event> run(Context ctx, Event evt) throws JobCancelledException;
 
     /**
      * A List of Events which this Job needs before it can be executed

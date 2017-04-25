@@ -1,6 +1,7 @@
 package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.*;
+import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.util.CustomClassLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,6 +18,8 @@ public class FrameworkController {
 
     private static ClassLoader myClassLoader;
     private final Logger logger;
+    private final EventStore eventStore;
+    private final boolean isRestarting;
 
     public FrameworkController() {
         logger = LogManager.getLogger();
@@ -28,6 +31,8 @@ public class FrameworkController {
                 myClassLoader = ClassLoader.getSystemClassLoader();
             }
         }
+        eventStore = new EventStore();
+        isRestarting = eventStore.hasEvents();
     }
 
     public static void run(String imagePath) {
@@ -46,7 +51,7 @@ public class FrameworkController {
     }
 
     public void run(FrameworkConfiguration config) {
-        Framework framework = new Framework();
+        Framework framework = new Framework(eventStore);
         // TODO configure framework with this configuration
 
         logger.info("Starting with configuration");
@@ -74,5 +79,13 @@ public class FrameworkController {
         framework.register(importRdsHashSetJob);
 
         framework.start();
+    }
+
+    public boolean isRestarting() {
+        return isRestarting;
+    }
+
+    public void clearEvents(){
+        eventStore.clear();
     }
 }

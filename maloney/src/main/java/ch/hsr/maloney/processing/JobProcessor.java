@@ -1,6 +1,7 @@
 package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.JobExecution;
 
 import java.util.Observable;
 
@@ -24,5 +25,14 @@ public abstract class JobProcessor extends Observable {
      * @param job   Job to be executed.
      * @param event Event which has to be forwarded to Job.
      */
-    public abstract void enqueue(Job job, Event event);
+    public void enqueue(Job job, Event event) {
+        enqueue(new JobExecution(job, event));
+    }
+
+    /**
+     * Adds a Job to be executed with the specified Event.
+     *  @param jobExecution   Job to be executed.
+     *
+     */
+    public abstract void enqueue(JobExecution jobExecution);
 }

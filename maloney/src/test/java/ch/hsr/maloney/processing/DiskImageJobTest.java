@@ -28,44 +28,6 @@ public class DiskImageJobTest {
     private FakeDataSource fakeDataSource;
     private Context ctx;
 
-    private class FakeDataSource implements DataSource {
-
-        Map<UUID, Path> fileUuidToPath = new HashMap<>();
-
-        @Override
-        public File getFile(UUID fileID) {
-            return fileUuidToPath.get(fileID).toFile();
-        }
-
-        @Override
-        public FileInputStream getFileStream(UUID fileID) {
-            try {
-                return new FileInputStream(fileUuidToPath.get(fileID).toFile());
-            } catch (FileNotFoundException e) {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        @Override
-        public UUID addFile(UUID parentId, FileExtractor fileExtractor) {
-            UUID id = UUID.randomUUID();
-            fileExtractor.extractMetadata();
-            Path file = fileExtractor.extractFile();
-            fileExtractor.cleanup();
-            fileUuidToPath.put(id, file);
-            return id;
-        }
-
-        @Override
-        public Path getJobWorkingDir(Class job) {
-            throw new UnsupportedOperationException();
-        }
-
-        public Collection<Path> getFiles(){
-            return fileUuidToPath.values();
-        }
-
-    }
     private Path testImage;
     @Before
     public void setup(){
@@ -80,7 +42,7 @@ public class DiskImageJobTest {
     }
 
     @Test
-    public void run() throws IOException {
+    public void run() throws IOException, JobCancelledException {
         Event startupEvent = new Event(FrameworkEventNames.STARTUP, EVENT_ORIGIN, null);
         testImage = Files.createTempFile("maloney", null);
         Job job = new DiskImageJob();

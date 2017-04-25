@@ -1,5 +1,6 @@
 package ch.hsr.maloney.storage;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,4 +46,11 @@ public interface MetadataStore {
      * @param artifacts Artifacts to be added.
      */
     void addArtifacts(UUID fileId, List<Artifact> artifacts);
+
+    /**
+     * Get an Iterator over all UUIDs stored in the MetadataStore.
+     *
+     * @return  Iterator over all UUIDs in MetadataStore.
+     */
+    Iterator<UUID> iterator();
 }

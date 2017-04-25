@@ -3,6 +3,7 @@ package ch.hsr.maloney.processing;
 import ch.hsr.maloney.storage.*;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.FakeMetaDataStore;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,7 +11,6 @@ import org.junit.Test;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
@@ -19,49 +19,11 @@ import static org.junit.Assert.assertTrue;
 public class CalculateHashesJobTest {
     private Path tempFilePath;
     private UUID tempFileUuid;
-    private fakeMetaDataStore fakeMetaDataStore;
+    private FakeMetaDataStore fakeMetaDataStore;
     private fakeDataSource fakeDataSource;
     private Context ctx;
     public static final String ZERO_LENGTH_SHA_1_HASH = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
     public static final String ZERO_LENGTH_MD5_HASH = "d41d8cd98f00b204e9800998ecf8427e";
-
-    private class fakeMetaDataStore implements MetadataStore {
-
-        Map<UUID, List<Artifact>> artifacts = new HashMap<>();
-
-        @Override
-        public FileAttributes getFileAttributes(UUID fileID) {
-            return null;
-        }
-
-        @Override
-        public void addFileAttributes(FileAttributes fileAttributes) {
-
-        }
-
-        @Override
-        public List<Artifact> getArtifacts(UUID fileId) {
-            return artifacts.get(fileId);
-        }
-
-        @Override
-        public void addArtifact(UUID fileId, Artifact artifact) {
-            List<Artifact> artifactList = artifacts.get(fileId);
-            if (artifactList == null) {
-                artifactList = new LinkedList<>();
-            }
-            artifactList.add(artifact);
-            artifacts.put(fileId, artifactList);
-        }
-
-        @Override
-        public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
-            for (Artifact a : artifacts) {
-                addArtifact(fileId, a);
-            }
-        }
-
-    }
 
     private class fakeDataSource implements DataSource {
 
@@ -106,7 +68,7 @@ public class CalculateHashesJobTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        fakeMetaDataStore = new fakeMetaDataStore();
+        fakeMetaDataStore = new FakeMetaDataStore();
         fakeDataSource = new fakeDataSource();
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
         tempFileUuid = fakeDataSource.addFile(tempFilePath);

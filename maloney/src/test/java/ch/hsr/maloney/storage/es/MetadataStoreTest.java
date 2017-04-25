@@ -97,5 +97,10 @@ public class MetadataStoreTest {
         Assert.assertTrue(result.contains("md5"));
         Assert.assertTrue(result.contains("86fb269d190d2c85f6e0468ceca42a20"));
     }
+
+    @Test
+    public void iterator() throws Exception {
+        //TODO this
+    }
 }
 

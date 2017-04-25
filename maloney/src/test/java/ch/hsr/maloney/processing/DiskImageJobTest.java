@@ -4,6 +4,7 @@ import ch.hsr.maloney.core.FrameworkEventNames;
 import ch.hsr.maloney.storage.*;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.FakeMetaDataStore;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,49 +24,11 @@ import static ch.hsr.maloney.core.Framework.EVENT_ORIGIN;
  * Created by roman on 03.12.16.
  */
 public class DiskImageJobTest {
-    private fakeMetaDataStore fakeMetaDataStore;
-    private fakeDataSource fakeDataSource;
+    private FakeMetaDataStore fakeMetaDataStore;
+    private FakeDataSource fakeDataSource;
     private Context ctx;
 
-    private class fakeMetaDataStore implements MetadataStore {
-
-        Map<UUID, List<Artifact>> artifacts = new HashMap<>();
-
-        @Override
-        public FileAttributes getFileAttributes(UUID fileID) {
-            return null;
-        }
-
-        @Override
-        public void addFileAttributes(FileAttributes fileAttributes) {
-
-        }
-
-        @Override
-        public List<Artifact> getArtifacts(UUID fileId) {
-            return artifacts.get(fileId);
-        }
-
-        @Override
-        public void addArtifact(UUID fileId, Artifact artifact) {
-            List<Artifact> artifactList = artifacts.get(fileId);
-            if (artifactList == null) {
-                artifactList = new LinkedList<>();
-            }
-            artifactList.add(artifact);
-            artifacts.put(fileId, artifactList);
-        }
-
-        @Override
-        public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
-            for (Artifact a : artifacts) {
-                addArtifact(fileId, a);
-            }
-        }
-
-    }
-
-    private class fakeDataSource implements DataSource {
+    private class FakeDataSource implements DataSource {
 
         Map<UUID, Path> fileUuidToPath = new HashMap<>();
 
@@ -106,8 +69,8 @@ public class DiskImageJobTest {
     private Path testImage;
     @Before
     public void setup(){
-        fakeMetaDataStore = new fakeMetaDataStore();
-        fakeDataSource = new fakeDataSource();
+        fakeMetaDataStore = new FakeMetaDataStore();
+        fakeDataSource = new FakeDataSource();
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
     }
 

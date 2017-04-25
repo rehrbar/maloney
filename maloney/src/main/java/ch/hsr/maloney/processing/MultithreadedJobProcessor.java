@@ -1,8 +1,6 @@
 package ch.hsr.maloney.processing;
 
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.JobExecution;
+import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

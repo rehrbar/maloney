@@ -100,7 +100,7 @@ public class MetadataStoreTest {
 
     @Test
     public void iterator() throws Exception {
-        //TODO this
+        es.iterator();
     }
 }
 

@@ -17,12 +17,9 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
@@ -32,7 +29,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.query.QueryBuilders.*;
 
 
 /**
@@ -191,45 +187,59 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public Iterator<UUID> iterator() {
-        //TODO this
-
-        QueryBuilder qb = termQuery("multi", "test");
-
-        SearchResponse scrollResp = client.prepareSearch(indexName)
-                .addSort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
-                .setScroll(new TimeValue(60000))
-                .setQuery(qb)
-                .setSize(100).get(); //max of 100 hits will be returned for each scroll
-        //Scroll until no hits are returned
-        do {
-            for (SearchHit hit : scrollResp.getHits().getHits()) {
-                //TODO this
-            }
-
-            scrollResp = client
-                    .prepareSearchScroll(scrollResp.getScrollId())
-                    .setScroll(new TimeValue(60000))
-                    .execute()
-                    .actionGet();
-        } while(scrollResp.getHits().getHits().length != 0); // Zero hits mark the end of the scroll and the while loop.
-
         return new ElasticsearchIterator();
     }
 
     private class ElasticsearchIterator implements Iterator<UUID> {
+        //TODO delete search on index
+        final int expiry_time_millis = 60000;
 
-        public ElasticsearchIterator(){
+        List<UUID> uuids;
+        Iterator<UUID> iterator;
+        SearchResponse scrollResp;
 
+        ElasticsearchIterator(){
+            //QueryBuilder qb = termQuery("multi", "test");
+            scrollResp = client.prepareSearch(indexName)
+                    //.addSort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
+                    .setScroll(new TimeValue(expiry_time_millis))
+                    //.setQuery(qb)
+                    .setSize(100).get(); //max of 100 hits will be returned for each scroll
+            extractResults();
+        }
+
+        private void extractResults() {
+            uuids = new LinkedList<>();
+            for (SearchHit hit : scrollResp.getHits().getHits()) {
+                uuids.add(hit.field("fileId").getValue());
+            }
+            iterator = uuids.iterator();
+        }
+
+        private boolean continueScrolling() {
+            scrollResp = client
+                    .prepareSearchScroll(scrollResp.getScrollId())
+                    .setScroll(new TimeValue(expiry_time_millis))
+                    .execute()
+                    .actionGet();
+            if(scrollResp.getHits().getHits().length != 0){ // Zero hits mark the end of the scroll and the while loop.
+                return false;
+            } else {
+                extractResults();
+                return true;
+            }
         }
 
         @Override
         public boolean hasNext() {
-            return false;
+            if(iterator.hasNext()){
+                return true;
+            } else return continueScrolling();
         }
 
         @Override
         public UUID next() {
-            return null;
+            return iterator.next();
         }
     }
 }

@@ -9,7 +9,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.sleuthkit.datamodel.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,7 +80,7 @@ public class TSKReadImageJob implements Job {
 
             // push all files into DataSource
             sk.findAllFilesWhere("name NOT IN ('.', '..')").forEach(abstractFile -> { // Low-key SQL Injection
-                addToDataSource(ctx, evt, events, abstractFile);
+                addToDataSource(ctx, evt.getFileUuid(), events, abstractFile);
             });
         } catch (TskCoreException e) {
             logger.fatal("Failed to read image in '" + IMAGE_PATH + "' with sleuthkit.", e);
@@ -118,10 +117,10 @@ public class TSKReadImageJob implements Job {
         process.commit();
     }
 
-    private void addToDataSource(Context ctx, Event evt, List<Event> events, AbstractFile abstractFile) {
+    private void addToDataSource(Context ctx, UUID parentFileUUID, List<Event> events, AbstractFile abstractFile) {
         DataSource dataSource = ctx.getDataSource();
 
-        UUID uuid = dataSource.addFile(evt.getFileUuid(), new FileExtractor() {
+        UUID uuid = dataSource.addFile(parentFileUUID, new FileExtractor() {
             Path extractedFile;
 
             @Override
@@ -186,16 +185,22 @@ public class TSKReadImageJob implements Job {
             }
         });
 
+        Event event = null;
         if(abstractFile.isMetaFlagSet(TskData.TSK_FS_META_FLAG_ENUM.UNALLOC)){
             logger.debug("Creating Event for Unallocated SPAAAACCEEE");
-            events.add(new Event(NEW_UNALLOCATED_SPACE_EVENT_NAME, getJobName(), uuid));
+            event = new Event(NEW_UNALLOCATED_SPACE_EVENT_NAME, getJobName(), uuid);
         } else if (abstractFile.isFile()) {
             logger.debug("Creating Event for new File");
-            events.add(new Event(NEW_FILE_EVENT_NAME, getJobName(), uuid));
+            event = new Event(NEW_FILE_EVENT_NAME, getJobName(), uuid);
         } else if(abstractFile.isDir()){
             logger.debug("Creating Event for new Directory");
-            events.add(new Event(NEW_DIRECTORY_EVENT_NAME, getJobName(), uuid));
+            event = new Event(NEW_DIRECTORY_EVENT_NAME, getJobName(), uuid);
         }
+        if(event != null){
+            ctx.getProgressTracker().processInfo(event);
+            events.add(event);
+        }
+
     }
 
     @Override

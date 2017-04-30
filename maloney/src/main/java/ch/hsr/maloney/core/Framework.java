@@ -46,6 +46,7 @@ public class Framework implements Observer {
         logger.debug("Checking if registered Jobs can be run...");
 
         availableEvents.add(FrameworkEventNames.STARTUP);
+        availableEvents.add(FrameworkEventNames.RESTART);
         // TODO add event names of recovered events
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
@@ -79,8 +80,7 @@ public class Framework implements Observer {
      */
     public void start() {
         if(eventStore.hasEvents()){
-            // TODO ask user whether to restore events or remove them.
-            // TODO find another way to prevent startup event or introduce some new ones (RESTART/FRESHSTART)
+            enqueueToInterestedJobs(new Event(FrameworkEventNames.RESTART, EVENT_ORIGIN, null));
             Collection<Event> recoveredEvents = eventStore.getEvents();
             recoveredEvents.forEach(event -> enqueueToInterestedJobs(event));
         } else {

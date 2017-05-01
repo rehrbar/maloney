@@ -2,12 +2,12 @@ package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.MultithreadedJobProcessor;
-import ch.hsr.maloney.processing.TSKReadImageJob;
 import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -2,6 +2,7 @@ package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeJobFactory;
+import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;

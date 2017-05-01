@@ -48,9 +48,9 @@ public interface MetadataStore {
     void addArtifacts(UUID fileId, List<Artifact> artifacts);
 
     /**
-     * Get an Iterator over all UUIDs stored in the MetadataStore.
+     * Get an Iterator over all FileAttributes stored in the MetadataStore.
      *
-     * @return  Iterator over all UUIDs in MetadataStore.
+     * @return  Iterator over all FileAttributes in MetadataStore.
      */
-    Iterator<UUID> iterator();
+    Iterator<FileAttributes> iterator();
 }

@@ -186,20 +186,21 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     }
 
     @Override
-    public Iterator<UUID> iterator() {
+    public Iterator<FileAttributes> iterator() {
         return new ElasticsearchIterator();
     }
 
-    public Iterator<UUID> iterator(int expiryTimeMillis){
+    public Iterator<FileAttributes> iterator(int expiryTimeMillis){
         return new ElasticsearchIterator(expiryTimeMillis);
     }
 
-    private class ElasticsearchIterator implements Iterator<UUID> {
+    private class ElasticsearchIterator implements Iterator<FileAttributes> {
         //TODO delete search on index
         final int expiry_time_millis;
+        private final int HITS_PER_GET = 100;
 
-        List<UUID> uuids;
-        Iterator<UUID> iterator;
+        List<FileAttributes> fileAttributes;
+        Iterator<FileAttributes> iterator;
         SearchResponse scrollResp;
 
         ElasticsearchIterator(){
@@ -213,21 +214,21 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
                     //.addSort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
                     .setScroll(new TimeValue(expiry_time_millis))
                     //.setQuery(qb)
-                    .setSize(100).get(); //max of 100 hits will be returned for each scroll
+                    .setSize(HITS_PER_GET).get();
             extractResults();
         }
 
         private void extractResults() {
-            uuids = new LinkedList<>();
+            fileAttributes = new LinkedList<>();
             for (SearchHit hit : scrollResp.getHits().getHits()) {
                 try {
-                    final FileAttributes fileAttributes = mapper.readValue(hit.getSourceAsString(),FileAttributes.class);
-                    uuids.add(fileAttributes.getFileId());
+                    final FileAttributes fileAttribute = mapper.readValue(hit.getSourceAsString(),FileAttributes.class);
+                    this.fileAttributes.add(fileAttribute);
                 } catch (IOException e) {
                     logger.error("Could not parse FileAttributes retrieved from elasticsearch.", e);
                 }
             }
-            iterator = uuids.iterator();
+            iterator = fileAttributes.iterator();
         }
 
         private boolean continueScrolling() {
@@ -236,7 +237,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
                     .setScroll(new TimeValue(expiry_time_millis))
                     .execute()
                     .actionGet();
-            if(scrollResp.getHits().getHits().length != 0){ // Zero hits mark the end of the scroll and the while loop.
+            if(scrollResp.getHits().getHits().length == 0){ // Zero hits mark the end of the scroll
                 return false;
             } else {
                 extractResults();
@@ -246,13 +247,11 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
         @Override
         public boolean hasNext() {
-            if(iterator.hasNext()){
-                return true;
-            } else return continueScrolling();
+            return iterator.hasNext() || continueScrolling();
         }
 
         @Override
-        public UUID next() {
+        public FileAttributes next() {
             return iterator.next();
         }
     }

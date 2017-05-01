@@ -38,7 +38,7 @@ public class SimpleMetadataStore implements MetadataStore {
     }
 
     @Override
-    public Iterator<UUID> iterator() {
-        return uuidFileAttributesMap.keySet().iterator();
+    public Iterator<FileAttributes> iterator() {
+        return uuidFileAttributesMap.values().iterator();
     }
 }

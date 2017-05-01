@@ -30,7 +30,6 @@ public class Start {
             System.loadLibrary("libvhdi");
             System.loadLibrary("libtsk_jni");
         }
-        // TODO convert args to hash map to make them easier available
 
         CommandLineParser parser = new DefaultParser();
 
@@ -70,10 +69,7 @@ public class Start {
             }
 
             if (line.hasOption("c")) {
-                // TODO allow overrides of FrameworkConfiguration
                 // TODO pass working directory
-                // TODO pass job configurations
-                // TODO pass jobs to execute
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
                 FrameworkController controller = new FrameworkController();
                 if(line.hasOption("clear-events")){
@@ -86,21 +82,14 @@ public class Start {
                 }
 
                 controller.run(frameworkConfiguration);
-                return;
-            }
-            if (line.hasOption("rds")) {
-                // TODO replace with job configuration
-                FrameworkController.runHashSet(line.getOptionValue("rds"));
-                return;
-            }
 
-            if(line.getArgList().size()>0) {
-                // TODO rplace this old behaviour with an image file through the configurable version.
-                FrameworkController.run(line.getArgs()[0]);
+                System.exit(0);
+                return;
             }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ParseException e) {
+            System.out.println("\"This is not the druid you are looking for.\"");
             System.out.println("Could not parse arguments: " + e.getMessage());
             printHelp();
         }

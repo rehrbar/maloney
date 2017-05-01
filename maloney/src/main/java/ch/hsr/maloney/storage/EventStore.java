@@ -145,8 +145,10 @@ public class EventStore {
         scheduler.shutdown();
 
         // Commit to clean up all write ahead logs.
-        commit();
-        db.close();
+        if(!db.isClosed()) {
+            commit();
+            db.close();
+        }
     }
 
     private class MySerializer extends GroupSerializerObjectArray<Event> implements Serializer<Event> {

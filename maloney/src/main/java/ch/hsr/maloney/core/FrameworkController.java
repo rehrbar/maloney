@@ -34,6 +34,8 @@ public class FrameworkController {
     private static final ScheduledExecutorService scheduledThreadPoolExecutor = Executors.newSingleThreadScheduledExecutor();
     private static EventStore eventStore;
     private final boolean isRestarting;
+    private boolean isShuttingDown;
+    private Framework framework;
 
     public FrameworkController() {
         if (myClassLoader == null) {
@@ -44,30 +46,11 @@ public class FrameworkController {
                 myClassLoader = ClassLoader.getSystemClassLoader();
             }
         }
+        // TODO allow another start after shutdown was called?
         eventStore = new EventStore();
         isRestarting = eventStore.hasEvents();
-    }
 
-    public static void run(String imagePath) {
-        ProgressTracker progressTracker = new SimpleProgressTracker();
-        Context ctx = initializeContext(null, progressTracker, null);
-        Framework framework = new Framework(eventStore, ctx);
-
-        // TODO rework how jobs are added and configured.
-        DiskImageJob diskImageJob = new DiskImageJob();
-        diskImageJob.setJobConfig(imagePath);
-        framework.register(diskImageJob);
-        framework.register(new TSKReadImageJob());
-        framework.register(new CalculateHashesJob());
-        ImportRdsHashSetJob importRdsHashSetJob = new ImportRdsHashSetJob();
-        importRdsHashSetJob.setJobConfig(""); // TODO set path from run parameters.
-        framework.register(importRdsHashSetJob);
-
-        scheduleProgressTracker(progressTracker);
-
-        framework.start();
-
-        scheduledThreadPoolExecutor.shutdown();
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
 
     /**
@@ -142,7 +125,7 @@ public class FrameworkController {
     public void run(FrameworkConfiguration config) {
         ProgressTracker progressTracker = new SimpleProgressTracker();
         Context ctx = initializeContext(null, progressTracker, null);
-        Framework framework = new Framework(eventStore, ctx);
+        framework = new Framework(eventStore, ctx);
         // TODO configure framework with this configuration
 
         logger.info("Starting with configuration");
@@ -161,22 +144,7 @@ public class FrameworkController {
         scheduleProgressTracker(progressTracker);
 
         framework.start();
-        logger.info("Framework has finished");
-        scheduledThreadPoolExecutor.shutdown();
-    }
-
-    public static void runHashSet(String hashSetPath) {
-        // TODO replace through run(FrameworkConfiguration config)
-        ProgressTracker progressTracker = new SimpleProgressTracker();
-        Context ctx = initializeContext(null, progressTracker, null);
-        Framework framework = new Framework(eventStore, ctx);
-
-        ImportRdsHashSetJob importRdsHashSetJob = new ImportRdsHashSetJob();
-        importRdsHashSetJob.setJobConfig(hashSetPath);
-        framework.register(importRdsHashSetJob);
-
-        framework.start();
-        scheduledThreadPoolExecutor.shutdown();
+        // TODO handle not finished executions
     }
 
     public boolean isRestarting() {
@@ -185,5 +153,18 @@ public class FrameworkController {
 
     public void clearEvents(){
         eventStore.clear();
+    }
+
+    private synchronized void shutdown(){
+        // prevent shutting down twice
+        if (isShuttingDown) {
+            return;
+        }
+        isShuttingDown = true;
+        logger.info("Initializing shutdown...");
+        scheduledThreadPoolExecutor.shutdown();
+        framework.shutdown();
+        eventStore.close();
+        logger.info("Shutdown complete");
     }
 }

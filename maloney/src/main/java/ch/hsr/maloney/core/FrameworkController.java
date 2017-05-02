@@ -163,7 +163,12 @@ public class FrameworkController {
         isShuttingDown = true;
         logger.info("Initializing shutdown...");
         scheduledThreadPoolExecutor.shutdown();
-        framework.shutdown();
+
+        // Possible that framework is not initialized due to misconfiguration
+        if(framework != null){
+            framework.shutdown();
+        }
+
         eventStore.close();
         logger.info("Shutdown complete");
     }

@@ -2,10 +2,7 @@ package ch.hsr.maloney.processing;
 
 import ch.hsr.maloney.storage.PlainSource;
 import ch.hsr.maloney.storage.SimpleMetadataStore;
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.FakeJobFactory;
-import ch.hsr.maloney.util.JobExecution;
+import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -64,14 +61,15 @@ public class MultithreadedJobProcessorTest{
     @Before
     public void setUp(){
         SimpleMetadataStore store = new SimpleMetadataStore();
-        Context ctx = new Context(store, null, new PlainSource(store));
+        ctx = new Context(store,new FakeProgressTracker(), new PlainSource(store));
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void emptyStart(){
         logger.debug("Setting up 'emptyStart'...");
         MultithreadedJobProcessor mtjp = new MultithreadedJobProcessor(ctx);
         mtjp.start();
+        mtjp.waitForFinish();
     }
 
     @Test(timeout = 1000)

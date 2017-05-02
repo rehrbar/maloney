@@ -2,24 +2,16 @@ package ch.hsr.maloney.core;
 
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.MultithreadedJobProcessor;
+import ch.hsr.maloney.util.*;
 import ch.hsr.maloney.storage.EventStore;
-import ch.hsr.maloney.storage.LocalDataSource;
-import ch.hsr.maloney.storage.MetadataStore;
-import ch.hsr.maloney.util.Context;
-import ch.hsr.maloney.util.Event;
-import ch.hsr.maloney.util.FrameworkEventNames;
-import ch.hsr.maloney.util.JobExecution;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.UnknownHostException;
 import java.util.*;
 
 /**
  * @author oniet
- *         <p>
  *         Framework for the whole applicaton:
- *         - Initializes all needed classes (DataSource, MetadataStore, ProgressTracker)
  *         - Checks dependencies on registered Jobs on initialization
  *         - Enqueues new Events to interested Jobs
  *         - ATM: Creates new Event on start (should be moved to a seperate Job...)
@@ -32,33 +24,14 @@ public class Framework implements Observer {
     private EventStore eventStore; //TODO Better Queue with nice persistence
     private List<Job> registeredJobs;
 
-    public Framework() {
-        // TODO get rid of this ctor, just for compatability
-        this(new EventStore());
-    }
-
-    public Framework(EventStore eventStore) {
+    public Framework(EventStore eventStore, Context ctx) {
         this.logger = LogManager.getLogger();
-        initializeContext();
+        this.context = ctx;
         this.registeredJobs = new LinkedList<>();
         this.eventStore = eventStore;
         this.jobProcessor = new MultithreadedJobProcessor(context);
-        jobProcessor.addObserver(this);
-    }
 
-    protected void initializeContext() {
-        MetadataStore metadataStore = null;
-        try {
-            metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();
-        } catch (UnknownHostException e) {
-            logger.fatal("Elasticsearch host not found. Terminating...", e);
-            System.exit(0);
-        }
-        this.context = new Context(
-                metadataStore,
-                null, //TODO Implement and add Progress Tracker
-                new LocalDataSource(metadataStore)
-        );
+        jobProcessor.addObserver(this);
     }
 
     /**
@@ -149,6 +122,7 @@ public class Framework implements Observer {
             JobExecution jobExecution = (JobExecution) arg;
             enqueueToInterestedJobs(jobExecution.getResults());
             eventStore.remove(jobExecution);
+            context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.TASK_FINISHED, 1));
             return;
         }
         throw new IllegalArgumentException("I just don't know, what to doooooo with this type... \uD83C\uDFB6");
@@ -169,6 +143,7 @@ public class Framework implements Observer {
 
         eventStore.add(plannedExecutions);
         plannedExecutions.forEach(j -> jobProcessor.enqueue(j));
+        context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.TASK_QUEUED, plannedExecutions.size()));
     }
 
     /**

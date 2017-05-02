@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author oniet
@@ -82,6 +83,13 @@ public class MultithreadedJobProcessor extends JobProcessor {
     @Override
     public void stop() {
         pool.shutdown();
+        try {
+            if(pool.awaitTermination(1, TimeUnit.MINUTES)){
+                logger.warn("Not all threads terminated before timeout.");
+            }
+        } catch (InterruptedException e) {
+            logger.warn("Not all threads terminated before timeout, because an interrupt occurred.");
+        }
     }
 
     @Override
@@ -97,6 +105,7 @@ public class MultithreadedJobProcessor extends JobProcessor {
     public void waitForFinish() {
         logger.debug("Waiting for JobProcessor to finish...");
         try {
+            // TODO implement with proper checks/while
             semaphore.acquire(MAXCONCURRENTJOBS);
             logger.debug("Nothing more to process or processing canceled");
             semaphore.release(MAXCONCURRENTJOBS);

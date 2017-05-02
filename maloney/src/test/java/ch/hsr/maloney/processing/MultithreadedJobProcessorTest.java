@@ -152,4 +152,18 @@ public class MultithreadedJobProcessorTest{
 
        Assert.assertEquals(6,fakeObserverAtoB.caughtEvents.size());
     }
+
+    @Test(timeout = 1000)
+    public void faultyJobTest(){
+        MultithreadedJobProcessor mtjp = new MultithreadedJobProcessor(ctx);
+        FakeJobFactory fakeJobFactory = new FakeJobFactory();
+
+        // Create job with obvious failure producing a runtime exception
+        Job job = fakeJobFactory.getAJob(() -> {int i = 4/0;});
+        UUID someUuid = UUID.randomUUID();
+
+        mtjp.enqueue(job,new Event("Nothing","Test", someUuid));
+        mtjp.start();
+        mtjp.waitForFinish();
+    }
 }

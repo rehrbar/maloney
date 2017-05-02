@@ -46,6 +46,7 @@ public class Framework implements Observer {
         logger.debug("Checking if registered Jobs can be run...");
 
         availableEvents.add(FrameworkEventNames.STARTUP);
+        availableEvents.add(FrameworkEventNames.RESTART);
         // TODO add event names of recovered events
 
         LinkedList<Job> runnableJobs = new LinkedList<>();
@@ -79,8 +80,7 @@ public class Framework implements Observer {
      */
     public void start() {
         if(eventStore.hasEvents()){
-            // TODO ask user whether to restore events or remove them.
-            // TODO find another way to prevent startup event or introduce some new ones (RESTART/FRESHSTART)
+            enqueueToInterestedJobs(new Event(FrameworkEventNames.RESTART, EVENT_ORIGIN, null));
             Collection<Event> recoveredEvents = eventStore.getEvents();
             recoveredEvents.forEach(event -> enqueueToInterestedJobs(event));
         } else {
@@ -97,7 +97,6 @@ public class Framework implements Observer {
         jobProcessor.waitForFinish();
         //TODO wait for abort command or for the application finish Event
         //TODO not all events are removed from eventStore when reaching this point.
-        eventStore.close();
         logger.info("Completion time: {}", System.currentTimeMillis() - startTime);
     }
 
@@ -144,6 +143,10 @@ public class Framework implements Observer {
         eventStore.add(plannedExecutions);
         plannedExecutions.forEach(j -> jobProcessor.enqueue(j));
         context.getProgressTracker().processInfo(new ProgressInfo(ProgressInfoType.TASK_QUEUED, plannedExecutions.size()));
+    }
+
+    public void shutdown() {
+        jobProcessor.stop();
     }
 
     /**

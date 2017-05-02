@@ -5,4 +5,5 @@ package ch.hsr.maloney.util;
  */
 public class FrameworkEventNames {
     public static final String STARTUP = "startup";
+    public static final String RESTART = "restart";
 }

@@ -25,16 +25,6 @@ public class LocalDataSource implements DataSource {
     private Path filesWorkingDirPath;
     private Map<UUID, Path> fileReferences = new HashMap<>();
 
-
-    /**
-     * Creates an instance of a local data source.
-     *
-     * @param metadataStore Used to store additional meta information.
-     */
-    public LocalDataSource(MetadataStore metadataStore) {
-        this(metadataStore, null);
-    }
-
     /**
      * Creates an instance of a local data source.
      *
@@ -45,13 +35,9 @@ public class LocalDataSource implements DataSource {
     public LocalDataSource(MetadataStore metadataStore, Path workingDirectory) {
         this.metadataStore = metadataStore;
         if (workingDirectory == null) {
-            try {
-                workingDirPath = Files.createTempDirectory("maloney");
-                logger.debug("Created temporary working directory: {}", workingDirPath.toString());
-            } catch (IOException e) {
-                logger.error("Could not create temporary working directory.", e);
-            }
+            throw new IllegalArgumentException("No working directory provided");
         }
+        workingDirPath = workingDirectory;
 
         // Prepare the working directories.
         jobsWorkingDirPath = workingDirPath.resolve("jobs");

@@ -35,6 +35,7 @@ public class Start {
 
         options = new Options();
         options.addOption("v", "verbose", false, "enables verbose output");
+        options.addOption("id","identifier", true, "case identifier used for operations");
         options.addOption("c", "configuration", true, "configuration to load");
         options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
@@ -72,10 +73,11 @@ public class Start {
                 // TODO pass working directory
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
                 FrameworkController controller = new FrameworkController();
+                controller.setCaseIdentifier(line.getOptionValue("l"));
                 if(line.hasOption("clear-events")){
                     controller.clearEvents();
                 } else {
-                    if(controller.isRestarting()){
+                    if(controller.hasEvents()){
                         logger.info("Not finished events were found, which will be restarted."
                                 +"To clear pending events, use switch --{} instead.","clear-events");
                     }

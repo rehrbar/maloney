@@ -4,7 +4,6 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.index.query.QueryBuilders;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -17,7 +16,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class MetadataStoreTestImpl extends ch.hsr.maloney.storage.es.MetadataStore {
     public MetadataStoreTestImpl() throws UnknownHostException {
-        super();
+        super("TEST");
     }
 
     public void clearIndex() {

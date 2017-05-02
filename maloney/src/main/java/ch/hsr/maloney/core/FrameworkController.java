@@ -8,10 +8,15 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.joda.time.LocalDateTime;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.Executors;
@@ -32,10 +37,12 @@ public class FrameworkController {
     private static ClassLoader myClassLoader;
     private static final Logger logger = LogManager.getLogger();;
     private static final ScheduledExecutorService scheduledThreadPoolExecutor = Executors.newSingleThreadScheduledExecutor();
-    private static EventStore eventStore;
-    private final boolean isRestarting;
     private boolean isShuttingDown;
     private Framework framework;
+    private String caseIdentifier;
+    private Path workingDirectory;
+    private EventStore eventStore;
+    private Path caseDirectory;
 
     public FrameworkController() {
         if (myClassLoader == null) {
@@ -47,8 +54,6 @@ public class FrameworkController {
             }
         }
         // TODO allow another start after shutdown was called?
-        eventStore = new EventStore();
-        isRestarting = eventStore.hasEvents();
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
@@ -60,10 +65,10 @@ public class FrameworkController {
      * @param dataSource        Specify DataSource, if null the default is taken (LocalDataSource)
      * @return                  Created Context with specified parameters
      */
-    private static Context initializeContext(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource) {
+    private Context initializeContext(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource) {
         if(metadataStore == null){
             try {
-                metadataStore = new ch.hsr.maloney.storage.es.MetadataStore();
+                metadataStore = new ch.hsr.maloney.storage.es.MetadataStore(this.getCaseIdentifier());
             } catch (UnknownHostException e) {
                 logger.fatal("Elasticsearch host not found. Terminating...", e);
                 System.exit(0);
@@ -75,7 +80,7 @@ public class FrameworkController {
         }
 
         if(dataSource == null){
-            dataSource = new LocalDataSource(metadataStore);
+            dataSource = new LocalDataSource(metadataStore, this.getCaseDirectory());
         }
         return new Context(
                 metadataStore,
@@ -125,7 +130,7 @@ public class FrameworkController {
     public void run(FrameworkConfiguration config) {
         ProgressTracker progressTracker = new SimpleProgressTracker();
         Context ctx = initializeContext(null, progressTracker, null);
-        framework = new Framework(eventStore, ctx);
+        framework = new Framework(getEventStore(), ctx);
         // TODO configure framework with this configuration
 
         logger.info("Starting with configuration");
@@ -147,8 +152,16 @@ public class FrameworkController {
         // TODO handle not finished executions
     }
 
-    public boolean isRestarting() {
-        return isRestarting;
+    @NotNull
+    private EventStore getEventStore() {
+        if(eventStore == null) {
+            eventStore = new EventStore(this.getCaseDirectory(), true);
+        }
+        return eventStore;
+    }
+
+    public boolean hasEvents() {
+        return this.getEventStore().hasEvents();
     }
 
     public void clearEvents(){
@@ -171,5 +184,41 @@ public class FrameworkController {
 
         eventStore.close();
         logger.info("Shutdown complete");
+    }
+
+    public void setCaseIdentifier(String caseIdentifier) {
+        // TODO validate identifier
+        // A-Z0-9- and not a reserved keyword
+        this.caseIdentifier = caseIdentifier;
+    }
+
+    public String getCaseIdentifier() {
+        if(caseIdentifier == null || caseIdentifier.length() == 0){
+            // TODO generate default identifier if null
+            caseIdentifier = "unknown";
+        }
+        return caseIdentifier;
+    }
+
+    public void setWorkingDirectory(String workingDirectory){
+        // TODO validate directory
+        this.workingDirectory = Paths.get(workingDirectory);
+    }
+
+    public Path getCaseDirectory() {
+        try {
+            if (workingDirectory == null || workingDirectory.getRoot() == null) {
+                // TODO fix temp directory to one without hash
+                workingDirectory = Paths.get(System.getProperty("java.io.tmpdir"),"maloney");
+                logger.debug("Created temporary working directory: {}", workingDirectory.toString());
+            }
+            if (caseDirectory == null) {
+                caseDirectory = workingDirectory.resolve(getCaseIdentifier());
+                Files.createDirectories(caseDirectory);
+            }
+        } catch (IOException e) {
+            logger.error("Could not create temporary working directory.", e);
+        }
+        return caseDirectory;
     }
 }

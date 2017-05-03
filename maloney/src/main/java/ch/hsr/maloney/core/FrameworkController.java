@@ -47,8 +47,9 @@ public class FrameworkController {
     private Path workingDirectory;
     private EventStore eventStore;
     private Path caseDirectory;
+    private final FrameworkConfiguration configuration;
 
-    public FrameworkController() {
+    public FrameworkController(FrameworkConfiguration configuration) {
         if (myClassLoader == null) {
             try {
                 myClassLoader = CustomClassLoader.createPluginLoader();
@@ -57,6 +58,9 @@ public class FrameworkController {
                 myClassLoader = ClassLoader.getSystemClassLoader();
             }
         }
+        this.configuration = configuration;
+        setWorkingDirectory(configuration.getWorkingDirectory());
+        // TODO make access private for caseIdentifier, WorkingDirectory, ...
         // TODO allow another start after shutdown was called?
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
@@ -131,7 +135,7 @@ public class FrameworkController {
     }
 
 
-    public void run(FrameworkConfiguration config) {
+    public void run() {
         ProgressTracker progressTracker = new SimpleProgressTracker();
         Context ctx = initializeContext(null, progressTracker, null);
         framework = new Framework(getEventStore(), ctx);
@@ -145,7 +149,7 @@ public class FrameworkController {
         while (iter.hasNext()) {
             // TODO only register jobs which are configured to run
             Job job = iter.next();
-            job.setJobConfig(config.getJobConfigurationMap().getOrDefault(job.getJobName(), ""));
+            job.setJobConfig(this.configuration.getJobConfigurationMap().getOrDefault(job.getJobName(), ""));
             logger.debug("Registering job " + job.getJobName());
             framework.register(job);
         }
@@ -169,7 +173,7 @@ public class FrameworkController {
     }
 
     public void clearEvents(){
-        eventStore.clear();
+        this.getEventStore().clear();
     }
 
     private synchronized void shutdown(){
@@ -196,10 +200,12 @@ public class FrameworkController {
      */
     public void setCaseIdentifier(String caseIdentifier) {
         // A-Z0-9- and not a reserved keyword
-        if(!Pattern.matches("[a-z0-9-]+", caseIdentifier)){
-            throw new IllegalArgumentException("Provided identifier is not valid. Only lowercase alpha-numerics and dashes are supported.");
+        if (caseIdentifier != null && Pattern.matches("[a-z0-9-]+", caseIdentifier)) {
+            this.caseIdentifier = caseIdentifier;
+        } else {
+            logger.warn("Could not update case identifier, resetting to default.");
+            this.caseIdentifier = null;
         }
-        this.caseIdentifier = caseIdentifier;
     }
 
     /**
@@ -210,7 +216,11 @@ public class FrameworkController {
         if(caseIdentifier == null || caseIdentifier.length() == 0){
             // Generates a default identifier while preventing using an existing one.
             try {
-                List<Path> files = workingDirectory == null ? new LinkedList<>() : Files.list(workingDirectory).collect(Collectors.toList());
+                List<Path> files = new LinkedList<>();
+                if(workingDirectory != null && Files.exists(workingDirectory)){
+                    files = Files.list(workingDirectory).collect(Collectors.toList());
+                }
+
                 int i = 0;
                 do{
                     // Testing identifiers: maloney1, maloney2, and so on.
@@ -232,7 +242,7 @@ public class FrameworkController {
     public void setWorkingDirectory(String workingDirectory){
         try {
             this.workingDirectory = Paths.get(workingDirectory);
-        } catch(IllegalArgumentException e){
+        } catch(NullPointerException | IllegalArgumentException e){
             this.workingDirectory = null;
         }
     }

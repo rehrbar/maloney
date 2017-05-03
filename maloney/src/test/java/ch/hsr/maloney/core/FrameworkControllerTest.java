@@ -1,25 +1,33 @@
 package ch.hsr.maloney.core;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FrameworkControllerTest {
     private FrameworkController controller;
+    private Path workingDirectory;
 
     @Before
-    public void setup(){
-        controller = new FrameworkController();
+    public void setup() throws IOException {
+        workingDirectory = Files.createTempDirectory("maloney-test");
+        FrameworkConfiguration config = new FrameworkConfiguration();
+        config.setWorkingDirectory(workingDirectory.toString());
+        controller = new FrameworkController(config);
+    }
+
+    @After
+    public void teardown() throws IOException{
+        Files.deleteIfExists(workingDirectory);
     }
 
     @Test
     public void GetInitialCaseIdentifier(){
-        FrameworkController controller = new FrameworkController();
         String identifier = controller.getCaseIdentifier();
         Assert.assertNotNull(identifier);
         Assert.assertTrue(identifier.length() > 0);
@@ -27,7 +35,6 @@ public class FrameworkControllerTest {
 
     @Test
     public void GetInitialCaseDirectory(){
-        FrameworkController controller = new FrameworkController();
         Path workingDirectory = controller.getCaseDirectory();
         Assert.assertNotNull(workingDirectory);
     }
@@ -48,11 +55,9 @@ public class FrameworkControllerTest {
 
     @Test
     public void GeneratedIdentifierExistingDirectory() throws IOException {
-        Path tmpDir = Files.createTempDirectory("maloney-test");
-        tmpDir.toFile().deleteOnExit();
-        Files.createDirectories(tmpDir.resolve("maloney1"));
-        Files.createDirectories(tmpDir.resolve("maloney2"));
-        controller.setWorkingDirectory(tmpDir.toString());
+        Files.createDirectories(workingDirectory.resolve("maloney1"));
+        Files.createDirectories(workingDirectory.resolve("maloney2"));
+        controller.setWorkingDirectory(workingDirectory.toString());
         String identifier = controller.getCaseIdentifier();
         Assert.assertEquals("maloney3", identifier);
     }

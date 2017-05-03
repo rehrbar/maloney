@@ -72,8 +72,8 @@ public class Start {
             if (line.hasOption("c")) {
                 // TODO pass working directory
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
-                FrameworkController controller = new FrameworkController();
-                controller.setCaseIdentifier(line.getOptionValue("l"));
+                FrameworkController controller = new FrameworkController(frameworkConfiguration);
+                controller.setCaseIdentifier(line.getOptionValue("id"));
                 if(line.hasOption("clear-events")){
                     controller.clearEvents();
                 } else {
@@ -83,7 +83,7 @@ public class Start {
                     }
                 }
 
-                controller.run(frameworkConfiguration);
+                controller.run();
 
                 System.exit(0);
                 return;

@@ -13,11 +13,12 @@ import java.nio.file.Path;
 public class FrameworkControllerTest {
     private FrameworkController controller;
     private Path workingDirectory;
+    private FrameworkConfiguration config;
 
     @Before
     public void setup() throws IOException {
         workingDirectory = Files.createTempDirectory("maloney-test");
-        FrameworkConfiguration config = new FrameworkConfiguration();
+        config = new FrameworkConfiguration();
         config.setWorkingDirectory(workingDirectory.toString());
         controller = new FrameworkController(config);
     }
@@ -43,7 +44,7 @@ public class FrameworkControllerTest {
     @Test
     public void SetCaseIdentifier(){
         String newIdentifier = "identifier-1";
-        controller.setCaseIdentifier(newIdentifier);
+        controller = new FrameworkController(config, newIdentifier);
         String identifier = controller.getCaseIdentifier();
         Assert.assertEquals(newIdentifier, identifier);
     }
@@ -51,7 +52,7 @@ public class FrameworkControllerTest {
     @Test
     public void SetInvalidIdentifier(){
         String invalidIdentifier = "identi_fier1";
-        controller.setCaseIdentifier(invalidIdentifier);
+        controller = new FrameworkController(config, invalidIdentifier);
         String caseIdentifier = controller.getCaseIdentifier();
         Assert.assertNotNull(caseIdentifier);
         Assert.assertTrue(caseIdentifier.length() > 0);
@@ -61,7 +62,7 @@ public class FrameworkControllerTest {
     public void GeneratedIdentifierExistingDirectory() throws IOException {
         Files.createDirectories(workingDirectory.resolve("maloney1"));
         Files.createDirectories(workingDirectory.resolve("maloney2"));
-        controller.setWorkingDirectory(workingDirectory.toString());
+        controller = new FrameworkController(config);
         String identifier = controller.getCaseIdentifier();
         Assert.assertEquals("maloney3", identifier);
     }

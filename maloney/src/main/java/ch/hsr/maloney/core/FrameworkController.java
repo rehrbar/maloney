@@ -36,7 +36,6 @@ public class FrameworkController {
     private static final int START_TIME = 0;
     private static final int UPDATE_FREQUENCY_IN_SECONDS = 3;
     private static final int RELEVANT_CYCLES = 10;
-    private static final int THREE_TABULATORS = 16;
 
     private static ClassLoader myClassLoader;
     private static final Logger logger = LogManager.getLogger();;
@@ -49,7 +48,11 @@ public class FrameworkController {
     private Path caseDirectory;
     private final FrameworkConfiguration configuration;
 
-    public FrameworkController(FrameworkConfiguration configuration) {
+    public FrameworkController(FrameworkConfiguration configuration){
+        this(configuration, null);
+    }
+
+    public FrameworkController(FrameworkConfiguration configuration, String caseIdentifier) {
         if (myClassLoader == null) {
             try {
                 myClassLoader = CustomClassLoader.createPluginLoader();
@@ -60,7 +63,9 @@ public class FrameworkController {
         }
         this.configuration = configuration;
         setWorkingDirectory(configuration.getWorkingDirectory());
-        // TODO make access private for caseIdentifier, WorkingDirectory, ...
+        setCaseIdentifier(caseIdentifier);
+
+        eventStore = new EventStore(this.getCaseDirectory(), true);
         // TODO allow another start after shutdown was called?
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
@@ -104,12 +109,7 @@ public class FrameworkController {
             StringBuilder stringBuilder = new StringBuilder();
             for (String type: progressTracker.getTypes()) {
                 stringBuilder
-                        .append(type);
-                if(type.length() > THREE_TABULATORS){
-                    stringBuilder.append(":\t");
-                } else {
-                    stringBuilder.append(":\t\t");
-                }
+                        .append(String.format("%1$-20s ",type)); //Padding right
                 stringBuilder
                         .append(progressTracker.getProcessedAmount(type))
                         .append("\n\r");
@@ -138,7 +138,7 @@ public class FrameworkController {
     public void run() {
         ProgressTracker progressTracker = new SimpleProgressTracker();
         Context ctx = initializeContext(null, progressTracker, null);
-        framework = new Framework(getEventStore(), ctx);
+        framework = new Framework(eventStore, ctx);
         // TODO configure framework with this configuration
 
         logger.info("Starting with configuration");
@@ -160,20 +160,12 @@ public class FrameworkController {
         // TODO handle not finished executions
     }
 
-    @NotNull
-    private EventStore getEventStore() {
-        if(eventStore == null) {
-            eventStore = new EventStore(this.getCaseDirectory(), true);
-        }
-        return eventStore;
-    }
-
     public boolean hasEvents() {
-        return this.getEventStore().hasEvents();
+        return eventStore.hasEvents();
     }
 
     public void clearEvents(){
-        this.getEventStore().clear();
+        eventStore.clear();
     }
 
     private synchronized void shutdown(){
@@ -198,22 +190,11 @@ public class FrameworkController {
      * Sets the case identifier. Only lowercase alpha-numerics and dashes are supported.
      * @param caseIdentifier New Case Identifier to set.
      */
-    public void setCaseIdentifier(String caseIdentifier) {
+    private void setCaseIdentifier(String caseIdentifier) {
         // A-Z0-9- and not a reserved keyword
         if (caseIdentifier != null && Pattern.matches("[a-z0-9-]+", caseIdentifier)) {
             this.caseIdentifier = caseIdentifier;
         } else {
-            logger.warn("Could not update case identifier, resetting to default.");
-            this.caseIdentifier = null;
-        }
-    }
-
-    /**
-     * Gets the case identifier. If not set, one will be generated. The working directory should not be changed if a default case identifier was used.
-     * @return Identifier of the current case.
-     */
-    public String getCaseIdentifier() {
-        if(caseIdentifier == null || caseIdentifier.length() == 0){
             // Generates a default identifier while preventing using an existing one.
             try {
                 List<Path> files = new LinkedList<>();
@@ -225,13 +206,19 @@ public class FrameworkController {
                 do{
                     // Testing identifiers: maloney1, maloney2, and so on.
                     i += 1;
-                    caseIdentifier = "maloney" + i;
-                }while(files.stream().anyMatch(f -> f.toFile().getName().equalsIgnoreCase(caseIdentifier)));
+                    this.caseIdentifier = "maloney" + i;
+                }while(files.stream().anyMatch(f -> f.toFile().getName().equalsIgnoreCase(this.caseIdentifier)));
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Could not generate a default case identifier.", e);
             }
-
         }
+    }
+
+    /**
+     * Gets the case identifier. If not set, one will be generated. The working directory should not be changed if a default case identifier was used.
+     * @return Identifier of the current case.
+     */
+    public String getCaseIdentifier() {
         return caseIdentifier;
     }
 
@@ -239,11 +226,15 @@ public class FrameworkController {
      * Sets the working directory. If an invalid path was provided, it will be reset to default (tmp).
      * @param workingDirectory Path to working directory.
      */
-    public void setWorkingDirectory(String workingDirectory){
+    private void setWorkingDirectory(String workingDirectory){
         try {
             this.workingDirectory = Paths.get(workingDirectory);
         } catch(NullPointerException | IllegalArgumentException e){
             this.workingDirectory = null;
+        }
+        if (this.workingDirectory == null || this.workingDirectory.getRoot() == null) {
+            this.workingDirectory = Paths.get(System.getProperty("java.io.tmpdir"),"maloney");
+            logger.debug("Created temporary working directory: {}", this.workingDirectory.toString());
         }
     }
 
@@ -253,10 +244,6 @@ public class FrameworkController {
      */
     public Path getCaseDirectory() {
         try {
-            if (workingDirectory == null || workingDirectory.getRoot() == null) {
-                workingDirectory = Paths.get(System.getProperty("java.io.tmpdir"),"maloney");
-                logger.debug("Created temporary working directory: {}", workingDirectory.toString());
-            }
             if (caseDirectory == null) {
                 caseDirectory = workingDirectory.resolve(getCaseIdentifier());
                 Files.createDirectories(caseDirectory);

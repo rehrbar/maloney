@@ -39,9 +39,8 @@ public class EventStore {
         this.logger = LogManager.getLogger();
         if (persistent) {
             File file = workingDirectory.resolve("events.db").toFile();
-            // TODO use memoryDB for some unittests/allow configuration if persistent or not
             db = DBMaker.fileDB(file)
-                    .fileMmapEnableIfSupported()
+                    .fileChannelEnable()
                     .transactionEnable()
                     .allocateStartSize(128 * 1024 * 1024) // 128MB
                     .allocateIncrement(64 * 1024 * 1024)  // 64MB

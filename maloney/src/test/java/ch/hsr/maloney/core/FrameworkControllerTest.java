@@ -1,5 +1,6 @@
 package ch.hsr.maloney.core;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,7 +24,7 @@ public class FrameworkControllerTest {
 
     @After
     public void teardown() throws IOException{
-        Files.deleteIfExists(workingDirectory);
+        FileUtils.deleteDirectory(workingDirectory.toFile());
     }
 
     @Test
@@ -47,10 +48,13 @@ public class FrameworkControllerTest {
         Assert.assertEquals(newIdentifier, identifier);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void SetInvalidIdentifier(){
-        String newIdentifier = "identi_fier1";
-        controller.setCaseIdentifier(newIdentifier);
+        String invalidIdentifier = "identi_fier1";
+        controller.setCaseIdentifier(invalidIdentifier);
+        String caseIdentifier = controller.getCaseIdentifier();
+        Assert.assertNotNull(caseIdentifier);
+        Assert.assertTrue(caseIdentifier.length() > 0);
     }
 
     @Test

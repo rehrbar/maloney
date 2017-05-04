@@ -1,6 +1,7 @@
 package ch.hsr.maloney.storage;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,13 +16,18 @@ import java.util.UUID;
 public class LocalDataSourceTest {
     private LocalDataSource dataSource ;
     private MetadataStore metadataStore;
+    private Path workingDirectory;
 
     @Before
     public void setup() throws IOException {
         metadataStore = new SimpleMetadataStore();
-        Path workingDirectory = Files.createTempDirectory("maloney_test");
-        FileUtils.forceDeleteOnExit(workingDirectory.toFile());
+        workingDirectory = Files.createTempDirectory("maloney_test");
         dataSource = new LocalDataSource(metadataStore, workingDirectory);
+    }
+
+    @After
+    public void teardown() throws IOException {
+        FileUtils.deleteDirectory(workingDirectory.toFile());
     }
 
     @Test

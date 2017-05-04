@@ -131,11 +131,11 @@ public class FrameworkController {
         scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
             StringBuilder stringBuilder = new StringBuilder();
             for (String type: progressTracker.getTypes()) {
-                stringBuilder
-                        .append(String.format("%1$-20s ",type)); //Padding right
-                stringBuilder
-                        .append(progressTracker.getProcessedAmount(type))
-                        .append("\n\r");
+                stringBuilder.append(String.format(
+                        "%-20s %d\n\r", // %-20s results in a right padded string
+                        type,
+                        progressTracker.getProcessedAmount(type)
+                ));
             }
 
             //time estimation

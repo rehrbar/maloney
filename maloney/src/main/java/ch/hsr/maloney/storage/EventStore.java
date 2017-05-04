@@ -137,7 +137,10 @@ public class EventStore {
      * Closes the underlying db.
      */
     public synchronized void close() {
-        deferredCommit.cancel(false);
+        if(deferredCommit != null){
+            deferredCommit.cancel(false);
+        }
+
         scheduler.shutdown();
 
         // Commit to clean up all write ahead logs.

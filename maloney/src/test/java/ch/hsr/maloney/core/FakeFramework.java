@@ -5,6 +5,7 @@ import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.FakeProgressTracker;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class FakeFramework extends Framework{
         Path workingDirectory = Paths.get(System.getProperty("java.io.tmpdir"), "maloney_test");
         try {
             Files.createDirectories(workingDirectory);
-            workingDirectory.toFile().deleteOnExit();
+            FileUtils.forceDeleteOnExit(workingDirectory.toFile());
         } catch (IOException e) {
             e.printStackTrace();
         }

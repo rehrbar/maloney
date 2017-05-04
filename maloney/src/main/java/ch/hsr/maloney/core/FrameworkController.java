@@ -6,8 +6,16 @@ import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
@@ -70,6 +78,7 @@ public class FrameworkController {
         setWorkingDirectory(configuration.getWorkingDirectory());
         setCaseIdentifier(caseIdentifier);
 
+        addFileLogger(this.getCaseDirectory());
         backupConfiguration(configuration);
 
         eventStore = new EventStore(this.getCaseDirectory(), true);
@@ -275,5 +284,32 @@ public class FrameworkController {
             logger.error("Could not create temporary working directory.", e);
         }
         return caseDirectory;
+    }
+
+    /**
+     * Saves a log file to provided directory.
+     * This configuration is lost after the configuration file is reloaded.
+     *
+     * @param target The target directory.
+     */
+    private static void addFileLogger(Path target) {
+        final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        final Configuration config = ctx.getConfiguration();
+        Layout layout = PatternLayout.createLayout(PatternLayout.SIMPLE_CONVERSION_PATTERN, null, config, null,
+                null, false, false, null, null);
+        FileAppender appender = FileAppender.newBuilder()
+                .withFileName(target.resolve("maloney.log").toString())
+                .withName("maloney-file")
+                .withLayout(layout)
+                .build();
+        appender.start();
+        config.addAppender(appender);
+        AppenderRef ref = AppenderRef.createAppenderRef("File", null, null);
+        AppenderRef[] refs = new AppenderRef[]{ref};
+        LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.DEBUG, "ch.hsr.maloney",
+                "true", refs, null, config, null);
+        loggerConfig.addAppender(appender, null, null);
+        config.addLogger("ch.hsr.maloney", loggerConfig);
+        ctx.updateLoggers();
     }
 }

@@ -9,6 +9,7 @@ import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 
 import java.io.File;
@@ -18,6 +19,8 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -61,14 +64,34 @@ public class FrameworkController {
                 myClassLoader = ClassLoader.getSystemClassLoader();
             }
         }
+
+        // Configure controller
         this.configuration = configuration;
         setWorkingDirectory(configuration.getWorkingDirectory());
         setCaseIdentifier(caseIdentifier);
+
+        backupConfiguration(configuration);
 
         eventStore = new EventStore(this.getCaseDirectory(), true);
         // TODO allow another start after shutdown was called?
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
+    }
+
+    /**
+     * Creates a backup of the configuration in the current case directory.
+     * The name will be extended with a timestamp, like config_20170504_133038.json
+     * @param configuration Configuration to save.
+     */
+    private void backupConfiguration(FrameworkConfiguration configuration) {
+        try {
+            String fileName = DateTime.now().toString("'config_'yyyyMMdd-HHmmss'.json'");
+            String configPath = this.getCaseDirectory().resolve(fileName).toString();
+            configuration.saveToFile(configPath);
+            logger.info("Configuration backed up to {}", configPath);
+        } catch (IOException e) {
+            logger.warn("Failed to create backup of configuration.");
+        }
     }
 
     /**

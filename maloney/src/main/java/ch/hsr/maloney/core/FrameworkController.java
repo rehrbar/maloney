@@ -1,6 +1,6 @@
 package ch.hsr.maloney.core;
 
-import ch.hsr.maloney.processing.*;
+import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
@@ -16,27 +16,25 @@ import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.jetbrains.annotations.NotNull;
-import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author oniet
@@ -47,6 +45,7 @@ public class FrameworkController {
     private static final int START_TIME = 0;
     private static final int UPDATE_FREQUENCY_IN_SECONDS = 3;
     private static final int RELEVANT_CYCLES = 10;
+    private static final DateTimeFormatter CONFIG_FILE_FORMATTER = DateTimeFormatter.ofPattern("'config_'yyyyMMdd-HHmmss'.json'");
 
     private static ClassLoader myClassLoader;
     private static final Logger logger = LogManager.getLogger();;
@@ -94,7 +93,7 @@ public class FrameworkController {
      */
     private void backupConfiguration(FrameworkConfiguration configuration) {
         try {
-            String fileName = DateTime.now().toString("'config_'yyyyMMdd-HHmmss'.json'");
+            String fileName = ZonedDateTime.now().format(CONFIG_FILE_FORMATTER);
             String configPath = this.getCaseDirectory().resolve(fileName).toString();
             configuration.saveToFile(configPath);
             logger.info("Configuration backed up to {}", configPath);
@@ -154,6 +153,7 @@ public class FrameworkController {
 
             etaCalculator.addMeasurement(processing, finished, System.currentTimeMillis());
 
+            // TODO upgrade to java8 date and time (JSR-310)
             LocalDateTime eta = etaCalculator.getETA();
 
             stringBuilder
@@ -235,10 +235,11 @@ public class FrameworkController {
                 }
 
                 int i = 0;
+                String counterPrefix = ZonedDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE) + "-";
                 do{
-                    // Testing identifiers: maloney1, maloney2, and so on.
+                    // Testing identifiers: 20170503-1, 20170503-2, and so on.
                     i += 1;
-                    this.caseIdentifier = "maloney" + i;
+                    this.caseIdentifier = counterPrefix + i;
                 }while(files.stream().anyMatch(f -> f.toFile().getName().equalsIgnoreCase(this.caseIdentifier)));
             } catch (IOException e) {
                 logger.error("Could not generate a default case identifier.", e);

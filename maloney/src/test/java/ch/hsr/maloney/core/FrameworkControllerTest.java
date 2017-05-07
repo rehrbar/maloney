@@ -9,6 +9,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class FrameworkControllerTest {
     private FrameworkController controller;
@@ -60,10 +62,11 @@ public class FrameworkControllerTest {
 
     @Test
     public void GeneratedIdentifierExistingDirectory() throws IOException {
-        Files.createDirectories(workingDirectory.resolve("maloney1"));
-        Files.createDirectories(workingDirectory.resolve("maloney2"));
+        String counterPrefix = ZonedDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        Files.createDirectories(workingDirectory.resolve(counterPrefix+"-1"));
+        Files.createDirectories(workingDirectory.resolve(counterPrefix+"-2"));
         controller = new FrameworkController(config);
         String identifier = controller.getCaseIdentifier();
-        Assert.assertEquals("maloney3", identifier);
+        Assert.assertEquals(counterPrefix+"-3", identifier);
     }
 }

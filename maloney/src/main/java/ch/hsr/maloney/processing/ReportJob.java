@@ -63,7 +63,7 @@ public class ReportJob implements Job {
 
         try (BufferedWriter writer = Files.newBufferedWriter(targetFile)){
             //Write Header
-            writer.write("Malonye report,Created on: " + (new Date()).toString());
+            writer.write("Maloney report,Created on: " + (new Date()).toString());
             writer.write("File Name,File Path,Date Accessed,Date Changed,Date Created,Number of Artifacts,Artifacts\r\n");
 
             final MetadataStore metadataStore = ctx.getMetadataStore();

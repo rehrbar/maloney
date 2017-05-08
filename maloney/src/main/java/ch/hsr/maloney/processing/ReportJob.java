@@ -9,11 +9,11 @@ import ch.hsr.maloney.util.Event;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,14 +47,27 @@ public class ReportJob implements Job {
     public List<Event> run(Context ctx, Event evt) throws JobCancelledException {
         final List<Event> eventList = new LinkedList<>();
 
-        final MetadataStore metadataStore = ctx.getMetadataStore();
-        final Iterator<FileAttributes> iterator = metadataStore.iterator();
 
         Path targetFile = ctx.getDataSource().getJobWorkingDir(this.getClass()).resolve(fileName);
+
         try {
-            FileWriter writer = new FileWriter(targetFile.toFile());
+            if(targetFile.toFile().getParentFile().mkdirs() && targetFile.toFile().createNewFile()) {
+                logger.debug("Created File {}", targetFile.toString());
+            } else {
+                throw new IOException();
+            }
+        } catch (IOException e) {
+            logger.error("Could not create report", e);
+            return eventList;
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(targetFile)){
             //Write Header
+            writer.write("Malonye report,Created on: " + (new Date()).toString());
             writer.write("File Name,File Path,Date Accessed,Date Changed,Date Created,Number of Artifacts,Artifacts\r\n");
+
+            final MetadataStore metadataStore = ctx.getMetadataStore();
+            final Iterator<FileAttributes> iterator = metadataStore.iterator();
 
             while(iterator.hasNext()){
                 FileAttributes fileAttributes = iterator.next();
@@ -64,7 +77,6 @@ public class ReportJob implements Job {
                 //TODO get relevant types from configuration
                 //TODO create registry with previously known and necessary artifact types (known bad etc.)
 
-                //TODO file output (CSV)
                 //Write data to file
                 StringBuilder stringBuilder = new StringBuilder();
                 final char CELL_SEPARATOR = ',';
@@ -83,6 +95,7 @@ public class ReportJob implements Job {
                 writer.write(stringBuilder.toString());
             }
 
+            logger.info("Created Report at {}", targetFile.toAbsolutePath().toString());
             eventList.add(new Event(reportCreatedEventName, reportJobName, evt.getId()));
         } catch (IOException e) {
             logger.error("Failed to create report", e);

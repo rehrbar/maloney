@@ -35,11 +35,11 @@ public class Start {
 
         options = new Options();
         options.addOption("v", "verbose", false, "enables verbose output");
+        options.addOption("id", "identifier", true, "case identifier used for operations");
         options.addOption("c", "configuration", true, "configuration to load");
         options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
-        options.addOption("rds", true, "indexes an rds hash set"); // TODO replace with job configuration
-        options.addOption(null, "clear-events", false,"clears stored events before start"); // TODO replace with job configuration
+        options.addOption(null, "clear-events", false, "clears stored events before start");
 
         try {
             CommandLine line = parser.parse(options, args);
@@ -50,8 +50,7 @@ public class Start {
             }
 
             // Preparing the logger.
-            if(line.hasOption("v")){
-                // TODO test if this is working properly.
+            if (line.hasOption("v")) {
                 LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
                 Configuration config = ctx.getConfiguration();
                 LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
@@ -69,19 +68,20 @@ public class Start {
             }
 
             if (line.hasOption("c")) {
-                // TODO pass working directory
+                // TODO merge stored configuration with command line parameters
                 FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
-                FrameworkController controller = new FrameworkController();
-                if(line.hasOption("clear-events")){
+                FrameworkController controller = new FrameworkController(frameworkConfiguration, line.getOptionValue("id"));
+
+                if (line.hasOption("clear-events")) {
                     controller.clearEvents();
                 } else {
-                    if(controller.isRestarting()){
+                    if (controller.hasEvents()) {
                         logger.info("Not finished events were found, which will be restarted."
-                                +"To clear pending events, use switch --{} instead.","clear-events");
+                                + "To clear pending events, use switch --{} instead.", "clear-events");
                     }
                 }
 
-                controller.run(frameworkConfiguration);
+                controller.run();
 
                 System.exit(0);
                 return;

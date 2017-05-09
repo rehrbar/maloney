@@ -45,11 +45,15 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
      * Creates a new Instance of MetadataStore with ElasticSearch as backend.
      *
      * @throws UnknownHostException Gets thrown when ElasticSearch instance ip address cannot be resolved
+     * @param caseIdentifier
      */
-    public MetadataStore() throws UnknownHostException {
+    public MetadataStore(String caseIdentifier) throws UnknownHostException {
         this.logger = LogManager.getLogger();
+
+        // Elasticsearch only works with lower case indices
+        this.indexName = "maloney-" + caseIdentifier.toLowerCase();
+
         // TODO pass configuration to transportclient for cluster name and node.
-        // TODO create index if it does not exist.
         Settings settings = Settings.builder()
             .put("cluster.name", "maloney").build();
         client = new PreBuiltTransportClient(settings)

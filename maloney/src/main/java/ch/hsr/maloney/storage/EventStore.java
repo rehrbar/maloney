@@ -13,6 +13,7 @@ import org.mapdb.serializer.SerializerUUID;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -34,17 +35,12 @@ public class EventStore {
     private ScheduledFuture deferredCommit;
     private BTreeMap<UUID, Event> events;
 
-    public EventStore() {
-        this(true);
-    }
-
-    public EventStore(boolean persistent) {
+    public EventStore(Path workingDirectory, boolean persistent) {
         this.logger = LogManager.getLogger();
         if (persistent) {
-            File file = Paths.get(System.getProperty("java.io.tmpdir"), "maloney-events.db").toFile();
-            // TODO use memoryDB for some unittests/allow configuration if persistent or not
+            File file = workingDirectory.resolve("events.db").toFile();
             db = DBMaker.fileDB(file)
-                    .fileMmapEnableIfSupported()
+                    .fileChannelEnable()
                     .transactionEnable()
                     .allocateStartSize(128 * 1024 * 1024) // 128MB
                     .allocateIncrement(64 * 1024 * 1024)  // 64MB
@@ -141,7 +137,10 @@ public class EventStore {
      * Closes the underlying db.
      */
     public synchronized void close() {
-        deferredCommit.cancel(false);
+        if(deferredCommit != null){
+            deferredCommit.cancel(false);
+        }
+
         scheduler.shutdown();
 
         // Commit to clean up all write ahead logs.

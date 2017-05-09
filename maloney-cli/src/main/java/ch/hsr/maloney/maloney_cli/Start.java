@@ -76,7 +76,7 @@ public class Start {
                     controller.clearEvents();
                 } else {
                     if (controller.hasEvents()) {
-                        logger.info("Not finished events were found, which will be restarted."
+                        logger.info("Unfinished events were found: Application will resume."
                                 + "To clear pending events, use switch --{} instead.", "clear-events");
                     }
                 }

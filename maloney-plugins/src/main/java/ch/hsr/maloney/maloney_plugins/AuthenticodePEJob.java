@@ -2,10 +2,18 @@ package ch.hsr.maloney.maloney_plugins;
 
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
+import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import net.jsign.DigestAlgorithm;
+import net.jsign.PEVerifier;
+import net.jsign.bouncycastle.cert.X509CertificateHolder;
+import net.jsign.bouncycastle.cms.CMSSignedData;
+import net.jsign.pe.PEFile;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +62,34 @@ public class AuthenticodePEJob implements Job {
 
     @Override
     public List<Event> run(Context ctx, Event evt) throws JobCancelledException {
-        // TODO implement
+        File eventFile = ctx.getDataSource().getFile(evt.getFileUuid());
+        List<Artifact> artifacts = new LinkedList<>();
+        try {
+            PEFile pef = new PEFile(eventFile);
+            byte[] sha1 = pef.computeDigest(DigestAlgorithm.SHA1);
+            byte[] sha256 = pef.computeDigest(DigestAlgorithm.SHA256);
+            artifacts.add(new Artifact(JOB_NAME, Hex.encodeHexString(sha1), "authenticode$"+ DigestAlgorithm.SHA1.id));
+            artifacts.add(new Artifact(JOB_NAME, Hex.encodeHexString(sha256), "authenticode$"+DigestAlgorithm.SHA256.id));
+
+            PEVerifier verifier = new PEVerifier(pef);
+            X509CertificateHolder cert = verifier.getCert();
+            if(cert != null){
+                artifacts.add(new Artifact(JOB_NAME, cert.getSubject(), "cert$subject"));
+            }
+
+            if(verifier.isCorrectlySigned()){
+                logger.debug("PE file is correctly signed.");
+                artifacts.add(new Artifact(JOB_NAME, "authenticode_ok","signature"));
+            } else {
+                // No artifact will be added if validation failed. It might still be possible the
+                // file is signed by a signature catalog.
+                logger.debug("PE file has no valid signature.");
+            }
+
+        } catch (IOException e) {
+            logger.warn("Could not identify portable executable.", e);
+        }
+        ctx.getMetadataStore().addArtifacts(evt.getFileUuid(), artifacts);
         return null;
     }
 

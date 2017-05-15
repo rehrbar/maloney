@@ -2,6 +2,7 @@ package ch.hsr.maloney.maloney_plugins;
 
 
 import ch.hsr.maloney.processing.Job;
+import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.util.Context;
@@ -13,6 +14,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -35,5 +37,13 @@ public class AuthenticodePEJobTest {
         Job job = new AuthenticodePEJob();
         boolean result = job.shouldRun(ctx, new Event("newFile","test", id));
         Assert.assertTrue("Job should be runnable", result);
+    }
+
+    @Test
+    public void ValidatePE() throws JobCancelledException {
+        String path = "/media/sf_shared/PE/bci.dll";
+        UUID id = fakeDataSource.addFile(Paths.get(path));
+        Job job = new AuthenticodePEJob();
+        List<Event> result = job.run(ctx, new Event("newFile","test", id));
     }
 }

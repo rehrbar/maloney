@@ -3,6 +3,7 @@ package ch.hsr.maloney.processing;
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
+import ch.hsr.maloney.util.Category;
 import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
@@ -73,9 +74,11 @@ public class ReportJob implements Job {
                 FileAttributes fileAttributes = iterator.next();
                 List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
 
-                //TODO decide which events are relevant
+                //TODO implement concreteCategories
+
+                //TODO implement Verifyer (util package?)
+
                 //TODO get relevant types from configuration
-                //TODO create registry with previously known and necessary artifact types (known bad etc.)
 
                 //Write data to file
                 StringBuilder stringBuilder = new StringBuilder();
@@ -130,5 +133,44 @@ public class ReportJob implements Job {
     @Override
     public void setJobConfig(String config) {
         //TODO configuraiton
+    }
+
+    class KnownGood implements Category{
+        //TODO implement this
+        @Override
+        public FileAttributes matchAttribute() {
+            return null;
+        }
+
+        @Override
+        public Artifact matchArtifact() {
+            return null;
+        }
+    }
+
+    class KnownBad implements Category{
+        //TODO implement this
+        @Override
+        public FileAttributes matchAttribute() {
+            return null;
+        }
+
+        @Override
+        public Artifact matchArtifact() {
+            return null;
+        }
+    }
+
+    class Unclassified implements Category{
+        //TODO implement this
+        @Override
+        public FileAttributes matchAttribute() {
+            return null;
+        }
+
+        @Override
+        public Artifact matchArtifact() {
+            return null;
+        }
     }
 }

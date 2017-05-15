@@ -1,21 +1,18 @@
 package ch.hsr.maloney.processing;
 
-import ch.hsr.maloney.core.FrameworkEventNames;
+import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.storage.*;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.storage.FakeMetaDataStore;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
 
 import static ch.hsr.maloney.core.Framework.EVENT_ORIGIN;
 

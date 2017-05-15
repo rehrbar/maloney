@@ -10,22 +10,22 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -189,4 +189,74 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         bulk.get();
     }
 
+    @Override
+    public Iterator<FileAttributes> iterator() {
+        return new ElasticsearchIterator();
+    }
+
+    public Iterator<FileAttributes> iterator(int expiryTimeMillis){
+        return new ElasticsearchIterator(expiryTimeMillis);
+    }
+
+    private class ElasticsearchIterator implements Iterator<FileAttributes> {
+        //TODO delete search on index
+        final int expiry_time_millis;
+        private final int HITS_PER_GET = 100;
+
+        List<FileAttributes> fileAttributes;
+        Iterator<FileAttributes> iterator;
+        SearchResponse scrollResp;
+
+        ElasticsearchIterator(){
+            this(60000);
+        }
+
+        ElasticsearchIterator(int expiryTimeMillis){
+            this.expiry_time_millis = expiryTimeMillis;
+            //QueryBuilder qb = termQuery("multi", "test");
+            scrollResp = client.prepareSearch(indexName)
+                    //.addSort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
+                    .setScroll(new TimeValue(expiry_time_millis))
+                    //.setQuery(qb)
+                    .setSize(HITS_PER_GET).get();
+            extractResults();
+        }
+
+        private void extractResults() {
+            fileAttributes = new LinkedList<>();
+            for (SearchHit hit : scrollResp.getHits().getHits()) {
+                try {
+                    final FileAttributes fileAttribute = mapper.readValue(hit.getSourceAsString(),FileAttributes.class);
+                    this.fileAttributes.add(fileAttribute);
+                } catch (IOException e) {
+                    logger.error("Could not parse FileAttributes retrieved from elasticsearch.", e);
+                }
+            }
+            iterator = fileAttributes.iterator();
+        }
+
+        private boolean continueScrolling() {
+            scrollResp = client
+                    .prepareSearchScroll(scrollResp.getScrollId())
+                    .setScroll(new TimeValue(expiry_time_millis))
+                    .execute()
+                    .actionGet();
+            if(scrollResp.getHits().getHits().length == 0){ // Zero hits mark the end of the scroll
+                return false;
+            } else {
+                extractResults();
+                return true;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext() || continueScrolling();
+        }
+
+        @Override
+        public FileAttributes next() {
+            return iterator.next();
+        }
+    }
 }

@@ -1,8 +1,12 @@
 package ch.hsr.maloney.storage;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +19,16 @@ import java.util.UUID;
 public class FakeDataSource implements DataSource {
 
     Map<UUID, Path> fileUuidToPath = new HashMap<>();
+    Map<Class, Path> workingDirs = new HashMap<>();
+    private Path jobsWorkingDirPath;
+
+    public FakeDataSource(){
+        try {
+            jobsWorkingDirPath = Files.createTempDirectory("maloney-test");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public File getFile(UUID fileID) {
@@ -42,7 +56,7 @@ public class FakeDataSource implements DataSource {
 
     @Override
     public Path getJobWorkingDir(Class job) {
-        throw new UnsupportedOperationException();
+        return workingDirs.computeIfAbsent(job, aClass -> jobsWorkingDirPath.resolve(job.getSimpleName() + "_" + job.getCanonicalName().hashCode()));
     }
 
     public UUID addFile(Path path) {
@@ -53,5 +67,9 @@ public class FakeDataSource implements DataSource {
 
     public Collection<Path> getFiles() {
         return fileUuidToPath.values();
+    }
+
+    public void cleanup() throws IOException {
+        FileUtils.deleteDirectory(jobsWorkingDirPath.toFile());
     }
 }

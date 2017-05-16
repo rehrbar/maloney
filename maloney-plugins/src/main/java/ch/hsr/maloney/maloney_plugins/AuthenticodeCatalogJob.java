@@ -7,12 +7,23 @@ import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import net.jsign.CatalogFile;
 import net.jsign.SignedHashInfo;
+import net.jsign.bouncycastle.cert.X509CertificateHolder;
 import net.jsign.bouncycastle.cms.CMSException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -60,12 +71,30 @@ public class AuthenticodeCatalogJob implements Job {
                     logger.debug("Do something with the hash infos...{} {}", hashInfo.getFilename(), Hex.encodeHexString(hashInfo.getHashbytes()));
                 }
             }
+
+            Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodeCatalogJob.class);
+            try {
+                saveCert(jobWorkingDir, "demo", catalogFile.getCert());
+                // TODO add cert to store
+            } catch (IOException e) {
+                logger.error("Could not save embedded certificate file.", e);
+            }
         } catch (IOException|CMSException e) {
             logger.warn("Security catalog of file {} could not be inspected.", evt.getFileUuid());
         }
 
         ctx.getMetadataStore().addArtifacts(evt.getFileUuid(), artifacts);
         return null;
+    }
+
+    private Path saveCert(Path jobWorkingDir, String certName, X509CertificateHolder cert) throws IOException {
+        Files.createDirectories(jobWorkingDir);
+        Path certFileName = jobWorkingDir.resolve(certName+".p7b");
+        PemWriter pemWriter = new PemWriter(new FileWriter(certFileName.toFile()));
+        pemWriter.writeObject(new PemObject("CERTIFICATE", cert.getEncoded()));
+        pemWriter.flush();
+        pemWriter.close();
+        return certFileName;
     }
 
     @Override

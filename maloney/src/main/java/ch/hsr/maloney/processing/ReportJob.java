@@ -3,6 +3,7 @@ package ch.hsr.maloney.processing;
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
+import ch.hsr.maloney.storage.hash.HashType;
 import ch.hsr.maloney.util.Category;
 import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.Context;
@@ -74,8 +75,6 @@ public class ReportJob implements Job {
                 FileAttributes fileAttributes = iterator.next();
                 List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
 
-                //TODO implement concreteCategories
-
                 //TODO implement Verifyer (util package?)
 
                 //TODO get relevant types from configuration
@@ -135,42 +134,49 @@ public class ReportJob implements Job {
         //TODO configuraiton
     }
 
-    class KnownGood implements Category{
-        //TODO implement this
+    class KnownGoodFiles implements Category {
         @Override
-        public FileAttributes matchAttribute() {
+        public List<FileAttributes> matchFileAttributes() {
             return null;
         }
 
         @Override
-        public Artifact matchArtifact() {
-            return null;
-        }
-    }
-
-    class KnownBad implements Category{
-        //TODO implement this
-        @Override
-        public FileAttributes matchAttribute() {
-            return null;
-        }
-
-        @Override
-        public Artifact matchArtifact() {
-            return null;
+        public List<Artifact> matchArtifact() {
+            LinkedList<Artifact> artifacts = new LinkedList<>();
+            // Hash match
+            artifacts.add(new Artifact(null, HashType.GOOD, null));
+            return artifacts;
         }
     }
 
-    class Unclassified implements Category{
-        //TODO implement this
+    class KnownBadFiles implements Category {
+        //TODO this
         @Override
-        public FileAttributes matchAttribute() {
+        public List<FileAttributes> matchFileAttributes() {
             return null;
         }
 
         @Override
-        public Artifact matchArtifact() {
+        public List<Artifact> matchArtifact() {
+            LinkedList<Artifact> artifacts = new LinkedList<>();
+            // Hash match
+            artifacts.add(new Artifact(null, HashType.BAD, null));
+            return artifacts;
+        }
+    }
+
+    class UnknownFiles implements Category {
+        //TODO this
+        @Override
+        public List<FileAttributes> matchFileAttributes() {
             return null;
+        }
+
+        public List<Artifact> matchArtifact() {
+            LinkedList<Artifact> artifacts = new LinkedList<>();
+            // Hash match
+            artifacts.add(new Artifact(null, HashType.CUSTOM, null));
+            return artifacts;
         }
     }
 }

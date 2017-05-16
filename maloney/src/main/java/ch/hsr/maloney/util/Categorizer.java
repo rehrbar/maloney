@@ -3,6 +3,7 @@ package ch.hsr.maloney.util;
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -12,20 +13,36 @@ public class Categorizer {
     /**
      * @param fileAttr File which will get categorized
      * @param category Category which file belongs to
-     * @return True if category matches, false if not
+     * @return True if one of the criteria (attributes) in a category matches, false if none do
      */
     boolean isMatch(FileAttributes fileAttr, Category category) {
-        FileAttributes target = category.matchAttribute();
-        Artifact targetArtifact = category.matchArtifact();
+        boolean isMatch = false;
 
-        return
-                matchFileName(fileAttr, target) &&
-                matchFilePath(fileAttr, target) &&
-                matchDateCreated(fileAttr, target) &&
-                matchDateChanged(fileAttr, target) &&
-                matchDateAccessed(fileAttr, target) &&
-                matchArtifacts(fileAttr.getArtifacts(), targetArtifact);
+        // Try to match FileAttributes
+        if(category.matchFileAttributes() != null){
+            Iterator<FileAttributes> fileAttributesIterator = category.matchFileAttributes().iterator();
+            while (!isMatch && fileAttributesIterator.hasNext()) {
+                FileAttributes target = fileAttributesIterator.next();
+                isMatch = matchFileName(fileAttr, target) &&
+                        matchFilePath(fileAttr, target) &&
+                        matchDateCreated(fileAttr, target) &&
+                        matchDateChanged(fileAttr, target) &&
+                        matchDateAccessed(fileAttr, target);
+            }
+        }
 
+        // Try to match Artifact(s)
+        if(category.matchArtifact() != null){
+            Iterator<Artifact> artifactIterator = category.matchArtifact().iterator();
+            while (!isMatch && artifactIterator.hasNext()) {
+                Artifact targetArtifact = artifactIterator.next();
+                isMatch = fileAttr.getArtifacts().stream().filter(art -> matchArtifactOriginator(art, targetArtifact) &&
+                                matchArtifactType(art, targetArtifact) &&
+                                matchArtifactValue(art, targetArtifact)).count() > 0;
+            }
+        }
+
+        return isMatch;
     }
 
     private boolean matchFileName(FileAttributes fileAttr, FileAttributes target) {
@@ -48,19 +65,15 @@ public class Categorizer {
         return target.getDateAccessed() == null || target.getDateAccessed().equals(fileAttr.getDateAccessed());
     }
 
-    private boolean matchArtifactOriginator(Artifact artifact, Artifact targetArtifact){
+    private boolean matchArtifactOriginator(Artifact artifact, Artifact targetArtifact) {
         return targetArtifact.getOriginator() == null || targetArtifact.getOriginator().equals(artifact.getOriginator());
     }
 
-    private boolean matchArtifactType(Artifact artifact, Artifact targetArtifact){
+    private boolean matchArtifactType(Artifact artifact, Artifact targetArtifact) {
         return targetArtifact.getType() == null || targetArtifact.getType().equals(artifact.getType());
     }
 
-    private boolean matchArtifactValue(Artifact artifact, Artifact targetArtifact){
+    private boolean matchArtifactValue(Artifact artifact, Artifact targetArtifact) {
         return targetArtifact.getValue() == null || targetArtifact.getValue().equals(artifact.getValue());
-    }
-
-    private boolean matchArtifacts(List<Artifact> artifacts, Artifact targetArtifact) {
-        return targetArtifact == null || artifacts.stream().filter(art -> matchArtifactOriginator(art, targetArtifact) && matchArtifactType(art, targetArtifact) && matchArtifactValue(art, targetArtifact)).count() > 0;
     }
 }

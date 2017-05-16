@@ -3,8 +3,6 @@ package ch.hsr.maloney.maloney_plugins;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.Artifact;
-import ch.hsr.maloney.storage.FileExtractor;
-import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import net.jsign.CatalogFile;
@@ -15,9 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -68,49 +64,7 @@ public class AuthenticodeCatalogJob implements Job {
             }
 
             Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodeCatalogJob.class);
-            UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new FileExtractor() {
-
-                private Path certPath;
-                private Path getCertPath(){
-                    if(certPath == null){
-                        try {
-                            certPath = AuthenticodeHelpers.saveCert(jobWorkingDir, evt.getFileUuid().toString(), catalogFile.getCert());
-                        } catch (IOException e) {
-                            logger.error("Could not save embedded certificate file.", e);
-                        }
-                    }
-                    return certPath;
-                }
-
-                @Override
-                public boolean useOriginalFile() {
-                    return false;
-                }
-
-                @Override
-                public Path extractFile() {
-                    return getCertPath();
-                }
-
-                @Override
-                public FileSystemMetadata extractMetadata() {
-                    File f = getCertPath().toFile();
-                    FileSystemMetadata metadata = new FileSystemMetadata();
-                    metadata.setSize(f.length());
-                    metadata.setDateAccessed(Calendar.getInstance().getTime());
-                    // TODO fill additional metadata
-                    return metadata;
-                }
-
-                @Override
-                public void cleanup() {
-                    try {
-                        Files.deleteIfExists(getCertPath());
-                    } catch (IOException e) {
-                        logger.warn("Could not delete temporary certificate file.", e);
-                    }
-                }
-            });
+            UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, catalogFile.getCert()));
             ctx.getMetadataStore().addArtifact(certUuid, new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
             // TODO add cert to store
         } catch (IOException | CMSException e) {
@@ -145,4 +99,5 @@ public class AuthenticodeCatalogJob implements Job {
     public void setJobConfig(String config) {
 
     }
+
 }

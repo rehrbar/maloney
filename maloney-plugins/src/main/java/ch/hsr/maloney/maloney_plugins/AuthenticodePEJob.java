@@ -17,8 +17,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Implementation which examines Authenticode information of a portable executable.
@@ -73,7 +75,11 @@ public class AuthenticodePEJob implements Job {
 
             PEVerifier verifier = new PEVerifier(pef);
             X509CertificateHolder cert = verifier.getCert();
+            Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodePEJob.class);
+
             if(cert != null){
+                UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, cert));
+                ctx.getMetadataStore().addArtifact(certUuid, new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
                 artifacts.add(new Artifact(JOB_NAME, cert.getSubject(), "cert$subject"));
             }
 

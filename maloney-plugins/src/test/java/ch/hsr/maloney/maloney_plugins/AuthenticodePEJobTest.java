@@ -7,10 +7,12 @@ import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
@@ -22,18 +24,25 @@ public class AuthenticodePEJobTest {
     private FakeMetaDataStore fakeMetaDataStore;
     private FakeDataSource fakeDataSource;
     private Context ctx;
+
     @Before
     public void prepare() {
         fakeMetaDataStore = new FakeMetaDataStore();
         fakeDataSource = new FakeDataSource();
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
     }
+
+//    @After
+//    public void cleanup() throws IOException {
+//        fakeDataSource.cleanup();
+//    }
+
     @Test
-    public void IdentifyPE(){
+    public void IdentifyPE() {
         String path = "/media/sf_shared/PE/7z.exe";
         UUID id = fakeDataSource.addFile(Paths.get(path));
         Job job = new AuthenticodePEJob();
-        boolean result = job.shouldRun(ctx, new Event("newFile","test", id));
+        boolean result = job.shouldRun(ctx, new Event("newFile", "test", id));
         Assert.assertTrue("Job should be runnable", result);
     }
 
@@ -42,6 +51,6 @@ public class AuthenticodePEJobTest {
         String path = "/media/sf_shared/PE/bci.dll";
         UUID id = fakeDataSource.addFile(Paths.get(path));
         Job job = new AuthenticodePEJob();
-        List<Event> result = job.run(ctx, new Event("newFile","test", id));
+        List<Event> result = job.run(ctx, new Event("newFile", "test", id));
     }
 }

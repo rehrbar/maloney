@@ -31,16 +31,16 @@ public class Category implements RuleComponent {
         return rules;
     }
 
-    void addRuleSet(RuleComponent ruleComponent){
+    public void addRule(RuleComponent ruleComponent){
         rules.addRule(ruleComponent);
     }
 
-    void removeRuleSet(RuleComponent ruleComponent){
+    public void removeRule(RuleComponent ruleComponent){
         rules.removeRule(ruleComponent);
     }
 
     @Override
     public boolean match(FileAttributes fileAttributes) {
-        return false;
+        return rules.match(fileAttributes);
     }
 }

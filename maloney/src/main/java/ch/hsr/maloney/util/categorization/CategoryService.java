@@ -1,0 +1,29 @@
+package ch.hsr.maloney.util.categorization;
+
+import java.util.*;
+
+/**
+ * Created by oliver on 18.05.17.
+ */
+public class CategoryService {
+    private Map<String, Category> categories;
+
+    public CategoryService(){
+        categories = new HashMap<>();
+        for(DefaultCategory defaultCategory : DefaultCategory.values()){
+            categories.put(defaultCategory.toString(), new Category(defaultCategory.toString()));
+        }
+    }
+
+    public Collection<Category> getCategories(){
+        return categories.values();
+    }
+
+    public void addCategory(Category category){
+        categories.put(category.getName(), category);
+    }
+
+    public Categorizer getCategorizer(){
+        return new Categorizer();
+    }
+}

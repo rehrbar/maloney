@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Calendar;
+import java.util.Collection;
 
 /**
  * Created by roman on 16.05.17.
@@ -25,8 +26,14 @@ class CertificateFileExtractor implements FileExtractor {
     private final X509CertificateHolder certificateHolder;
     private Path certPath;
     private final Logger logger;
+    private Collection<X509CertificateHolder> certs;
 
     public CertificateFileExtractor(Path jobWorkingDir, Event evt, X509CertificateHolder certificateHolder) {
+        this(jobWorkingDir, evt, certificateHolder, null);
+    }
+
+    public CertificateFileExtractor(Path jobWorkingDir, Event evt, X509CertificateHolder certificateHolder, Collection<X509CertificateHolder> certs) {
+        this.certs = certs;
         logger = LogManager.getLogger();
         this.jobWorkingDir = jobWorkingDir;
         this.certificateHolder = certificateHolder;
@@ -43,7 +50,16 @@ class CertificateFileExtractor implements FileExtractor {
         try {
             Files.createDirectories(jobWorkingDir);
             PemWriter pemWriter = new PemWriter(new FileWriter(certPath.toFile()));
-            pemWriter.writeObject(new PemObject("CERTIFICATE", certificateHolder.getEncoded()));
+            //pemWriter.writeObject(new PemObject("CERTIFICATE", certificateHolder.getEncoded()));
+            if(certs != null){
+                certs.forEach(o -> {
+                    try {
+                        pemWriter.writeObject(new PemObject("CERTIFICATE", o.getEncoded()));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
             pemWriter.flush();
             pemWriter.close();
         } catch (IOException e) {

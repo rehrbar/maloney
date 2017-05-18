@@ -55,7 +55,7 @@ public class AuthenticodeCatalogJob implements Job {
         List<Artifact> artifacts = new LinkedList<>();
 
         try {
-            CatalogFile catalogFile = new CatalogFile(eventFile.getAbsolutePath());
+            ch.hsr.maloney.maloney_plugins.CatalogFile catalogFile = new ch.hsr.maloney.maloney_plugins.CatalogFile(eventFile.getAbsolutePath());
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
                 if (hashInfo.getHashbytes() != null) {
                     // TODO add hashes to a store
@@ -64,7 +64,7 @@ public class AuthenticodeCatalogJob implements Job {
             }
 
             Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodeCatalogJob.class);
-            UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, catalogFile.getCert()));
+            UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, catalogFile.getCert(), catalogFile.getCerts()));
             ctx.getMetadataStore().addArtifact(certUuid, new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
             // TODO add cert to store
         } catch (IOException | CMSException e) {

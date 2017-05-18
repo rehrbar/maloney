@@ -1,4 +1,4 @@
-package ch.hsr.maloney.maloney_plugins;
+package ch.hsr.maloney.maloney_plugins.authenticode;
 
 import net.jsign.bouncycastle.asn1.cms.ContentInfo;
 import net.jsign.bouncycastle.cert.X509CertificateHolder;

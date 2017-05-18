@@ -1,4 +1,4 @@
-package ch.hsr.maloney.maloney_plugins;
+package ch.hsr.maloney.maloney_plugins.authenticode;
 
 import ch.hsr.maloney.storage.FileExtractor;
 import ch.hsr.maloney.storage.FileSystemMetadata;

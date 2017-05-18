@@ -1,4 +1,4 @@
-package ch.hsr.maloney.maloney_plugins;
+package ch.hsr.maloney.maloney_plugins.authenticode;
 
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
@@ -8,7 +8,6 @@ import ch.hsr.maloney.util.Event;
 import net.jsign.DigestAlgorithm;
 import net.jsign.PEVerifier;
 import net.jsign.bouncycastle.cert.X509CertificateHolder;
-import net.jsign.bouncycastle.cms.CMSSignedData;
 import net.jsign.pe.PEFile;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;

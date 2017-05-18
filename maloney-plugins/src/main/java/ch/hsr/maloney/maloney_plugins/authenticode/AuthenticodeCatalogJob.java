@@ -1,11 +1,10 @@
-package ch.hsr.maloney.maloney_plugins;
+package ch.hsr.maloney.maloney_plugins.authenticode;
 
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
-import net.jsign.CatalogFile;
 import net.jsign.SignedHashInfo;
 import net.jsign.bouncycastle.cms.CMSException;
 import org.apache.commons.codec.binary.Hex;
@@ -55,7 +54,7 @@ public class AuthenticodeCatalogJob implements Job {
         List<Artifact> artifacts = new LinkedList<>();
 
         try {
-            ch.hsr.maloney.maloney_plugins.CatalogFile catalogFile = new ch.hsr.maloney.maloney_plugins.CatalogFile(eventFile.getAbsolutePath());
+            ch.hsr.maloney.maloney_plugins.authenticode.CatalogFile catalogFile = new ch.hsr.maloney.maloney_plugins.authenticode.CatalogFile(eventFile.getAbsolutePath());
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
                 if (hashInfo.getHashbytes() != null) {
                     // TODO add hashes to a store

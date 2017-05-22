@@ -14,7 +14,7 @@ public enum DefaultCategory {
         name = value;
     }
 
-    public String toString(){
+    public String getName(){
         return this.name;
     }
 }

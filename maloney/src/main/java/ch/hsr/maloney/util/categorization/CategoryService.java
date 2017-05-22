@@ -11,7 +11,7 @@ public class CategoryService {
     public CategoryService(){
         categories = new HashMap<>();
         for(DefaultCategory defaultCategory : DefaultCategory.values()){
-            categories.put(defaultCategory.toString(), new Category(defaultCategory.toString()));
+            categories.put(defaultCategory.getName(), new Category(defaultCategory.getName()));
         }
     }
 
@@ -28,6 +28,6 @@ public class CategoryService {
     }
 
     public Categorizer getCategorizer(){
-        return new Categorizer();
+        return new Categorizer(this);
     }
 }

@@ -11,8 +11,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -20,10 +24,11 @@ import static org.junit.Assert.*;
  * Created by roman on 21.05.17.
  */
 public class AuthenticodeSignatureLookupJobTest {
+    public static final String HASH = "b207eaa72396b87a82db095ae73021973bece60a";
     private FakeMetaDataStore fakeMetaDataStore;
     private Context ctx;
     private UUID fileId;
-    private ElasticSignatureStoreTestImpl store;
+    private FakeSignatureStore store;
 
     @Before
     public void prepare() throws UnknownHostException {
@@ -32,17 +37,23 @@ public class AuthenticodeSignatureLookupJobTest {
         fakeMetaDataStore.addFileAttributes(new FileAttributes(
                 "text.exe", "C:\\windows\\",fileId,null, null, null, null,null
         ));
-        fakeMetaDataStore.addArtifact(fileId, new Artifact("AuthenticodePEJob", "b207eaa72396b87a82db095ae73021973bece60a","authenticode$SHA-1"));
+        fakeMetaDataStore.addArtifact(fileId, new Artifact("AuthenticodePEJob", HASH,"authenticode$SHA-1"));
         ctx = new Context(fakeMetaDataStore, null, null);
-        store = new ElasticSignatureStoreTestImpl();
-        store.clearIndex();
-        store.seedTestData();
-        store.refreshIndex();
+        store = new FakeSignatureStore();
     }
     @Test
     public void run() throws JobCancelledException {
-        AuthenticodeSignatureLookupJob job = new AuthenticodeSignatureLookupJob();
-        job.signatureStore = store;
+        SignatureRecord record = new SignatureRecord();
+        record.setSource(UUID.randomUUID());
+        record.setHash(HASH);
+        record.setFileName("text.exe");
+        record.setFilePath("C:\\windows\\");
+        record.setStatus(CertificateStatus.GOOD);
+        List<SignatureRecord> records = new LinkedList<>();
+        records.add(record);
+        store.addSignatures(records);
+
+        AuthenticodeSignatureLookupJob job = new AuthenticodeSignatureLookupJob(store);
 
         Event evt = new Event("selectedFile", "test", fileId);
         job.run(ctx, evt);
@@ -50,7 +61,7 @@ public class AuthenticodeSignatureLookupJobTest {
         // Verification
         Artifact result = fakeMetaDataStore.getArtifacts(fileId).stream().filter(artifact -> artifact.getType().equals("authenticode$status")).findFirst().orElse(null);
         assertNotNull(result);
-        assertEquals(CertificateStatus.GOOD, result.getValue());
+        assertEquals(record.getStatus(), result.getValue());
     }
 
 }

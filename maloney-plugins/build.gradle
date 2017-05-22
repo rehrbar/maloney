@@ -11,3 +11,10 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile project(':maloney').sourceSets.test.output
 }
+
+
+test {
+    systemProperty "java.library.path", file("..\\lib")
+    exclude "TSK/**"
+    exclude "ch/hsr/maloney/maloney_plugins/authenticode/ElasticSignatureStoreTest/**"
+}

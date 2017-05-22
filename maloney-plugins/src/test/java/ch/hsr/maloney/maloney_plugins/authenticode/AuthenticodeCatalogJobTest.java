@@ -23,12 +23,14 @@ public class AuthenticodeCatalogJobTest {
     private FakeMetaDataStore fakeMetaDataStore;
     private FakeDataSource fakeDataSource;
     private Context ctx;
+    private FakeSignatureStore signatureStore;
 
     @Before
     public void prepare() {
         fakeMetaDataStore = new FakeMetaDataStore();
         fakeDataSource = new FakeDataSource();
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
+        signatureStore = new FakeSignatureStore();
     }
 
     @After
@@ -40,7 +42,7 @@ public class AuthenticodeCatalogJobTest {
     public void IdentifyCatalog() {
         String path = "/media/sf_shared/PE/VBoxNetLwf.cat";
         UUID id = fakeDataSource.addFile(Paths.get(path));
-        Job job = new AuthenticodeCatalogJob();
+        Job job = new AuthenticodeCatalogJob(signatureStore);
         boolean result = job.shouldRun(ctx, new Event("newFile", "test", id));
         Assert.assertTrue("Job should be runnable", result);
     }
@@ -49,7 +51,8 @@ public class AuthenticodeCatalogJobTest {
     public void ValidateCatalogFile() throws JobCancelledException {
         String path = "/media/sf_shared/PE/VBoxNetLwf.cat";
         UUID id = fakeDataSource.addFile(Paths.get(path));
-        Job job = new AuthenticodeCatalogJob();
+        Job job = new AuthenticodeCatalogJob(signatureStore);
         List<Event> result = job.run(ctx, new Event("newFile", "test", id));
+        Assert.assertFalse(signatureStore.getAllSignatures().isEmpty());
     }
 }

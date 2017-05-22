@@ -20,17 +20,22 @@ public class AuthenticodeSignatureLookupJob implements Job {
     private final LinkedList<String> producedEvents;
     private final LinkedList<String> requiredEvents;
     private final Logger logger;
-    SignatureStore signatureStore;
+    private SignatureStore signatureStore;
 
     public AuthenticodeSignatureLookupJob() {
-        logger = LogManager.getLogger();
-        requiredEvents = new LinkedList<>();
-        producedEvents = new LinkedList<>();
+        this(null);
         try {
             signatureStore = new ElasticSignatureStore();
         } catch (UnknownHostException e) {
             logger.error("Could not connect to store.", e);
         }
+    }
+
+    AuthenticodeSignatureLookupJob(SignatureStore store){
+        logger = LogManager.getLogger();
+        requiredEvents = new LinkedList<>();
+        producedEvents = new LinkedList<>();
+        signatureStore = store;
     }
 
     @Override

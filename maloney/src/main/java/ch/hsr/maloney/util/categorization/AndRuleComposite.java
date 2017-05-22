@@ -3,8 +3,6 @@ package ch.hsr.maloney.util.categorization;
 import ch.hsr.maloney.storage.FileAttributes;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Created by oliver on 18.05.17.

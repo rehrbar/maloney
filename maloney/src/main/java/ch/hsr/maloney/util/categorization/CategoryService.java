@@ -19,7 +19,11 @@ public class CategoryService {
         return categories.values();
     }
 
-    public void addCategory(Category category){
+    public Category getCategory(String name){
+        return categories.get(name);
+    }
+
+    public void addOrUpdateCategory(Category category){
         categories.put(category.getName(), category);
     }
 

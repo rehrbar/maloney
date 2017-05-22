@@ -1,17 +1,18 @@
 package ch.hsr.maloney.maloney_plugins.authenticode;
 
 
-import ch.hsr.maloney.maloney_plugins.authenticode.AuthenticodePEJob;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
@@ -31,10 +32,10 @@ public class AuthenticodePEJobTest {
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
     }
 
-//    @After
-//    public void cleanup() throws IOException {
-//        fakeDataSource.cleanup();
-//    }
+    @After
+    public void cleanup() throws IOException {
+        fakeDataSource.cleanup();
+    }
 
     @Test
     public void IdentifyPE() {

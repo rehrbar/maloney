@@ -1,6 +1,8 @@
 package ch.hsr.maloney.maloney_plugins.authenticode;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -9,6 +11,8 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -119,6 +123,30 @@ public class ElasticSignatureStore implements SignatureStore {
         return addedRecordIds;
     }
 
+    @Override
+    public void removeSignature(String id){
+        DeleteResponse deleteResponse = client.prepareDelete(INDEX_NAME, SIGNATURE_TYPE, id).get();
+        logger.debug("Performed delete action for SignatureRecord with result {}", deleteResponse.status());
+    }
+
+    @Override
+    public SignatureRecord getSignature(String id){
+        GetResponse response = client.prepareGet(INDEX_NAME, SIGNATURE_TYPE, id).get();
+        try {
+            return mapper.readValue(response.getSourceAsBytes(), SignatureRecord.class);
+        } catch (IOException e) {
+            logger.error("Could not parse SignatureRecord retrieved from elasticsearch.", e);
+        } catch (NullPointerException e) {
+            logger.info("Requested SignatureRecord with id '{}' was not found.", id, e);
+        }
+        return null;
+    }
+
+    /**
+     * Finds all signatures in the store.
+     * @param hash Signature hash to search for. Search is case sensitive.
+     * @return List with all matches. If none is found, an empty list is returned.
+     */
     @Override
     public List<SignatureRecord> findSignatures(String hash){
         SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)

@@ -29,7 +29,7 @@ public class AuthenticodeSignatureLookupJobTest {
         fakeMetaDataStore.addFileAttributes(new FileAttributes(
                 "text.exe", "C:\\windows\\",fileId,null, null, null, null,null
         ));
-        fakeMetaDataStore.addArtifact(fileId, new Artifact("AuthenticodePEJob", "B207EAA72396B87A82DB095AE73021973BECE60A","authenticode$SHA-1"));
+        fakeMetaDataStore.addArtifact(fileId, new Artifact("AuthenticodePEJob", "b207eaa72396b87a82db095ae73021973bece60a","authenticode$SHA-1"));
         ctx = new Context(fakeMetaDataStore, null, null);
     }
     @Test

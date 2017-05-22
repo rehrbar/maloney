@@ -29,8 +29,8 @@ public class ElasticSignatureStoreTest {
         SignatureRecord record = es.getSignature(generatedIds.get(0));
         Assert.assertNotNull(record);
         Assert.assertEquals("b207eaa72396b87a82db095ae73021973bece60a", record.getHash());
-        Assert.assertEquals("vboxnetlwf.sys", record.getFilename());
-        Assert.assertEquals("2:5.1,2:5.2,2:6.0", record.getOsAttr());
+        Assert.assertEquals("vboxnetlwf.sys", record.getFileName());
+        Assert.assertEquals("C:\\Program Files\\Oracle\\VirtualBox\\drivers\\network\\netlwf", record.getFilePath());
         Assert.assertEquals(CertificateStatus.GOOD, record.getStatus());
         Assert.assertEquals(UUID.fromString("75d856e0-b439-4823-97cf-c3e9b09764e9"), record.getSource());
     }
@@ -40,14 +40,14 @@ public class ElasticSignatureStoreTest {
         SignatureRecord r1 = new SignatureRecord(
                 new byte[]{-85, -55, 85, 110, -2, 20, -99, -45, 27, 23, 30, -124, -50, 28, 57, 116, -12, -102, -84, 73},
                 "some.exe",
-                "2:5.1,2:5.2,2:6.0",
+                "C:\\windows",
                 CertificateStatus.GOOD,
                 UUID.fromString("e31d1a37-da85-46a5-ab66-9cada50e29ed")
         );
         SignatureRecord r2 = new SignatureRecord(
                 new byte[]{-44, -33, 22, 11, -2, 20, -99, -45, 27, 23, 30, -124, -50, 28, 57, 116, -12, 0, -21, 22},
                 "some.exe",
-                "2:5.1,2:5.2,2:6.0",
+                "C:\\windows",
                 CertificateStatus.BAD,
                 UUID.fromString("2f8e1043-1e6d-457f-9910-2b33f3b98907")
         );
@@ -64,7 +64,7 @@ public class ElasticSignatureStoreTest {
         Assert.assertEquals(1, results.size());
 
         SignatureRecord firstRecord = results.get(0);
-        Assert.assertEquals("vboxnetlwf.sys", firstRecord.getFilename());
+        Assert.assertEquals("vboxnetlwf.sys", firstRecord.getFileName());
     }
 
     @Test

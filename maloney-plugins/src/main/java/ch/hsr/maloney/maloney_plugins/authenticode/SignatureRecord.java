@@ -9,8 +9,8 @@ import java.util.UUID;
  */
 public class SignatureRecord {
     private String hash;
-    private String filename;
-    private String osAttr;
+    private String fileName;
+    private String filePath;
     private CertificateStatus status;
     private UUID source;
 
@@ -18,10 +18,10 @@ public class SignatureRecord {
         // keep for serialization
     }
 
-    public SignatureRecord(byte[] hashbytes, String filename, String osAttr, CertificateStatus status, UUID source){
+    public SignatureRecord(byte[] hashbytes, String fileName, String filePath, CertificateStatus status, UUID source){
         this.hash = Hex.encodeHexString(hashbytes);
-        this.filename = filename;
-        this.osAttr = osAttr;
+        this.fileName = fileName;
+        this.filePath = filePath;
         this.status = status;
         this.source = source;
     }
@@ -35,20 +35,16 @@ public class SignatureRecord {
         this.hash = hash;
     }
 
-    public String getFilename() {
-        return filename;
+    public void setHash(byte[] bytes){
+        setHash(Hex.encodeHexString(bytes));
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
+    public String getFileName() {
+        return fileName;
     }
 
-    public String getOsAttr() {
-        return osAttr;
-    }
-
-    public void setOsAttr(String osAttr) {
-        this.osAttr = osAttr;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public CertificateStatus getStatus() {
@@ -65,6 +61,14 @@ public class SignatureRecord {
 
     public void setSource(UUID source) {
         this.source = source;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 }
 

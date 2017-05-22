@@ -7,11 +7,11 @@ import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import net.jsign.SignedHashInfo;
 import net.jsign.bouncycastle.cms.CMSException;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,12 +26,18 @@ public class AuthenticodeCatalogJob implements Job {
     private final LinkedList<String> producedEvents;
     private final LinkedList<String> requiredEvents;
     private final Logger logger;
+    SignatureStore signatureStore;
 
     public AuthenticodeCatalogJob() {
         producedEvents = new LinkedList<>();
         requiredEvents = new LinkedList<>();
         requiredEvents.add(NEW_FILE_EVENT_NAME);
         logger = org.apache.logging.log4j.LogManager.getLogger();
+        try {
+            signatureStore= new ElasticSignatureStore();
+        } catch (UnknownHostException e) {
+            logger.error("Could not connect to signature store.", e);
+        }
     }
 
     @Override
@@ -45,7 +51,7 @@ public class AuthenticodeCatalogJob implements Job {
 
     @Override
     public boolean canRun(Context ctx, Event evt) {
-        return true;
+        return signatureStore != null;
     }
 
     @Override
@@ -55,17 +61,24 @@ public class AuthenticodeCatalogJob implements Job {
 
         try {
             ch.hsr.maloney.maloney_plugins.authenticode.CatalogFile catalogFile = new ch.hsr.maloney.maloney_plugins.authenticode.CatalogFile(eventFile.getAbsolutePath());
+            List<SignatureRecord> records = new LinkedList<>();
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
                 if (hashInfo.getHashbytes() != null) {
-                    // TODO add hashes to a store
-                    logger.debug("Do something with the hash infos...{} {}", hashInfo.getFilename(), Hex.encodeHexString(hashInfo.getHashbytes()));
+                    SignatureRecord e = new SignatureRecord();
+                    e.setFileName(hashInfo.getFilename());
+                    e.setSource(evt.getFileUuid());
+                    e.setHash(hashInfo.getHashbytes());
+                    // TODO verify certificate and set status accordingly.
+                    e.setStatus(CertificateStatus.GOOD);
+                    records.add(e);
                 }
             }
+            signatureStore.addSignatures(records);
 
             Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodeCatalogJob.class);
             UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, catalogFile.getCert(), catalogFile.getCerts()));
             ctx.getMetadataStore().addArtifact(certUuid, new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
-            // TODO add cert to store
+            // TODO also set the status for the certificate itself.
         } catch (IOException | CMSException e) {
             logger.warn("Security catalog of file {} could not be inspected.", evt.getFileUuid());
         }

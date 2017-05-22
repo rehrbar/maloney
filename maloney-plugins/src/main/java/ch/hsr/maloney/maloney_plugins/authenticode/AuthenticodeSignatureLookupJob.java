@@ -20,48 +20,47 @@ public class AuthenticodeSignatureLookupJob implements Job {
     private final LinkedList<String> producedEvents;
     private final LinkedList<String> requiredEvents;
     private final Logger logger;
+    SignatureStore signatureStore;
 
     public AuthenticodeSignatureLookupJob() {
         logger = LogManager.getLogger();
         requiredEvents = new LinkedList<>();
         producedEvents = new LinkedList<>();
+        try {
+            signatureStore = new ElasticSignatureStore();
+        } catch (UnknownHostException e) {
+            logger.error("Could not connect to store.", e);
+        }
     }
 
     @Override
     public boolean shouldRun(Context ctx, Event evt) {
-        // TODO check if the file has a pe hash value.
         return true;
     }
 
     @Override
     public boolean canRun(Context ctx, Event evt) {
-        return true;
+        return signatureStore != null;
     }
 
     @Override
     public List<Event> run(Context ctx, Event evt) throws JobCancelledException {
-        // TODO perform search for each hash value
         List<Event> events = new LinkedList<>();
-        try {
-            SignatureStore signatureStore = new ElasticSignatureStore();
-            List<Artifact> results = new LinkedList<>();
-            List<Artifact> artifacts = ctx.getMetadataStore().getArtifacts(evt.getFileUuid());
+        List<Artifact> results = new LinkedList<>();
+        List<Artifact> artifacts = ctx.getMetadataStore().getArtifacts(evt.getFileUuid());
 
-            // Matching all artifacts containing hashes
-            for(Artifact a : artifacts){
-                if(a.getType().startsWith("authenticode")){
-                    List<SignatureRecord> signatures = signatureStore.findSignatures(a.getValue().toString());
-                    for(SignatureRecord record : signatures){
-                        results.add(new Artifact(JOB_NAME, record, SignatureRecord.class.getCanonicalName()));
-                        results.add(new Artifact(JOB_NAME, record.getStatus(), "authenticode$status"));
-                        // TODO check file name.
-                    }
+        // Matching all artifacts containing hashes
+        for (Artifact a : artifacts) {
+            if (a.getType().startsWith("authenticode")) {
+                List<SignatureRecord> signatures = signatureStore.findSignatures(a.getValue().toString());
+                for (SignatureRecord record : signatures) {
+                    results.add(new Artifact(JOB_NAME, record, SignatureRecord.class.getCanonicalName()));
+                    results.add(new Artifact(JOB_NAME, record.getStatus(), "authenticode$status"));
+                    // TODO check file name and path?
                 }
             }
-            ctx.getMetadataStore().addArtifacts(evt.getFileUuid(), results);
-        } catch (UnknownHostException e) {
-            throw new JobCancelledException(null, "Could not connect to store.", e);
         }
+        ctx.getMetadataStore().addArtifacts(evt.getFileUuid(), results);
         return events;
     }
 

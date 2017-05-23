@@ -3,6 +3,7 @@ package ch.hsr.maloney.maloney_plugins.authenticode;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.Artifact;
+import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import net.jsign.SignedHashInfo;
@@ -50,8 +51,9 @@ public class AuthenticodeCatalogJob implements Job {
         // Security Catalog does not contain a magic value like a PE.
         // ASN.1 DER format may often start with 0x30, but it is not guaranteed.
         // Checking the file ending is another good enough guess.
-        File file = ctx.getDataSource().getFile(evt.getFileUuid());
-        return file.getName().endsWith(".cat");
+        // TODO improve check and fix tests
+        FileAttributes file = ctx.getMetadataStore().getFileAttributes(evt.getFileUuid());
+        return file.getFileName().toLowerCase().endsWith(".cat");
     }
 
     @Override
@@ -79,6 +81,7 @@ public class AuthenticodeCatalogJob implements Job {
                 }
             }
             signatureStore.addSignatures(records);
+            logger.info("Found {} signatures in {}", records.size(), evt.getFileUuid());
 
             Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodeCatalogJob.class);
             UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, catalogFile.getCert(), catalogFile.getCerts()));

@@ -66,7 +66,10 @@ public class AuthenticodeSignatureLookupJob implements Job {
                         for (SignatureRecord record : signatures) {
                             results.add(new Artifact(JOB_NAME, record, SignatureRecord.class.getCanonicalName()));
                             results.add(new Artifact(JOB_NAME, record.getStatus(), "authenticode$status"));
-                            // TODO check file name and path?
+                            if(!record.getFileName().equalsIgnoreCase(fileAttributes.getFileName())){
+                                // TODO check file name and path?
+                                results.add(new Artifact(JOB_NAME, "filename-mismatch", "authenticode$fileName"));
+                            }
                         }
                     }
                 }

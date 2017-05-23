@@ -16,5 +16,5 @@ dependencies {
 test {
     systemProperty "java.library.path", file("..\\lib")
     exclude "TSK/**"
-    exclude "ch/hsr/maloney/maloney_plugins/authenticode/ElasticSignatureStoreTest/**"
+    exclude "ch/hsr/maloney/maloney_plugins/authenticode/ElasticSignatureStoreTest*"
 }

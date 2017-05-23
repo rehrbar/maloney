@@ -8,6 +8,7 @@ import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.FrameworkEventNames;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,7 +57,7 @@ public class AuthenticodeSignatureLookupJobTest {
 
         Job job = new AuthenticodeSignatureLookupJob(store);
 
-        Event evt = new Event("selectedFile", "test", fileId);
+        Event evt = new Event(FrameworkEventNames.STARTUP, "test", null);
         job.run(ctx, evt);
 
         // Verification

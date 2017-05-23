@@ -41,18 +41,7 @@ public class FakeMetaDataStore implements MetadataStore {
 
     @Override
     public Iterator<FileAttributes> iterator() {
-        return new Iterator<FileAttributes>() {
-            Iterator<UUID> iterator = fileAttributesMap.keySet().iterator();
-            @Override
-            public boolean hasNext() {
-                return iterator.hasNext();
-            }
-
-            @Override
-            public FileAttributes next() {
-                return fileAttributesMap.get(iterator.next());
-            }
-        };
+        return fileAttributesMap.values().iterator();
     }
 
 }

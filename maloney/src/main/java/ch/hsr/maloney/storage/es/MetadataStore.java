@@ -209,11 +209,8 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
         ElasticsearchIterator(int expiryTimeMillis){
             this.expiry_time_millis = expiryTimeMillis;
-            //QueryBuilder qb = termQuery("multi", "test");
             scrollResp = client.prepareSearch(indexName)
-                    //.addSort(FieldSortBuilder.DOC_FIELD_NAME, SortOrder.ASC)
                     .setScroll(new TimeValue(expiry_time_millis))
-                    //.setQuery(qb)
                     .setSize(HITS_PER_GET).get();
             extractResults();
         }

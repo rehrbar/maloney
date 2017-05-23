@@ -65,8 +65,8 @@ public class ReportJob implements Job {
 
         try (BufferedWriter writer = Files.newBufferedWriter(targetFile)){
             //Write Header
-            writer.write("Maloney report,Created on: " + (new Date()).toString());
-            writer.write("File Name,File Path,Date Accessed,Date Changed,Date Created,Number of Artifacts,Artifacts\r\n");
+            writer.write("Maloney report,Created on: " + (new Date()).toString() + "\r\n");
+            writer.write("File Name,File Path,Date Accessed,Date Changed,Date Created,Categories,Number of Artifacts,Artifacts\r\n");
 
             final MetadataStore metadataStore = ctx.getMetadataStore();
             final Iterator<FileAttributes> iterator = metadataStore.iterator();
@@ -88,6 +88,7 @@ public class ReportJob implements Job {
                         .append(fileAttributes.getDateAccessed()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getDateChanged()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getDateCreated()).append(CELL_SEPARATOR)
+                        //TODO add categories
                         .append(artifacts.size());
                 artifacts.forEach(artifact -> stringBuilder
                         .append(artifact.getOriginator()).append(CELL_SEPARATOR)

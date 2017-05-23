@@ -142,7 +142,7 @@ public class TSKReadImageJobTest {
             }
         });
 
-        tskReadImageJob.run(new Context(null , null, dataSource),
+        tskReadImageJob.run(new Context(null , null, dataSource, null),
                 new Event("newDiskImage","Test", uuid));
 
         Assert.assertTrue(dataSource.getSavedFiles().size() > 1);

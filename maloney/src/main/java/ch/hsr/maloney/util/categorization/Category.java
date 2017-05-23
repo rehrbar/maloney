@@ -3,44 +3,14 @@ package ch.hsr.maloney.util.categorization;
 import ch.hsr.maloney.storage.FileAttributes;
 
 /**
- * Created by oliver on 18.05.17.
+ * Created by oliver on 23.05.17.
  */
-public class Category implements RuleComponent {
+public interface Category {
+    String getName();
 
-    private String name;
-    private RuleComposite categoryRules;
+    RuleComposite getRuleSet();
 
-    Category(String name, RuleComposite rules){
-        this.name = name;
-        if(rules == null){
-            this.categoryRules = new OrRuleComposite();
-        } else {
-            this.categoryRules = rules;
-        }
-    }
+    void addRule(RuleComponent ruleComponent);
 
-    Category(String name){
-        this(name, null);
-    }
-
-    public String getName(){
-        return name;
-    }
-
-    public RuleComposite getRuleSet(){
-        return categoryRules;
-    }
-
-    public void addRule(RuleComponent ruleComponent){
-        categoryRules.addRule(ruleComponent);
-    }
-
-    public void removeRule(RuleComponent ruleComponent){
-        categoryRules.removeRule(ruleComponent);
-    }
-
-    @Override
-    public boolean match(FileAttributes fileAttributes) {
-        return categoryRules.match(fileAttributes);
-    }
+    boolean match(FileAttributes fileAttributes);
 }

@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Created by oliver on 18.05.17.
  */
-abstract class RuleComposite implements RuleComponent {
+public abstract class RuleComposite implements RuleComponent {
     List<RuleComponent> rules;
 
     RuleComposite(){

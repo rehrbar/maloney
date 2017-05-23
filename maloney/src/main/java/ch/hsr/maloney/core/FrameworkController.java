@@ -6,6 +6,7 @@ import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
+import ch.hsr.maloney.util.categorization.Category;
 import ch.hsr.maloney.util.categorization.CategoryService;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -192,7 +193,11 @@ public class FrameworkController {
             framework.register(job);
         }
 
-        //TODO get categories from jobs
+        Iterator<Category> categoryIterator = ServiceLoader.load(Category.class, myClassLoader).iterator();
+        while (categoryIterator.hasNext()) {
+            Category category = categoryIterator.next();
+            ctx.getCategoryService().addOrUpdateCategory(category);
+        }
 
         scheduleProgressTracker(progressTracker);
 

@@ -10,9 +10,9 @@ public class CategoryService {
 
     public CategoryService(){
         categories = new HashMap<>();
-        for(DefaultCategory defaultCategory : DefaultCategory.values()){
-            categories.put(defaultCategory.getName(), new Category(defaultCategory.getName()));
-        }
+        categories.put(DefaultCategory.KNOWN_GOOD, new DefaultCategory(DefaultCategory.KNOWN_GOOD));
+        categories.put(DefaultCategory.KNOWN_BAD, new DefaultCategory(DefaultCategory.KNOWN_BAD));
+        categories.put(DefaultCategory.UNKNOWN, new DefaultCategory(DefaultCategory.UNKNOWN));
     }
 
     Collection<Category> getCategories(){

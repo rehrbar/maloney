@@ -22,7 +22,7 @@ public class Categorizer {
                 .filter(category -> category.match(fileAttributes))
                 .collect(Collectors.toList());
         if(categories.isEmpty()){
-            categories.add(categoryService.getCategory(DefaultCategory.UNKNOWN.getName()));
+            categories.add(categoryService.getCategory(DefaultCategory.UNKNOWN));
         }
         return categories;
     }

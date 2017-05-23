@@ -1,5 +1,6 @@
 package ch.hsr.maloney.maloney_plugins.authenticode;
 
+import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FakeDataSource;
@@ -53,13 +54,15 @@ public class AuthenticodeSignatureLookupJobTest {
         records.add(record);
         store.addSignatures(records);
 
-        AuthenticodeSignatureLookupJob job = new AuthenticodeSignatureLookupJob(store);
+        Job job = new AuthenticodeSignatureLookupJob(store);
 
         Event evt = new Event("selectedFile", "test", fileId);
         job.run(ctx, evt);
 
         // Verification
-        Artifact result = fakeMetaDataStore.getArtifacts(fileId).stream().filter(artifact -> artifact.getType().equals("authenticode$status")).findFirst().orElse(null);
+        Artifact result = fakeMetaDataStore.getArtifacts(fileId).stream()
+                .filter(artifact -> artifact.getOriginator().equals(job.getJobName()) && artifact.getType().equals("authenticode$status"))
+                .findFirst().orElse(null);
         assertNotNull(result);
         assertEquals(record.getStatus(), result.getValue());
     }

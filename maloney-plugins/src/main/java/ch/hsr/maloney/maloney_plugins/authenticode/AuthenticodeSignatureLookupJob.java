@@ -54,19 +54,25 @@ public class AuthenticodeSignatureLookupJob implements Job {
 
         while (iterator.hasNext()) {
             FileAttributes fileAttributes = iterator.next();
-            List<Artifact> results = new LinkedList<>();
             // Matching all artifacts containing hashes
-            for (Artifact a : ctx.getMetadataStore().getArtifacts(fileAttributes.getFileId())) {
-                if (a.getType().startsWith("authenticode")) {
-                    List<SignatureRecord> signatures = signatureStore.findSignatures(a.getValue().toString());
-                    for (SignatureRecord record : signatures) {
-                        results.add(new Artifact(JOB_NAME, record, SignatureRecord.class.getCanonicalName()));
-                        results.add(new Artifact(JOB_NAME, record.getStatus(), "authenticode$status"));
-                        // TODO check file name and path?
+            List<Artifact> artifacts = ctx.getMetadataStore().getArtifacts(fileAttributes.getFileId());
+            if(artifacts == null){
+                logger.info("No artifact available for file {}", fileAttributes.getFileId());
+            } else {
+                List<Artifact> results = new LinkedList<>();
+                for (Artifact a : artifacts) {
+                    if (a.getType().startsWith("authenticode")) {
+                        List<SignatureRecord> signatures = signatureStore.findSignatures(a.getValue().toString());
+                        for (SignatureRecord record : signatures) {
+                            results.add(new Artifact(JOB_NAME, record, SignatureRecord.class.getCanonicalName()));
+                            results.add(new Artifact(JOB_NAME, record.getStatus(), "authenticode$status"));
+                            // TODO check file name and path?
+                        }
                     }
                 }
+                ctx.getMetadataStore().addArtifacts(fileAttributes.getFileId(), results);
+
             }
-            ctx.getMetadataStore().addArtifacts(fileAttributes.getFileId(), results);
         }
         return events;
     }

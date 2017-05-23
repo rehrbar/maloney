@@ -34,12 +34,13 @@ public class MetadataStoreTest {
                 new Date(1436471820000L),
                 new Date(1473823035000L),
                 new Date(1473823035000L),
-                new LinkedList<Artifact>(){{
-                    add(new Artifact("test","SGVsbG8gd29ybGQh","base64"));
-                    add(new Artifact("test","86fb269d190d2c85f6e0468ceca42a20","md5"));
-                }},
                 UUID.fromString("dadec7c6-ad8c-4f80-b6da-379fceccd0fc"));
+        List<Artifact> artifacts = new LinkedList<Artifact>(){{
+            add(new Artifact("test","SGVsbG8gd29ybGQh","base64"));
+            add(new Artifact("test","86fb269d190d2c85f6e0468ceca42a20","md5"));
+        }};
         es.addFileAttributes(attributes);
+        es.addArtifacts(attributes.getFileId(), artifacts);
     }
 
     @Test
@@ -101,7 +102,8 @@ public class MetadataStoreTest {
 
         int counter = 0;
         while(iterator.hasNext()){
-            iterator.next();
+            FileAttributes file = iterator.next();
+            System.out.printf("File %s\n\r", file.getFileId());
             counter++;
         }
 

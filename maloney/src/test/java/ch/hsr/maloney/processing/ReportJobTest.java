@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.UUID;
 
 /**
@@ -26,7 +25,7 @@ public class ReportJobTest {
 
     @Before
     public void setUp(){
-        MetadataStore metadataStore = new SimpleMetadataStore();
+        MetadataStore metadataStore = new FakeMetaDataStore();
         ctx = new Context(metadataStore, new FakeProgressTracker(), new PlainSource(metadataStore));
     }
 

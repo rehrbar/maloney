@@ -2,6 +2,8 @@ package ch.hsr.maloney.storage.es;
 
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -63,6 +65,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         updateMapping(false);
         mapper = new ObjectMapper();
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     void updateMapping(boolean force) {
@@ -128,8 +131,6 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
             client.prepareIndex(this.indexName, fileAttributeTypeName, fileAttributes.getFileId().toString())
                     .setSource(builder)
                     .get();
-
-            addArtifacts(fileAttributes.getFileId(), fileAttributes.getArtifacts());
         } catch (IOException e) {
             logger.error("Could not index file attributes into ElasticSearch.", e);
         }
@@ -138,7 +139,15 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     @Override
     public List<Artifact> getArtifacts(UUID fileId) {
         // TODO Idea: Implement this method correctly with searchers to query for a specific type of an artifact.
-        return this.getFileAttributes(fileId).getArtifacts();
+        // TODO restrict source only to provide artifacts. The entire document is not needed.
+        GetResponse response = client.prepareGet(indexName, fileAttributeTypeName, fileId.toString()).get();
+        try {
+            ArtifactsDto artifactsDto = mapper.readValue(response.getSourceAsBytes(), ArtifactsDto.class);
+            return artifactsDto.artifacts;
+        } catch (IOException e) {
+            logger.error("Could not parse Artifacts retrieved from elasticsearch.", e);
+        }
+        return null;
     }
 
     @Override
@@ -255,5 +264,13 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         public FileAttributes next() {
             return iterator.next();
         }
+    }
+
+}
+//@JsonIgnoreProperties(ignoreUnknown = true)
+class ArtifactsDto {
+    public List<Artifact> artifacts;
+    public ArtifactsDto(){
+        // keep for serialization
     }
 }

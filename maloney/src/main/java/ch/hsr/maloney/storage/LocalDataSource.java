@@ -101,7 +101,6 @@ public class LocalDataSource implements DataSource {
                 uuid, metadata.getDateChanged(),
                 metadata.getDateCreated(),
                 metadata.getDateAccessed(),
-                null,
                 parentId));
         return uuid;
     }

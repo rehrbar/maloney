@@ -1,7 +1,7 @@
 package ch.hsr.maloney.processing;
 
+import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.storage.PlainSource;
-import ch.hsr.maloney.storage.SimpleMetadataStore;
 import ch.hsr.maloney.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,7 +60,7 @@ public class MultithreadedJobProcessorTest{
 
     @Before
     public void setUp(){
-        SimpleMetadataStore store = new SimpleMetadataStore();
+        FakeMetaDataStore store = new FakeMetaDataStore();
         ctx = new Context(store,new FakeProgressTracker(), new PlainSource(store));
     }
 

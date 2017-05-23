@@ -1,6 +1,6 @@
 package ch.hsr.maloney.processing;
 
-import ch.hsr.maloney.core.FrameworkEventNames;
+import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.storage.FileExtractor;
 import ch.hsr.maloney.storage.FileSystemMetadata;
 import ch.hsr.maloney.util.Context;

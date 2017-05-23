@@ -30,6 +30,31 @@ public class MultithreadedJobProcessorTest{
         }
     }
 
+    class QueueingFakeObserver extends FakeObserver{
+        private final JobProcessor jobProcessor;
+        private final Job queueableJob;
+
+        QueueingFakeObserver(JobProcessor jobProcessor, Job queueableJob){
+            this.jobProcessor = jobProcessor;
+            this.queueableJob = queueableJob;
+        }
+
+        @Override
+        public void update(Observable o, Object arg) {
+            logger.debug("Fake Observer is adding an Event to its memory");
+
+            if(arg instanceof JobExecution) {
+                List<Event> events = ((JobExecution) arg).getResults();
+                events.forEach((event) -> {
+                    if (queueableJob.getRequiredEvents().contains(event.getName())) {
+                        jobProcessor.enqueue(queueableJob, event);
+                    }
+                });
+                caughtEvents.addAll(events);
+            }
+        }
+    }
+
     Context ctx;
     private final Logger logger = LogManager.getLogger();
 
@@ -84,34 +109,11 @@ public class MultithreadedJobProcessorTest{
 
     @Test(timeout = 10000)
     public void twoJobsInSequence(){
-        class FakeObserverEnqueuesNext extends FakeObserver{
-            private JobProcessor jobProcessor;
-
-            FakeObserverEnqueuesNext(JobProcessor jobProcessor){
-                this.jobProcessor = jobProcessor;
-            }
-
-            @Override
-            public void update(Observable o, Object arg) {
-                logger.debug("Fake Observer is adding an Event to its memory");
-
-                if(arg instanceof JobExecution) {
-                    List<Event> events = ((JobExecution) arg).getResults();
-                    if (events.get(0).getName().equals(FakeJobFactory.eventA)) {
-                        FakeJobFactory fakeJobFactory = new FakeJobFactory();
-                        jobProcessor.enqueue(fakeJobFactory.getAtoBJob(), events.get(0));
-                    }
-                    caughtEvents.addAll(events);
-                }
-            }
-        }
-
         logger.debug("Setting up 'twoJobsInSequence'...");
         MultithreadedJobProcessor mtjp = new MultithreadedJobProcessor(ctx);
-        FakeObserverEnqueuesNext fakeObserver = new FakeObserverEnqueuesNext(mtjp);
-        mtjp.addObserver(fakeObserver);
-
         FakeJobFactory fakeJobFactory = new FakeJobFactory();
+        QueueingFakeObserver fakeObserver = new QueueingFakeObserver(mtjp, fakeJobFactory.getAtoBJob());
+        mtjp.addObserver(fakeObserver);
 
         UUID someUuid = UUID.randomUUID();
         mtjp.enqueue(fakeJobFactory.getAJob(()->waitMilliseconds(1000)),new Event("Nothing","Test1", someUuid));
@@ -121,7 +123,34 @@ public class MultithreadedJobProcessorTest{
         mtjp.waitForFinish();
         logger.debug("Stopped waiting");
         mtjp.stop();
-        Assert.assertSame(4, fakeObserver.caughtEvents.size());
+        Assert.assertEquals(4, fakeObserver.caughtEvents.size());
+    }
+
+    @Test(timeout = 10000)
+    public void twoStarts(){
+        MultithreadedJobProcessor mtjp = new MultithreadedJobProcessor(ctx);
+        FakeJobFactory fakeJobFactory = new FakeJobFactory();
+        QueueingFakeObserver fakeObserverAtoB = new QueueingFakeObserver(mtjp, fakeJobFactory.getAtoBJob(()->waitMilliseconds(250)));
+        QueueingFakeObserver fakeObserverBtoC = new QueueingFakeObserver(mtjp, fakeJobFactory.getBtoCJob(()->waitMilliseconds(250)));
+        mtjp.addObserver(fakeObserverAtoB);
+        mtjp.addObserver(fakeObserverBtoC);
+
+        UUID uuid = UUID.randomUUID();
+        JobExecution jobExecution = new JobExecution(
+                fakeJobFactory.getAJob(()-> waitMilliseconds(1000)),
+                new Event("Start","Test",uuid));
+        mtjp.enqueue(jobExecution);
+
+        mtjp.start();
+        mtjp.waitForFinish();
+
+       Assert.assertEquals(3,fakeObserverAtoB.caughtEvents.size());
+
+       mtjp.enqueue(jobExecution);
+       mtjp.start();
+       mtjp.waitForFinish();
+
+       Assert.assertEquals(6,fakeObserverAtoB.caughtEvents.size());
     }
 
     @Test(timeout = 1000)

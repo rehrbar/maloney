@@ -1,4 +1,4 @@
-package ch.hsr.maloney.core;
+package ch.hsr.maloney.util;
 
 /**
  * Created by r1ehrbar on 29.11.2016.

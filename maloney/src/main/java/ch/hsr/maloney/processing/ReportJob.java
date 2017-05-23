@@ -3,11 +3,10 @@ package ch.hsr.maloney.processing;
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
-import ch.hsr.maloney.storage.hash.HashType;
-import ch.hsr.maloney.util.Category;
 import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.categorization.Category;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,6 +29,7 @@ public class ReportJob implements Job {
     private final String fileName = "report.csv";
     private final Logger logger;
     private String jobConfig;
+    private final char CELL_SEPARATOR = ',';
 
     public ReportJob(){
         logger = LogManager.getLogger();
@@ -75,20 +75,31 @@ public class ReportJob implements Job {
                 FileAttributes fileAttributes = iterator.next();
                 List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
 
-                //TODO implement Verifyer (util package?)
-
-                //TODO get relevant types from configuration
-
                 //Write data to file
                 StringBuilder stringBuilder = new StringBuilder();
-                final char CELL_SEPARATOR = ',';
+
+                //File meta data
                 stringBuilder
                         .append(fileAttributes.getFileName()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getFilePath()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getDateAccessed()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getDateChanged()).append(CELL_SEPARATOR)
-                        .append(fileAttributes.getDateCreated()).append(CELL_SEPARATOR)
-                        //TODO add categories
+                        .append(fileAttributes.getDateCreated()).append(CELL_SEPARATOR);
+
+                //Categories
+                boolean moreThanOne = false;
+                for (Category category : ctx.getCategoryService().getCategorizer().match(fileAttributes)) {
+                    if (moreThanOne) {
+                        stringBuilder.append(" ");
+                    } else {
+                        moreThanOne = true;
+                    }
+                    stringBuilder.append(category.getName());
+                }
+                stringBuilder.append(CELL_SEPARATOR);
+
+                //Artifacts
+                stringBuilder
                         .append(artifacts.size());
                 artifacts.forEach(artifact -> stringBuilder
                         .append(artifact.getOriginator()).append(CELL_SEPARATOR)
@@ -132,52 +143,6 @@ public class ReportJob implements Job {
 
     @Override
     public void setJobConfig(String config) {
-        //TODO configuraiton
-    }
-
-    class KnownGoodFiles implements Category {
-        @Override
-        public List<FileAttributes> matchFileAttributes() {
-            return null;
-        }
-
-        @Override
-        public List<Artifact> matchArtifact() {
-            LinkedList<Artifact> artifacts = new LinkedList<>();
-            // Hash match
-            artifacts.add(new Artifact(null, HashType.GOOD, null));
-            return artifacts;
-        }
-    }
-
-    class KnownBadFiles implements Category {
-        //TODO this
-        @Override
-        public List<FileAttributes> matchFileAttributes() {
-            return null;
-        }
-
-        @Override
-        public List<Artifact> matchArtifact() {
-            LinkedList<Artifact> artifacts = new LinkedList<>();
-            // Hash match
-            artifacts.add(new Artifact(null, HashType.BAD, null));
-            return artifacts;
-        }
-    }
-
-    class UnknownFiles implements Category {
-        //TODO this
-        @Override
-        public List<FileAttributes> matchFileAttributes() {
-            return null;
-        }
-
-        public List<Artifact> matchArtifact() {
-            LinkedList<Artifact> artifacts = new LinkedList<>();
-            // Hash match
-            artifacts.add(new Artifact(null, HashType.CUSTOM, null));
-            return artifacts;
-        }
+        //TODO configuration
     }
 }

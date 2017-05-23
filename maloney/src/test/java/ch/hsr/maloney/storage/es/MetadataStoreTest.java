@@ -6,10 +6,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by roman on 13.11.16.
@@ -96,6 +93,19 @@ public class MetadataStoreTest {
         Assert.assertTrue(result.contains("SGVsbG8gd29ybGQh"));
         Assert.assertTrue(result.contains("md5"));
         Assert.assertTrue(result.contains("86fb269d190d2c85f6e0468ceca42a20"));
+    }
+
+    @Test
+    public void iterator() throws Exception {
+        Iterator<FileAttributes> iterator = es.iterator();
+
+        int counter = 0;
+        while(iterator.hasNext()){
+            iterator.next();
+            counter++;
+        }
+
+        Assert.assertEquals(generatedIds.size(),counter);
     }
 }
 

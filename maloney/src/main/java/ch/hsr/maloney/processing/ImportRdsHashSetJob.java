@@ -1,6 +1,6 @@
 package ch.hsr.maloney.processing;
 
-import ch.hsr.maloney.core.FrameworkEventNames;
+import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.storage.hash.*;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;

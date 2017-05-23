@@ -90,9 +90,7 @@ public class FakeJobFactory {
     }
 
     public Job getAJob(){
-        List<String> producedEvents =  new LinkedList<>();
-        producedEvents.add(eventA);
-        return new FakeJob(null,producedEvents,"JobA","", null);
+        return getAJob(null);
     }
 
     public Job getAJob(Runnable jobBody){
@@ -102,18 +100,26 @@ public class FakeJobFactory {
     }
 
     public Job getAtoBJob(){
+        return getAtoBJob(null);
+    }
+
+    public Job getAtoBJob(Runnable jobBody){
         List<String> requiredEvents =  new LinkedList<>();
         requiredEvents.add(eventA);
         List<String> producedEvents =  new LinkedList<>();
         producedEvents.add(eventB);
-        return new FakeJob(requiredEvents,producedEvents,"JobAtoB","", null);
+        return new FakeJob(requiredEvents,producedEvents,"JobAtoB","", jobBody);
     }
 
     public Job getBtoCJob(){
+        return getBtoCJob(null);
+    }
+
+    public Job getBtoCJob(Runnable jobBody){
         List<String> requiredEvents =  new LinkedList<>();
         requiredEvents.add(eventB);
         List<String> producedEvents =  new LinkedList<>();
         producedEvents.add(eventC);
-        return new FakeJob(requiredEvents,producedEvents,"JobBtoC","", null);
+        return new FakeJob(requiredEvents, producedEvents,"JobBtoC","", jobBody);
     }
 }

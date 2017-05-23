@@ -5,7 +5,7 @@ import ch.hsr.maloney.storage.FileAttributes;
 /**
  * Created by oliver on 22.05.17.
  */
-class CompositeTestHelper {
+class RuleTestHelper {
     static final RuleComponent falseRule = new RuleComponent() {
         @Override
         public boolean match(FileAttributes fileAttributes) {

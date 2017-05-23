@@ -15,16 +15,25 @@ public class CategoryService {
         }
     }
 
-    public Collection<Category> getCategories(){
+    Collection<Category> getCategories(){
         return categories.values();
     }
 
-    public Category getCategory(String name){
+    Category getCategory(String name){
         return categories.get(name);
     }
 
+    /**
+     * Either adds the specified category to the Service or, if a Category with the same name already exists, adds the RuleComposite associated with the category to it.
+     * @param category New Category with rules to be added. If the name of the category already exists, its rules will be added to the existing one instead.
+     */
     public void addOrUpdateCategory(Category category){
-        categories.put(category.getName(), category);
+        Category storedCategory = categories.get(category.getName());
+        if(storedCategory == null){
+            categories.put(category.getName(), category);
+        } else {
+            storedCategory.addRule(category.getRuleSet());
+        }
     }
 
     public Categorizer getCategorizer(){

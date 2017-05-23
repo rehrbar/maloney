@@ -186,6 +186,8 @@ public class FrameworkController {
             framework.register(job);
         }
 
+        //TODO get categories from jobs
+
         scheduleProgressTracker(progressTracker);
 
         framework.start();

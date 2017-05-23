@@ -8,14 +8,14 @@ import ch.hsr.maloney.storage.FileAttributes;
 public class Category implements RuleComponent {
 
     private String name;
-    private RuleComposite rules;
+    private RuleComposite categoryRules;
 
     Category(String name, RuleComposite rules){
         this.name = name;
         if(rules == null){
-            rules = new OrRuleComposite();
+            this.categoryRules = new OrRuleComposite();
         } else {
-            this.rules = rules;
+            this.categoryRules = rules;
         }
     }
 
@@ -27,20 +27,20 @@ public class Category implements RuleComponent {
         return name;
     }
 
-    RuleComposite getRuleSet(){
-        return rules;
+    public RuleComposite getRuleSet(){
+        return categoryRules;
     }
 
     public void addRule(RuleComponent ruleComponent){
-        rules.addRule(ruleComponent);
+        categoryRules.addRule(ruleComponent);
     }
 
     public void removeRule(RuleComponent ruleComponent){
-        rules.removeRule(ruleComponent);
+        categoryRules.removeRule(ruleComponent);
     }
 
     @Override
     public boolean match(FileAttributes fileAttributes) {
-        return rules.match(fileAttributes);
+        return categoryRules.match(fileAttributes);
     }
 }

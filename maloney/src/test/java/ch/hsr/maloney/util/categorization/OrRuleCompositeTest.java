@@ -29,9 +29,9 @@ public class OrRuleCompositeTest {
 
     @Test
     public void trueComposite(){
-        ruleComposite.addRule(CompositeTestHelper.trueRule);
-        ruleComposite.addRule(CompositeTestHelper.falseRule);
-        ruleComposite.addRule(CompositeTestHelper.falseRule);
+        ruleComposite.addRule(RuleTestHelper.trueRule);
+        ruleComposite.addRule(RuleTestHelper.falseRule);
+        ruleComposite.addRule(RuleTestHelper.falseRule);
 
         boolean result = ruleComposite.match(testFileAttributes);
         Assert.assertTrue(result);
@@ -39,9 +39,9 @@ public class OrRuleCompositeTest {
 
     @Test
     public void falseComposite(){
-        ruleComposite.addRule(CompositeTestHelper.falseRule);
-        ruleComposite.addRule(CompositeTestHelper.falseRule);
-        ruleComposite.addRule(CompositeTestHelper.falseRule);
+        ruleComposite.addRule(RuleTestHelper.falseRule);
+        ruleComposite.addRule(RuleTestHelper.falseRule);
+        ruleComposite.addRule(RuleTestHelper.falseRule);
 
         boolean result = ruleComposite.match(testFileAttributes);
         Assert.assertFalse(result);
@@ -49,7 +49,7 @@ public class OrRuleCompositeTest {
 
     @Test
     public void hugeComposite(){
-        CompositeTestHelper.addRules(ruleComposite, 1000, CompositeTestHelper.trueRule);
+        RuleTestHelper.addRules(ruleComposite, 1000, RuleTestHelper.trueRule);
 
         boolean result = ruleComposite.match(testFileAttributes);
         Assert.assertTrue(result);

@@ -32,7 +32,7 @@ public class CategoryService {
         if(storedCategory == null){
             categories.put(category.getName(), category);
         } else {
-            storedCategory.addRule(category.getRuleSet());
+            storedCategory.getRuleSet().addRule(category.getRuleSet());
         }
     }
 

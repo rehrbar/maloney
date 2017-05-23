@@ -13,7 +13,7 @@ public abstract class RuleComposite implements RuleComponent {
         rules = new LinkedList<>();
     }
 
-    void addRule(RuleComponent rule){
+    public void addRule(RuleComponent rule){
         rules.add(rule);
     }
 

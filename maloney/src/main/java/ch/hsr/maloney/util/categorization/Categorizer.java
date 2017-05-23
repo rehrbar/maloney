@@ -19,7 +19,7 @@ public class Categorizer {
 
     public List<Category> match(FileAttributes fileAttributes) {
         List<Category> categories = categoryService.getCategories().stream()
-                .filter(category -> category.match(fileAttributes))
+                .filter(category -> category.getRuleSet().match(fileAttributes))
                 .collect(Collectors.toList());
         if(categories.isEmpty()){
             categories.add(categoryService.getCategory(DefaultCategory.UNKNOWN));

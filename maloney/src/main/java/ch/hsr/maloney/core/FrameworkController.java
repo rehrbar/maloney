@@ -192,6 +192,14 @@ public class FrameworkController {
         // TODO handle not finished executions
     }
 
+    public void query(String query, String filter){
+        Context ctx = initializeContext(null, null, null);
+        SimpleQuery q = new SimpleQuery();
+        q.setContext(ctx.getMetadataStore(), ctx.getDataSource());
+        q.setFilter(filter);
+        q.performQuery(query);
+    }
+
     public boolean hasEvents() {
         return eventStore.hasEvents();
     }

@@ -6,6 +6,7 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.JobExecution;
 import ch.hsr.maloney.util.categorization.Category;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,9 +25,9 @@ import java.util.List;
  */
 public class ReportJob implements Job {
 
-    private final String reportCreatedEventName = "ReportCreated";
-    private final String reportJobName = "ReportJob";
-    private final String fileName = "report.csv";
+    private static final String REPORT_CREATED_EVENT_NAME = "ReportCreated";
+    private static final String JOB_NAME = "ReportJob";
+    private static final String FILE_NAME = "report.csv";
     private final Logger logger;
     private String jobConfig;
     private final char CELL_SEPARATOR = ',';
@@ -50,7 +51,7 @@ public class ReportJob implements Job {
         final List<Event> eventList = new LinkedList<>();
 
 
-        Path targetFile = ctx.getDataSource().getJobWorkingDir(this.getClass()).resolve(fileName);
+        Path targetFile = ctx.getDataSource().getJobWorkingDir(this.getClass()).resolve(FILE_NAME);
 
         try {
             if(targetFile.toFile().getParentFile().mkdirs() && targetFile.toFile().createNewFile()) {
@@ -60,7 +61,7 @@ public class ReportJob implements Job {
             }
         } catch (IOException e) {
             logger.error("Could not create report", e);
-            return eventList;
+            throw new JobCancelledException(new JobExecution(this, evt),"Could not create report", e);
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(targetFile)){
@@ -73,7 +74,7 @@ public class ReportJob implements Job {
 
             while(iterator.hasNext()){
                 FileAttributes fileAttributes = iterator.next();
-                List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
+                List<Artifact> artifacts = fileAttributes.getArtifacts();
 
                 //Write data to file
                 StringBuilder stringBuilder = new StringBuilder();
@@ -110,7 +111,7 @@ public class ReportJob implements Job {
             }
 
             logger.info("Created Report at {}", targetFile.toAbsolutePath().toString());
-            eventList.add(new Event(reportCreatedEventName, reportJobName, evt.getId()));
+            eventList.add(new Event(REPORT_CREATED_EVENT_NAME, JOB_NAME, evt.getId()));
         } catch (IOException e) {
             logger.error("Failed to create report", e);
         }
@@ -127,18 +128,18 @@ public class ReportJob implements Job {
     @Override
     public List<String> getProducedEvents() {
         List<String> events = new LinkedList<>();
-        events.add(reportCreatedEventName);
+        events.add(REPORT_CREATED_EVENT_NAME);
         return events;
     }
 
     @Override
     public String getJobName() {
-        return reportJobName;
+        return JOB_NAME;
     }
 
     @Override
     public String getJobConfig() {
-        return this.jobConfig;
+        return null;
     }
 
     @Override

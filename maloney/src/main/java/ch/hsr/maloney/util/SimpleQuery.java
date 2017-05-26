@@ -4,6 +4,10 @@ import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
+import ch.hsr.maloney.util.categorization.Category;
+import ch.hsr.maloney.util.categorization.OrRuleComposite;
+import ch.hsr.maloney.util.categorization.RuleComponent;
+import ch.hsr.maloney.util.categorization.RuleComposite;
 
 import java.util.Iterator;
 import java.util.List;
@@ -23,15 +27,15 @@ public class SimpleQuery {
     }
 
     public void performQuery(String query){
+        Category queryCategory = createQueryCategory(query);
         int counter = 0;
-        // TODO create custom category
         // TODO loop through all files and apply category
         Iterator<FileAttributes> iterator = metadataStore.iterator();
         while (iterator.hasNext()){
             FileAttributes fileAttributes = iterator.next();
             List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
 
-            if(isMatch(query, fileAttributes, artifacts)){
+            if(isMatch(queryCategory, fileAttributes, artifacts)){
                 writeToOutput(fileAttributes, artifacts);
                 counter++;
             }
@@ -50,12 +54,24 @@ public class SimpleQuery {
         // TODO replace sout with output stream
     }
 
-    protected boolean isMatch(String query, FileAttributes fileAttributes, List<Artifact> artifacts) {
-        boolean artifactMatch = artifacts.stream().anyMatch(a -> a.getType().contains(query)
-                        || a.getOriginator().contains(query)
-                        || a.getValue().toString().contains(query));
-        return (fileAttributes.getFileName() != null && fileAttributes.getFileName().contains(query))
-                || (fileAttributes.getFilePath() != null && fileAttributes.getFilePath().contains(query))
-                || artifactMatch;
+    protected boolean isMatch(Category query, FileAttributes fileAttributes, List<Artifact> artifacts) {
+        return query.getRuleSet().match(fileAttributes);
+    }
+
+    private Category createQueryCategory(String query){
+        return new Category() {
+            @Override
+            public String getName() {
+                return "Query";
+            }
+
+            @Override
+            public RuleComposite getRuleSet() {
+                // TODO prepare rule set for all known attributes
+                OrRuleComposite ruleComposite = new OrRuleComposite();
+                ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().contains(query));
+                return ruleComposite;
+            }
+        };
     }
 }

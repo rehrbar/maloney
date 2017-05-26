@@ -4,13 +4,10 @@ import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.storage.FileAttributes;
-import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,13 +19,11 @@ import static org.junit.Assert.*;
  * Created by roman on 25.05.17.
  */
 public class SimpleQueryTest {
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     private FakeMetaDataStore metadataStore;
     private FakeDataSource dataSource;
 
     @Before
     public void setUp() {
-        System.setOut(new PrintStream(outContent));
         metadataStore = new FakeMetaDataStore();
         UUID fileId = UUID.fromString("d5c7bdcb-9286-48d9-bd13-e6bbe1e81652");
         metadataStore.addFileAttributes(new FileAttributes(
@@ -49,18 +44,13 @@ public class SimpleQueryTest {
         dataSource = new FakeDataSource();
     }
 
-    @After
-    public void cleanUp() {
-        System.setOut(null);
-        System.setErr(null);
-    }
-
     @Test
     public void performQuery() throws Exception {
         SimpleQuery q = new SimpleQuery();
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
         q.setContext(metadataStore, dataSource);
-        q.performQuery("regedit");
-        Assert.assertTrue(outContent.toString().length() > 0);
+        q.performQuery(os, "regedit");
+        assertTrue(os.size() > 0);
     }
 
 }

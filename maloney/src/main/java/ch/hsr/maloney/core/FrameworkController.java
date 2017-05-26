@@ -210,7 +210,7 @@ public class FrameworkController {
         SimpleQuery q = new SimpleQuery();
         q.setContext(ctx.getMetadataStore(), ctx.getDataSource());
         q.setFilter(filter);
-        q.performQuery(query);
+        q.performQuery(System.out, query);
     }
 
     public boolean hasEvents() {

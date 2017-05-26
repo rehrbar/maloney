@@ -9,6 +9,9 @@ import ch.hsr.maloney.util.categorization.OrRuleComposite;
 import ch.hsr.maloney.util.categorization.RuleComponent;
 import ch.hsr.maloney.util.categorization.RuleComposite;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,7 +29,7 @@ public class SimpleQuery {
         // TODO do something with this filter
     }
 
-    public void performQuery(String query){
+    public void performQuery(OutputStream os, String query){
         Category queryCategory = createQueryCategory(query);
         int counter = 0;
         // TODO loop through all files and apply category
@@ -36,22 +39,23 @@ public class SimpleQuery {
             List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
 
             if(isMatch(queryCategory, fileAttributes, artifacts)){
-                writeToOutput(fileAttributes, artifacts);
+                writeToOutput(os, fileAttributes, artifacts);
                 counter++;
             }
         }
         System.out.println("Results: "+ counter);
     }
 
-    protected void writeToOutput(FileAttributes fileAttributes, List<Artifact> artifacts){
+    protected void writeToOutput(OutputStream os, FileAttributes fileAttributes, List<Artifact> artifacts){
+        final PrintStream printStream = new PrintStream(os);
         StringBuilder sb = new StringBuilder();
         // TODO format output
         // TODO filter fields
         sb.append(fileAttributes.getFileId());
         sb.append(" ");
         sb.append(fileAttributes.getFileName());
-        System.out.println(sb.toString());
-        // TODO replace sout with output stream
+        printStream.print(sb);
+        printStream.close();
     }
 
     protected boolean isMatch(Category query, FileAttributes fileAttributes, List<Artifact> artifacts) {

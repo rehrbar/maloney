@@ -206,7 +206,7 @@ public class FrameworkController {
     }
 
     public void query(String query, String filter){
-        Context ctx = initializeContext(null, null, null);
+        Context ctx = initializeContext(null, null, null, null);
         SimpleQuery q = new SimpleQuery();
         q.setContext(ctx.getMetadataStore(), ctx.getDataSource());
         q.setFilter(filter);

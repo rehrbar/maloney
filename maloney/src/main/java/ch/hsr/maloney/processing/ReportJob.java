@@ -6,6 +6,7 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.JobExecution;
 import ch.hsr.maloney.util.categorization.Category;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

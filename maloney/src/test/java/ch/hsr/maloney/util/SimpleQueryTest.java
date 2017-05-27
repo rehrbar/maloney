@@ -4,6 +4,8 @@ import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.storage.FileAttributes;
+import ch.hsr.maloney.util.categorization.Category;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,6 +54,39 @@ public class SimpleQueryTest {
         q.performQuery(os, "regedit");
         System.out.println(os.toString());
         assertTrue(os.size() > 0);
+    }
+    @Test
+    public void performQueryById() throws Exception {
+        SimpleQuery q = new SimpleQuery();
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        q.setContext(metadataStore, dataSource);
+        q.performQuery(os, "d5c7bdcb");
+        System.out.println(os.toString());
+        assertTrue(os.size() > 0);
+    }
+    @Test
+    public void performQueryWithExpression() throws Exception {
+        SimpleQuery q = new SimpleQuery();
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        q.setContext(metadataStore, dataSource);
+        q.performQuery(os, "fileName=\"reg.*\"");
+        System.out.println(os.toString());
+        assertTrue(os.size() > 10);
+    }
+    @Test
+    public void createQueryCategory(){
+        Category c = SimpleQuery.createQueryCategory("fileName=\"reg.*\"");
+        FileAttributes fileAttributes = new FileAttributes("regex.exe",null, null, null, null, null, null, null);
+        Assert.assertTrue(c.getRuleSet().match(fileAttributes));
+    }
+    @Test
+    public void createDateQueryCategory(){
+        Category c = SimpleQuery.createQueryCategory("dateCreated=\"2016.*\"");
+        // File 1 contains 2016, File2 contains 2015
+        FileAttributes file1 = new FileAttributes(null,null, null, null, new Date(1473823035000L), null, null, null);
+        FileAttributes file2 = new FileAttributes(null,null, null, null, new Date(1433823035000L), null, null, null);
+        Assert.assertTrue(c.getRuleSet().match(file1));
+        Assert.assertFalse(c.getRuleSet().match(file2));
     }
 
 }

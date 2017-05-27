@@ -6,17 +6,23 @@ import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.categorization.Category;
 import ch.hsr.maloney.util.categorization.OrRuleComposite;
-import ch.hsr.maloney.util.categorization.RuleComponent;
 import ch.hsr.maloney.util.categorization.RuleComposite;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.StringWriter;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // TODO probably replace through reporting feature
 public class SimpleQuery {
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     protected MetadataStore metadataStore;
     protected DataSource dataSource;
 
@@ -48,7 +54,7 @@ public class SimpleQuery {
         printStream.close();
     }
 
-    protected void writeToOutput(PrintStream printStream, FileAttributes fileAttributes, List<Artifact> artifacts){
+    private void writeToOutput(PrintStream printStream, FileAttributes fileAttributes, List<Artifact> artifacts){
         StringBuilder sb = new StringBuilder();
         // TODO format output
         // TODO filter fields
@@ -58,11 +64,45 @@ public class SimpleQuery {
         printStream.println(sb);
     }
 
-    protected boolean isMatch(Category query, FileAttributes fileAttributes, List<Artifact> artifacts) {
+    private boolean isMatch(Category query, FileAttributes fileAttributes, List<Artifact> artifacts) {
         return query.getRuleSet().match(fileAttributes);
     }
 
-    private Category createQueryCategory(String query){
+    protected static Category createQueryCategory(String query){
+        // TODO prepare rule set for artifacts
+        final String valueGroupName = "value";
+        final String propertyGroupName = "property";
+        final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");
+        Matcher matcher = pattern.matcher(query);
+        OrRuleComposite ruleComposite = new OrRuleComposite();
+        while(matcher.find()){
+            final String value = matcher.group(valueGroupName);
+            switch (matcher.group(propertyGroupName)){
+                case "fileId":
+                    ruleComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().matches(value));
+                    break;
+                case "fileName":
+                    ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().matches(value));
+                    break;
+                case "filePath":
+                    ruleComposite.addRule(fileAttributes -> fileAttributes.getFilePath().matches(value));
+                    break;
+                case "dateAccessed":
+                    ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateAccessed()).matches(value));
+                    break;
+                case "dateChanged":
+                    ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateChanged()).matches(value));
+                    break;
+                case "dateCreated":
+                    ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateCreated()).matches(value));
+                    break;
+            }
+        }
+        if(!matcher.matches()) {
+            // Fallback rule
+            ruleComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().contains(query));
+            ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().contains(query));
+        }
         return new Category() {
             @Override
             public String getName() {
@@ -71,11 +111,14 @@ public class SimpleQuery {
 
             @Override
             public RuleComposite getRuleSet() {
-                // TODO prepare rule set for all known attributes
-                OrRuleComposite ruleComposite = new OrRuleComposite();
-                ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().contains(query));
                 return ruleComposite;
             }
         };
+    }
+
+    @NotNull
+    private static String formatDate(Date date) {
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+        return localDateTime.format(DATE_TIME_FORMATTER);
     }
 }

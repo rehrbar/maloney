@@ -50,6 +50,7 @@ public class SimpleQueryTest {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         q.setContext(metadataStore, dataSource);
         q.performQuery(os, "regedit");
+        System.out.println(os.toString());
         assertTrue(os.size() > 0);
     }
 

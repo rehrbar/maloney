@@ -4,6 +4,7 @@ import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
+import ch.hsr.maloney.util.categorization.AndRuleComposite;
 import ch.hsr.maloney.util.categorization.Category;
 import ch.hsr.maloney.util.categorization.OrRuleComposite;
 import ch.hsr.maloney.util.categorization.RuleComposite;
@@ -39,7 +40,6 @@ public class SimpleQuery {
         final PrintStream printStream = new PrintStream(os);
         Category queryCategory = createQueryCategory(query);
         int counter = 0;
-        // TODO loop through all files and apply category
         Iterator<FileAttributes> iterator = metadataStore.iterator();
         while (iterator.hasNext()){
             FileAttributes fileAttributes = iterator.next();
@@ -74,7 +74,7 @@ public class SimpleQuery {
         final String propertyGroupName = "property";
         final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");
         Matcher matcher = pattern.matcher(query);
-        OrRuleComposite ruleComposite = new OrRuleComposite();
+        RuleComposite ruleComposite = new AndRuleComposite();
         while(matcher.find()){
             final String value = matcher.group(valueGroupName);
             switch (matcher.group(propertyGroupName)){
@@ -100,9 +100,13 @@ public class SimpleQuery {
         }
         if(!matcher.matches()) {
             // Fallback rule
+            ruleComposite = new OrRuleComposite();
             ruleComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().contains(query));
             ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().contains(query));
         }
+
+        // Required final for inner class.
+        final RuleComposite finalComposite = ruleComposite;
         return new Category() {
             @Override
             public String getName() {
@@ -111,7 +115,7 @@ public class SimpleQuery {
 
             @Override
             public RuleComposite getRuleSet() {
-                return ruleComposite;
+                return finalComposite;
             }
         };
     }

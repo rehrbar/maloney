@@ -11,7 +11,8 @@ public enum PropertyName {
     FilePath("filePath"),
     DateAccessed("dateAccessed"),
     DateChanged("dateChanged"),
-    DateCreated("dateCreated");
+    DateCreated("dateCreated"),
+    Artifacts("artifacts");
 
     private String fieldName;
 

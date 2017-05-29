@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// TODO probably replace through reporting feature
+// TODO Extract common functionality shared with reporting feature.
 public class SimpleQuery {
     private static final String FIELD_DELIMITER = "\t";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
@@ -37,7 +37,6 @@ public class SimpleQuery {
     }
 
     public void setFilter(String filter){
-        // TODO prevent order of fields
         propertiesToDisplay = new LinkedList<>();
         if(filter != null) {
             // Pattern matching all names separated by any non alphabetic character.
@@ -99,9 +98,17 @@ public class SimpleQuery {
                 case DateCreated:
                     sb.append(fileAttributes.getDateCreated());
                     break;
+                case Artifacts:
+                    for(Artifact artifact : artifacts){
+                        sb.append(artifact.getOriginator()).append(FIELD_DELIMITER);
+                        sb.append(artifact.getType()).append(FIELD_DELIMITER);
+                        sb.append(artifact.getValue());
+                    }
+                    break;
             }
             sb.append(FIELD_DELIMITER);
         }
+
         printStream.println(sb);
     }
 

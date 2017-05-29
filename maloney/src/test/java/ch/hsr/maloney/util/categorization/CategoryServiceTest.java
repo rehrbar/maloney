@@ -32,39 +32,44 @@ public class CategoryServiceTest {
 
     @Test
     public void categorizeUnknown(){
-        Categorizer categorizer = categoryService.getCategorizer();
-
-        List<Category> categories = categorizer.match(RuleTestHelper.testFileAttributes);
+        List<Category> categories = categoryService.match(RuleTestHelper.testFileAttributes);
 
         Assert.assertEquals(1, categories.size());
     }
 
     @Test
     public void categorizeKnownGood() {
-        Categorizer categorizer = categoryService.getCategorizer();
-
         addRuleToCategory(DefaultCategory.KNOWN_GOOD, RuleTestHelper.matchTestFileAttributes);
 
-        List<Category> categories = categorizer.match(RuleTestHelper.testFileAttributes);
+        List<Category> categories = categoryService.match(RuleTestHelper.testFileAttributes);
 
         Assert.assertEquals(1, categories.size());
         Assert.assertTrue(categories.contains(categoryService.getCategory(DefaultCategory.KNOWN_GOOD)));
     }
 
     private void addRuleToCategory(String categoryName, RuleComponent ruleComponent) {
-        DefaultCategory category = new DefaultCategory(categoryName);
-        category.addRule(ruleComponent);
+        Category category = new Category() {
+            @Override
+            public String getName() {
+                return categoryName;
+            }
+
+            @Override
+            public RuleComposite getRuleSet() {
+                RuleComposite newRules = new AndRuleComposite();
+                newRules.addRule(ruleComponent);
+                return newRules;
+            }
+        };
         categoryService.addOrUpdateCategory(category);
     }
 
     @Test
     public void multipleCategoriesMatch(){
-        Categorizer categorizer = categoryService.getCategorizer();
-
         addRuleToCategory(DefaultCategory.KNOWN_GOOD, RuleTestHelper.matchTestFileAttributes);
         addRuleToCategory(DefaultCategory.KNOWN_BAD, RuleTestHelper.matchTestFileAttributes);
 
-        List<Category> categories = categorizer.match(RuleTestHelper.testFileAttributes);
+        List<Category> categories = categoryService.match(RuleTestHelper.testFileAttributes);
 
         Assert.assertEquals(2, categories.size());
         Assert.assertTrue(categories.contains(categoryService.getCategory(DefaultCategory.KNOWN_GOOD)));

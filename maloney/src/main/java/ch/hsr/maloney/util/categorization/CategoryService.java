@@ -1,6 +1,9 @@
 package ch.hsr.maloney.util.categorization;
 
+import ch.hsr.maloney.storage.FileAttributes;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by oliver on 18.05.17.
@@ -36,7 +39,13 @@ public class CategoryService {
         }
     }
 
-    public Categorizer getCategorizer(){
-        return new Categorizer(this);
+    public List<Category> match(FileAttributes fileAttributes) {
+        List<Category> categories = this.getCategories().stream()
+                .filter(category -> category.getRuleSet().match(fileAttributes))
+                .collect(Collectors.toList());
+        if(categories.isEmpty()){
+            categories.add(this.getCategory(DefaultCategory.UNKNOWN));
+        }
+        return categories;
     }
 }

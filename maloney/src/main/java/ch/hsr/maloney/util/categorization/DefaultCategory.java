@@ -1,7 +1,5 @@
 package ch.hsr.maloney.util.categorization;
 
-import ch.hsr.maloney.storage.FileAttributes;
-
 /**
  * Created by oliver on 18.05.17.
  */
@@ -37,11 +35,4 @@ public class DefaultCategory implements Category {
         return categoryRules;
     }
 
-    public void addRule(RuleComponent ruleComponent){
-        categoryRules.addRule(ruleComponent);
-    }
-
-    public boolean match(FileAttributes fileAttributes) {
-        return categoryRules.match(fileAttributes);
-    }
 }

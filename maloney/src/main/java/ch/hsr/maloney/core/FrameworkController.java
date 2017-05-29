@@ -8,6 +8,7 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
 import ch.hsr.maloney.util.categorization.Category;
 import ch.hsr.maloney.util.categorization.CategoryService;
+import ch.hsr.maloney.util.query.SimpleQuery;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

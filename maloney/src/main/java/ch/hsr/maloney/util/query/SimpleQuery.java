@@ -1,4 +1,4 @@
-package ch.hsr.maloney.util;
+package ch.hsr.maloney.util.query;
 
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.DataSource;
@@ -15,17 +15,21 @@ import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 // TODO probably replace through reporting feature
 public class SimpleQuery {
+    private static final String FIELD_DELIMITER = "\t";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
+    private List<PropertyName> propertiesToDisplay;
     protected MetadataStore metadataStore;
     protected DataSource dataSource;
+
+    public SimpleQuery(){
+        setFilter(null);
+    }
 
     public void setContext(MetadataStore metadataStore, DataSource dataSource){
         this.metadataStore = metadataStore;
@@ -33,7 +37,26 @@ public class SimpleQuery {
     }
 
     public void setFilter(String filter){
-        // TODO do something with this filter
+        // TODO prevent order of fields
+        propertiesToDisplay = new LinkedList<>();
+        if(filter != null) {
+            // Pattern matching all names separated by any non alphabetic character.
+            final String propertyGroupName = "property";
+            Pattern pattern = Pattern.compile("(?<" + propertyGroupName + ">[a-zA-Z]+)");
+            Matcher matcher = pattern.matcher(filter);
+
+            while (matcher.find()) {
+                PropertyName p = PropertyName.getByFieldName(matcher.group(propertyGroupName));
+                if (p != null) {
+                    propertiesToDisplay.add(p);
+                }
+            }
+        }
+
+        // Fallback: Adding all properties
+        if(propertiesToDisplay.isEmpty()) {
+            propertiesToDisplay.addAll(Arrays.asList(PropertyName.values()));
+        }
     }
 
     public void performQuery(OutputStream os, String query){
@@ -56,11 +79,29 @@ public class SimpleQuery {
 
     private void writeToOutput(PrintStream printStream, FileAttributes fileAttributes, List<Artifact> artifacts){
         StringBuilder sb = new StringBuilder();
-        // TODO format output
-        // TODO filter fields
-        sb.append(fileAttributes.getFileId());
-        sb.append(" ");
-        sb.append(fileAttributes.getFileName());
+        for(PropertyName prop : propertiesToDisplay){
+            switch (prop){
+                case FileId:
+                    sb.append(fileAttributes.getFileId());
+                    break;
+                case FileName:
+                    sb.append(fileAttributes.getFileName());
+                    break;
+                case FilePath:
+                    sb.append(fileAttributes.getFilePath());
+                    break;
+                case DateAccessed:
+                    sb.append(fileAttributes.getDateAccessed());
+                    break;
+                case DateChanged:
+                    sb.append(fileAttributes.getDateChanged());
+                    break;
+                case DateCreated:
+                    sb.append(fileAttributes.getDateCreated());
+                    break;
+            }
+            sb.append(FIELD_DELIMITER);
+        }
         printStream.println(sb);
     }
 
@@ -77,23 +118,23 @@ public class SimpleQuery {
         RuleComposite ruleComposite = new AndRuleComposite();
         while(matcher.find()){
             final String value = matcher.group(valueGroupName);
-            switch (matcher.group(propertyGroupName)){
-                case "fileId":
+            switch (PropertyName.getByFieldName(matcher.group(propertyGroupName))){
+                case FileId:
                     ruleComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().matches(value));
                     break;
-                case "fileName":
+                case FileName:
                     ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().matches(value));
                     break;
-                case "filePath":
+                case FilePath:
                     ruleComposite.addRule(fileAttributes -> fileAttributes.getFilePath().matches(value));
                     break;
-                case "dateAccessed":
+                case DateAccessed:
                     ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateAccessed()).matches(value));
                     break;
-                case "dateChanged":
+                case DateChanged:
                     ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateChanged()).matches(value));
                     break;
-                case "dateCreated":
+                case DateCreated:
                     ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateCreated()).matches(value));
                     break;
             }

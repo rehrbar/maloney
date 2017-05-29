@@ -1,10 +1,11 @@
-package ch.hsr.maloney.util;
+package ch.hsr.maloney.util.query;
 
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.categorization.Category;
+import ch.hsr.maloney.util.query.SimpleQuery;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,6 +88,18 @@ public class SimpleQueryTest {
         FileAttributes file2 = new FileAttributes(null,null, null, null, new Date(1433823035000L), null, null, null);
         Assert.assertTrue(c.getRuleSet().match(file1));
         Assert.assertFalse(c.getRuleSet().match(file2));
+    }
+    @Test
+    public void performQueryByIdFiltered() throws Exception {
+        SimpleQuery q = new SimpleQuery();
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        q.setContext(metadataStore, dataSource);
+        // Inversed order and also reduced output
+        q.setFilter("fileName fileId");
+        q.performQuery(os, "d5c7bdcb");
+        System.out.println(os.toString());
+        assertTrue(os.size() > 0);
+        assertEquals("regedit.exe\td5c7bdcb-9286-48d9-bd13-e6bbe1e81652\t\nResults: 1\n", os.toString());
     }
 
 }

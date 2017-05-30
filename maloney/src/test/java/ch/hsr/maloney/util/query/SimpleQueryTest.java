@@ -5,7 +5,6 @@ import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.categorization.Category;
-import ch.hsr.maloney.util.query.SimpleQuery;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +50,7 @@ public class SimpleQueryTest {
     public void performQuery() throws Exception {
         SimpleQuery q = new SimpleQuery();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        q.setContext(metadataStore, dataSource);
+        q.setContext(metadataStore);
         q.performQuery(os, "regedit");
         System.out.println(os.toString());
         assertTrue(os.size() > 0);
@@ -60,7 +59,7 @@ public class SimpleQueryTest {
     public void performQueryById() throws Exception {
         SimpleQuery q = new SimpleQuery();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        q.setContext(metadataStore, dataSource);
+        q.setContext(metadataStore);
         q.performQuery(os, "d5c7bdcb");
         System.out.println(os.toString());
         assertTrue(os.size() > 0);
@@ -69,7 +68,7 @@ public class SimpleQueryTest {
     public void performQueryWithExpression() throws Exception {
         SimpleQuery q = new SimpleQuery();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        q.setContext(metadataStore, dataSource);
+        q.setContext(metadataStore);
         q.performQuery(os, "fileName=\"reg.*\"");
         System.out.println(os.toString());
         assertTrue(os.size() > 10);
@@ -78,7 +77,7 @@ public class SimpleQueryTest {
     public void performQueryWithArtifactExpression() throws Exception {
         SimpleQuery q = new SimpleQuery();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        q.setContext(metadataStore, dataSource);
+        q.setContext(metadataStore);
         q.performQuery(os, "artifactType=\"md5|MD5\" artifactValue=\"86fb269d190d2c85f6e0468ceca42a20\"");
         System.out.println(os.toString());
         assertTrue(os.size() > 10);
@@ -88,7 +87,7 @@ public class SimpleQueryTest {
     public void performQueryWithArtifactExpressionWrongType() throws Exception {
         SimpleQuery q = new SimpleQuery();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        q.setContext(metadataStore, dataSource);
+        q.setContext(metadataStore);
         q.performQuery(os, "artifactType=\"SHA1\" artifactValue=\"86fb269d190d2c85f6e0468ceca42a20\"");
         System.out.println(os.toString());
         assertTrue(os.toString().contains("Results: 0"));
@@ -112,7 +111,7 @@ public class SimpleQueryTest {
     public void performQueryByIdFiltered() throws Exception {
         SimpleQuery q = new SimpleQuery();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        q.setContext(metadataStore, dataSource);
+        q.setContext(metadataStore);
         // Inversed order and also reduced output
         q.setFilter("fileName fileId");
         q.performQuery(os, "d5c7bdcb");

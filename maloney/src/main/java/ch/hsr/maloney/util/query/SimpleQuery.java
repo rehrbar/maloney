@@ -1,7 +1,6 @@
 package ch.hsr.maloney.util.query;
 
 import ch.hsr.maloney.storage.Artifact;
-import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.categorization.*;
@@ -22,15 +21,13 @@ public class SimpleQuery {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     private List<PropertyName> propertiesToDisplay;
     protected MetadataStore metadataStore;
-    protected DataSource dataSource;
 
     public SimpleQuery(){
         setFilter(null);
     }
 
-    public void setContext(MetadataStore metadataStore, DataSource dataSource){
+    public void setContext(MetadataStore metadataStore){
         this.metadataStore = metadataStore;
-        this.dataSource = dataSource;
     }
 
     public void setFilter(String filter){
@@ -113,7 +110,7 @@ public class SimpleQuery {
         return query.getRuleSet().match(fileAttributes);
     }
 
-    protected static Category createQueryCategory(String query){
+    static Category createQueryCategory(String query){
         final String valueGroupName = "value";
         final String propertyGroupName = "property";
         final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");

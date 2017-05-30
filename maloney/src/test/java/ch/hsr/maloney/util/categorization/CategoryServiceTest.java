@@ -27,7 +27,7 @@ public class CategoryServiceTest {
         addRuleToCategory(DefaultCategory.KNOWN_GOOD.getName(), RuleTestHelper.trueRule);
 
         Category category = categoryService.getCategory(DefaultCategory.KNOWN_GOOD.getName());
-        Assert.assertEquals(1,category.getRuleSet().rules.size());
+        Assert.assertEquals(1,category.getRules().rules.size());
     }
 
     @Test
@@ -55,7 +55,7 @@ public class CategoryServiceTest {
             }
 
             @Override
-            public RuleComposite getRuleSet() {
+            public RuleComposite getRules() {
                 RuleComposite newRules = new AndRuleComposite();
                 newRules.addRule(ruleComponent);
                 return newRules;

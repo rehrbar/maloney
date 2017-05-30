@@ -35,13 +35,13 @@ public class CategoryService {
         if(storedCategory == null){
             categories.put(category.getName(), category);
         } else {
-            storedCategory.getRuleSet().addRule(category.getRuleSet());
+            storedCategory.getRules().addRule(category.getRules());
         }
     }
 
     public List<Category> match(FileAttributes fileAttributes) {
         List<Category> categories = this.getCategories().stream()
-                .filter(category -> category.getRuleSet().match(fileAttributes))
+                .filter(category -> category.getRules().match(fileAttributes))
                 .collect(Collectors.toList());
         if(categories.isEmpty()){
             categories.add(this.getCategory(DefaultCategory.UNKNOWN.getName()));

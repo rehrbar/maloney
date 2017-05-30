@@ -14,7 +14,7 @@ class CategoryFactory {
             }
 
             @Override
-            public RuleComposite getRuleSet() {
+            public RuleComposite getRules() {
                 return rules;
             }
         };

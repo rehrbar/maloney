@@ -16,7 +16,7 @@ public class KnownBadHashCategory implements Category {
     }
 
     @Override
-    public RuleComposite getRuleSet() {
+    public RuleComposite getRules() {
         RuleComposite ruleComposite = new OrRuleComposite();
         ruleComposite.addRule(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact ->
                 artifact.getOriginator().equals(IdentifyKnownFilesJob.JOB_NAME) &&

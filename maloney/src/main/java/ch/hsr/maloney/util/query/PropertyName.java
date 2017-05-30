@@ -12,7 +12,10 @@ public enum PropertyName {
     DateAccessed("dateAccessed"),
     DateChanged("dateChanged"),
     DateCreated("dateCreated"),
-    Artifacts("artifacts");
+    Artifacts("artifacts"),
+    ArtifactType("artifactType"),
+    ArtifactOriginator("artifactOriginator"),
+    ArtifactValue("artifactValue");
 
     private String fieldName;
 

@@ -4,10 +4,7 @@ import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.DataSource;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.storage.MetadataStore;
-import ch.hsr.maloney.util.categorization.AndRuleComposite;
-import ch.hsr.maloney.util.categorization.Category;
-import ch.hsr.maloney.util.categorization.OrRuleComposite;
-import ch.hsr.maloney.util.categorization.RuleComposite;
+import ch.hsr.maloney.util.categorization.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.OutputStream;
@@ -117,36 +114,48 @@ public class SimpleQuery {
     }
 
     protected static Category createQueryCategory(String query){
-        // TODO prepare rule set for artifacts
         final String valueGroupName = "value";
         final String propertyGroupName = "property";
         final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");
         Matcher matcher = pattern.matcher(query);
-        RuleComposite ruleComposite = new AndRuleComposite();
+        List<RuleComponent> components = new LinkedList<>();
         while(matcher.find()){
             final String value = matcher.group(valueGroupName);
             switch (PropertyName.getByFieldName(matcher.group(propertyGroupName))){
                 case FileId:
-                    ruleComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().matches(value));
+                    components.add(fileAttributes -> fileAttributes.getFileId().toString().matches(value));
                     break;
                 case FileName:
-                    ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().matches(value));
+                    components.add(fileAttributes -> fileAttributes.getFileName().matches(value));
                     break;
                 case FilePath:
-                    ruleComposite.addRule(fileAttributes -> fileAttributes.getFilePath().matches(value));
+                    components.add(fileAttributes -> fileAttributes.getFilePath().matches(value));
                     break;
                 case DateAccessed:
-                    ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateAccessed()).matches(value));
+                    components.add(fileAttributes -> formatDate(fileAttributes.getDateAccessed()).matches(value));
                     break;
                 case DateChanged:
-                    ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateChanged()).matches(value));
+                    components.add(fileAttributes -> formatDate(fileAttributes.getDateChanged()).matches(value));
                     break;
                 case DateCreated:
-                    ruleComposite.addRule(fileAttributes -> formatDate(fileAttributes.getDateCreated()).matches(value));
+                    components.add(fileAttributes -> formatDate(fileAttributes.getDateCreated()).matches(value));
+                    break;
+                case ArtifactOriginator: // Matches in artifacts does not have to be in the same artifact.
+                    components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getOriginator().matches(value)));
+                    break;
+                case ArtifactType:
+                    components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getType().matches(value)));
+                    break;
+                case ArtifactValue:
+                    components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getValue().toString().matches(value)));
                     break;
             }
         }
-        if(!matcher.matches()) {
+        RuleComposite ruleComposite;
+        if (!components.isEmpty()) {
+            ruleComposite = new AndRuleComposite();
+            components.forEach(ruleComposite::addRule);
+        } else {
             // Fallback rule
             ruleComposite = new OrRuleComposite();
             ruleComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().contains(query));

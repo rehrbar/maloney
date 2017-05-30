@@ -4,6 +4,7 @@ import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
+import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import org.junit.After;
@@ -28,8 +29,8 @@ public class AuthenticodeCatalogJobTest {
     @Before
     public void prepare() {
         fakeMetaDataStore = new FakeMetaDataStore();
-        fakeDataSource = new FakeDataSource();
-        ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
+        fakeDataSource = new FakeDataSource(fakeMetaDataStore);
+        ctx = new Context(fakeMetaDataStore, null, fakeDataSource, null);
         signatureStore = new FakeSignatureStore();
     }
 
@@ -41,7 +42,8 @@ public class AuthenticodeCatalogJobTest {
     @Test
     public void IdentifyCatalog() {
         String path = "/media/sf_shared/PE/VBoxNetLwf.cat";
-        UUID id = fakeDataSource.addFile(Paths.get(path));
+        UUID id = fakeDataSource.addFile(Paths.get(path), null);
+        fakeMetaDataStore.addFileAttributes(new FileAttributes("VBoxNetLwf.cat", null, id, null, null, null, null));
         Job job = new AuthenticodeCatalogJob(signatureStore);
         boolean result = job.shouldRun(ctx, new Event("newFile", "test", id));
         Assert.assertTrue("Job should be runnable", result);
@@ -50,7 +52,8 @@ public class AuthenticodeCatalogJobTest {
     @Test
     public void ValidateCatalogFile() throws JobCancelledException {
         String path = "/media/sf_shared/PE/VBoxNetLwf.cat";
-        UUID id = fakeDataSource.addFile(Paths.get(path));
+        UUID id = fakeDataSource.addFile(Paths.get(path), null);
+        fakeMetaDataStore.addFileAttributes(new FileAttributes("VBoxNetLwf.cat", null, id, null, null, null, null));
         Job job = new AuthenticodeCatalogJob(signatureStore);
         List<Event> result = job.run(ctx, new Event("newFile", "test", id));
         Assert.assertFalse(signatureStore.getAllSignatures().isEmpty());

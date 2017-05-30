@@ -61,7 +61,7 @@ public class MultithreadedJobProcessorTest{
     @Before
     public void setUp(){
         FakeMetaDataStore store = new FakeMetaDataStore();
-        ctx = new Context(store,new FakeProgressTracker(), new PlainSource(store));
+        ctx = new Context(store,new FakeProgressTracker(), new PlainSource(store), null);
     }
 
     @Test(timeout = 1000)

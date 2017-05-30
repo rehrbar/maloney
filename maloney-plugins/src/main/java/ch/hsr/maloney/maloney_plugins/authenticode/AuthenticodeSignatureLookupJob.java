@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,7 +56,7 @@ public class AuthenticodeSignatureLookupJob implements Job {
         while (iterator.hasNext()) {
             FileAttributes fileAttributes = iterator.next();
             // Matching all artifacts containing hashes
-            List<Artifact> artifacts = ctx.getMetadataStore().getArtifacts(fileAttributes.getFileId());
+            Collection<Artifact> artifacts = ctx.getMetadataStore().getArtifacts(fileAttributes.getFileId());
             if(artifacts == null){
                 logger.info("No artifact available for file {}", fileAttributes.getFileId());
             } else {

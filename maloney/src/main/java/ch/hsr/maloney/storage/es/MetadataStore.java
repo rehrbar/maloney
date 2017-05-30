@@ -158,7 +158,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     }
 
     @Override
-    public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
+    public void addArtifacts(UUID fileId, Collection<Artifact> artifacts) {
         if (artifacts == null || artifacts.size() == 0) {
             return;
         }

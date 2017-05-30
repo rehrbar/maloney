@@ -1,5 +1,6 @@
 package ch.hsr.maloney.storage;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -29,7 +30,7 @@ public interface MetadataStore {
      * @param fileId Id of the file
      * @return Artifacts which are tethered to the specified file
      */
-    List<Artifact> getArtifacts(UUID fileId);
+    Collection<Artifact> getArtifacts(UUID fileId);
 
     /**
      * Adds only the artifacts to an already existing file.
@@ -45,7 +46,7 @@ public interface MetadataStore {
      * @param fileId    Id of the file.
      * @param artifacts Artifacts to be added.
      */
-    void addArtifacts(UUID fileId, List<Artifact> artifacts);
+    void addArtifacts(UUID fileId, Collection<Artifact> artifacts);
 
     /**
      * Get an Iterator over all FileAttributes stored in the MetadataStore.

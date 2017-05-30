@@ -28,8 +28,8 @@ public class AuthenticodePEJobTest {
     @Before
     public void prepare() {
         fakeMetaDataStore = new FakeMetaDataStore();
-        fakeDataSource = new FakeDataSource();
-        ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
+        fakeDataSource = new FakeDataSource(fakeMetaDataStore);
+        ctx = new Context(fakeMetaDataStore, null, fakeDataSource, null);
     }
 
     @After
@@ -40,7 +40,7 @@ public class AuthenticodePEJobTest {
     @Test
     public void IdentifyPE() {
         String path = "/media/sf_shared/PE/7z.exe";
-        UUID id = fakeDataSource.addFile(Paths.get(path));
+        UUID id = fakeDataSource.addFile(Paths.get(path), null);
         Job job = new AuthenticodePEJob();
         boolean result = job.shouldRun(ctx, new Event("newFile", "test", id));
         Assert.assertTrue("Job should be runnable", result);
@@ -49,7 +49,7 @@ public class AuthenticodePEJobTest {
     @Test
     public void ValidatePE() throws JobCancelledException {
         String path = "/media/sf_shared/PE/bci.dll";
-        UUID id = fakeDataSource.addFile(Paths.get(path));
+        UUID id = fakeDataSource.addFile(Paths.get(path), null);
         Job job = new AuthenticodePEJob();
         List<Event> result = job.run(ctx, new Event("newFile", "test", id));
     }

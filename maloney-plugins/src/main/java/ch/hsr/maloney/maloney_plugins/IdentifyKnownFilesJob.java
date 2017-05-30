@@ -14,11 +14,12 @@ import ch.hsr.maloney.util.ProgressInfoType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 public class IdentifyKnownFilesJob implements Job {
-    private static final String JOB_NAME = "IdentifyKnownFilesJob";
+    static final String JOB_NAME = "IdentifyKnownFilesJob";
     private static final String KNOWN_FILE_EVENT_NAME = "KnownFileFound";
     private static final String UNKNOWN_FILE_EVENT_NAME = "KnownFileNotFound";
     private static final String MD_5_HASH_TYPE = "MD5Hash"; // TODO define hash types in a common place
@@ -61,7 +62,7 @@ public class IdentifyKnownFilesJob implements Job {
             return null;
         }
         MetadataStore metadataStore = ctx.getMetadataStore();
-        List<Artifact> artifacts = metadataStore.getArtifacts(evt.getFileUuid());
+        Collection<Artifact> artifacts = metadataStore.getArtifacts(evt.getFileUuid());
         List<Event> events = new LinkedList<>();
 
         // Get hash and its algorithm which was produced by the event

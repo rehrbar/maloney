@@ -7,6 +7,7 @@ import ch.hsr.maloney.util.FrameworkEventNames;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.JobExecution;
+import ch.hsr.maloney.util.categorization.Category;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,10 +15,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by oliver on 01.05.17.
@@ -28,6 +27,9 @@ public class ReportJob implements Job {
     private static final String JOB_NAME = "ReportJob";
     private static final String FILE_NAME = "report.csv";
     private final Logger logger;
+    private String jobConfig;
+    private final char CELL_SEPARATOR = ',';
+    private final String CATEGORY_SEPARATOR = " ";
 
     public ReportJob(){
         logger = LogManager.getLogger();
@@ -64,32 +66,39 @@ public class ReportJob implements Job {
         try (BufferedWriter writer = Files.newBufferedWriter(targetFile)){
             //Write Header
             writer.write("Maloney report,Created on: " + (new Date()).toString() + "\r\n");
-            writer.write("File Name,File Path,Date Accessed,Date Changed,Date Created,Number of Artifacts,Artifacts\r\n");
+            writer.write("File Name,File Path,Date Accessed,Date Changed,Date Created,Categories,Number of Artifacts,Artifacts\r\n");
 
             final MetadataStore metadataStore = ctx.getMetadataStore();
             final Iterator<FileAttributes> iterator = metadataStore.iterator();
 
             while(iterator.hasNext()){
                 FileAttributes fileAttributes = iterator.next();
-                List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
+                Collection<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
                 if(artifacts == null){
                     logger.info("No artifact available for file {}", fileAttributes.getFileId());
                     artifacts = new LinkedList<>();
                 }
 
-                //TODO decide which events are relevant
-                //TODO get relevant types from configuration
-                //TODO create registry with previously known and necessary artifact types (known bad etc.)
-
                 //Write data to file
                 StringBuilder stringBuilder = new StringBuilder();
-                final char CELL_SEPARATOR = ',';
+
+                //File meta data
                 stringBuilder
                         .append(fileAttributes.getFileName()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getFilePath()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getDateAccessed()).append(CELL_SEPARATOR)
                         .append(fileAttributes.getDateChanged()).append(CELL_SEPARATOR)
-                        .append(fileAttributes.getDateCreated()).append(CELL_SEPARATOR)
+                        .append(fileAttributes.getDateCreated()).append(CELL_SEPARATOR);
+
+                //Categories
+                stringBuilder.append(String.join(CATEGORY_SEPARATOR,
+                        ctx.getCategoryService().match(fileAttributes).stream()
+                        .map(Category::getName)
+                        .collect(Collectors.toSet())));
+                stringBuilder.append(CELL_SEPARATOR);
+
+                //Artifacts
+                stringBuilder
                         .append(artifacts.size());
                 artifacts.forEach(artifact -> stringBuilder
                         .append(artifact.getOriginator()).append(CELL_SEPARATOR)
@@ -133,6 +142,6 @@ public class ReportJob implements Job {
 
     @Override
     public void setJobConfig(String config) {
-        //TODO configuraiton
+        //TODO configuration
     }
 }

@@ -9,8 +9,7 @@ public class AndRuleComposite extends RuleComposite {
     @Override
     public boolean match(FileAttributes fileAttributes) {
         for(RuleComponent rule:rules){
-            boolean isMatch = rule.match(fileAttributes);
-            if(!isMatch){
+            if(!rule.match(fileAttributes)){
                 return false;
             }
         }

@@ -28,6 +28,7 @@ public class SimpleQuery {
 
     /**
      * Creates an instance of {@link SimpleQuery} with the default filter.
+     * @param metadataStore Source used for this query.
      */
     public SimpleQuery(MetadataStore metadataStore) {
         this.metadataStore = metadataStore;

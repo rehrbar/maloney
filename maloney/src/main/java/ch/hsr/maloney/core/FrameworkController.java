@@ -6,6 +6,8 @@ import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.LocalDataSource;
 import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
+import ch.hsr.maloney.util.categorization.Category;
+import ch.hsr.maloney.util.categorization.CategoryService;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -109,7 +111,7 @@ public class FrameworkController {
      * @param dataSource        Specify DataSource, if null the default is taken (LocalDataSource)
      * @return                  Created Context with specified parameters
      */
-    private Context initializeContext(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource) {
+    private Context initializeContext(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource, CategoryService categoryService) {
         if(metadataStore == null){
             try {
                 metadataStore = new ch.hsr.maloney.storage.es.MetadataStore(this.getCaseIdentifier());
@@ -126,10 +128,15 @@ public class FrameworkController {
         if(dataSource == null){
             dataSource = new LocalDataSource(metadataStore, this.getCaseDirectory());
         }
+        if(categoryService == null){
+            categoryService = new CategoryService();
+        }
+
         return new Context(
                 metadataStore,
                 progressTracker,
-                dataSource
+                dataSource,
+                categoryService
         );
     }
 
@@ -169,7 +176,7 @@ public class FrameworkController {
 
     public void run() {
         ProgressTracker progressTracker = new SimpleProgressTracker();
-        Context ctx = initializeContext(null, progressTracker, null);
+        Context ctx = initializeContext(null, progressTracker, null, null);
         framework = new Framework(eventStore, ctx);
         // TODO configure framework with this configuration
 
@@ -184,6 +191,12 @@ public class FrameworkController {
             job.setJobConfig(this.configuration.getJobConfigurationMap().getOrDefault(job.getJobName(), ""));
             logger.debug("Registering job " + job.getJobName());
             framework.register(job);
+        }
+
+        Iterator<Category> categoryIterator = ServiceLoader.load(Category.class, myClassLoader).iterator();
+        while (categoryIterator.hasNext()) {
+            Category category = categoryIterator.next();
+            ctx.getCategoryService().addOrUpdateCategory(category);
         }
 
         scheduleProgressTracker(progressTracker);

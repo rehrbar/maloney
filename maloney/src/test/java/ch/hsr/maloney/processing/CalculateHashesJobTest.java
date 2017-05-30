@@ -34,7 +34,7 @@ public class CalculateHashesJobTest {
         }
         fakeMetaDataStore = new FakeMetaDataStore();
         fakeDataSource = new FakeDataSource();
-        ctx = new Context(fakeMetaDataStore, null, fakeDataSource);
+        ctx = new Context(fakeMetaDataStore, null, fakeDataSource, null);
         tempFileUuid = fakeDataSource.addFile(tempFilePath);
     }
 

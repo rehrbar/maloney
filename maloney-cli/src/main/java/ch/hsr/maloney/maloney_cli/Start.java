@@ -40,6 +40,8 @@ public class Start {
         options.addOption("sc", "save-configuration", true, "saves an example configuration");
         options.addOption("h", "help", false, "prints this help");
         options.addOption(null, "clear-events", false, "clears stored events before start");
+        options.addOption("q","query", true,"query all stored meta-data");
+        options.addOption(null,"filter", true,"filter for output");
 
         try {
             CommandLine line = parser.parse(options, args);
@@ -64,6 +66,19 @@ public class Start {
             if (line.hasOption("sc")) {
                 // TODO add generator for example configuration
                 new FrameworkConfiguration().saveToFile(line.getOptionValue("sc"));
+                return;
+            }
+
+            if(line.hasOption("q") && line.hasOption("c")){
+                FrameworkConfiguration frameworkConfiguration = FrameworkConfiguration.loadFromFile(line.getOptionValue("c", "./configuration.json"));
+                FrameworkController controller = new FrameworkController(frameworkConfiguration, line.getOptionValue("id"));
+
+                controller.query(
+                        line.getOptionValue("q", ""),
+                        line.getOptionValue("filter", null)
+                );
+
+                System.exit(0);
                 return;
             }
 

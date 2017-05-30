@@ -18,7 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class IdentifyKnownFilesJob implements Job {
-    private static final String JOB_NAME = "IdentifyKnownFilesJob";
+    static final String JOB_NAME = "IdentifyKnownFilesJob";
     private static final String KNOWN_FILE_EVENT_NAME = "KnownFileFound";
     private static final String UNKNOWN_FILE_EVENT_NAME = "KnownFileNotFound";
     private static final String MD_5_HASH_TYPE = "MD5Hash"; // TODO define hash types in a common place

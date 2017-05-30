@@ -60,6 +60,10 @@ public class FileAttributes {
     }
 
     public List<Artifact> getArtifacts() {
+        // TODO make list unmodifiable.
+        if(artifacts == null){
+            artifacts = new LinkedList<>();
+        }
         return artifacts;
     }
 

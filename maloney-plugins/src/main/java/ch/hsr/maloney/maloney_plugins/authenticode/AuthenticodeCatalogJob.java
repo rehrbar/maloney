@@ -6,6 +6,7 @@ import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import net.jsign.CatalogFile;
 import net.jsign.SignedHashInfo;
 import net.jsign.bouncycastle.cms.CMSException;
 import org.apache.logging.log4j.Logger;
@@ -67,7 +68,7 @@ public class AuthenticodeCatalogJob implements Job {
         List<Artifact> artifacts = new LinkedList<>();
 
         try {
-            ch.hsr.maloney.maloney_plugins.authenticode.CatalogFile catalogFile = new ch.hsr.maloney.maloney_plugins.authenticode.CatalogFile(eventFile.getAbsolutePath());
+            CatalogFile catalogFile = new CatalogFile(eventFile.getAbsolutePath());
             List<SignatureRecord> records = new LinkedList<>();
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
                 if (hashInfo.getHashbytes() != null) {

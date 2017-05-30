@@ -96,7 +96,7 @@ public class SimpleQueryTest {
     public void createQueryCategory(){
         Category c = SimpleQuery.createQueryCategory("fileName=\"reg.*\"");
         FileAttributes fileAttributes = new FileAttributes("regex.exe",null, null, null, null, null, null, null);
-        Assert.assertTrue(c.getRuleSet().match(fileAttributes));
+        Assert.assertTrue(c.getRules().match(fileAttributes));
     }
     @Test
     public void createDateQueryCategory(){
@@ -104,8 +104,8 @@ public class SimpleQueryTest {
         // File 1 contains 2016, File2 contains 2015
         FileAttributes file1 = new FileAttributes(null,null, null, null, new Date(1473823035000L), null, null, null);
         FileAttributes file2 = new FileAttributes(null,null, null, null, new Date(1433823035000L), null, null, null);
-        Assert.assertTrue(c.getRuleSet().match(file1));
-        Assert.assertFalse(c.getRuleSet().match(file2));
+        Assert.assertTrue(c.getRules().match(file1));
+        Assert.assertFalse(c.getRules().match(file2));
     }
     @Test
     public void performQueryByIdFiltered() throws Exception {

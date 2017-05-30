@@ -107,7 +107,7 @@ public class SimpleQuery {
     }
 
     private boolean isMatch(Category query, FileAttributes fileAttributes, List<Artifact> artifacts) {
-        return query.getRuleSet().match(fileAttributes);
+        return query.getRules().match(fileAttributes);
     }
 
     static Category createQueryCategory(String query){
@@ -168,7 +168,7 @@ public class SimpleQuery {
             }
 
             @Override
-            public RuleComposite getRuleSet() {
+            public RuleComposite getRules() {
                 return finalComposite;
             }
         };

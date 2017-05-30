@@ -12,16 +12,16 @@ import ch.hsr.maloney.util.categorization.*;
 public class KnownGoodHashCategory implements Category {
     @Override
     public String getName() {
-        return DefaultCategory.KNOWN_GOOD;
+        return DefaultCategory.KNOWN_GOOD.getName();
     }
 
     @Override
     public RuleComposite getRuleSet() {
         RuleComposite ruleComposite = new OrRuleComposite();
-        ruleComposite.addRule(fileAttributes -> fileAttributes.getArtifacts().stream().filter(artifact ->
+        ruleComposite.addRule(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact ->
                 artifact.getOriginator().equals(IdentifyKnownFilesJob.JOB_NAME) &&
                         artifact.getType().contains("$type") &&
-                        artifact.getValue().equals(HashType.GOOD)).count() > 0);
+                        artifact.getValue().equals(HashType.GOOD)));
         return ruleComposite;
     }
 }

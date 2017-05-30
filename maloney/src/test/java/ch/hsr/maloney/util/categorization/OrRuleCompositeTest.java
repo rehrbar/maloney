@@ -21,6 +21,20 @@ public class OrRuleCompositeTest {
     }
 
     @Test
+    public void oneTrueElement(){
+        ruleComposite.addRule(RuleTestHelper.trueRule);
+
+        Assert.assertTrue(ruleComposite.match(RuleTestHelper.testFileAttributes));
+    }
+
+    @Test
+    public void oneFalseElement(){
+        ruleComposite.addRule(RuleTestHelper.falseRule);
+
+        Assert.assertFalse(ruleComposite.match(RuleTestHelper.testFileAttributes));
+    }
+
+    @Test
     public void trueComposite(){
         ruleComposite.addRule(RuleTestHelper.trueRule);
         ruleComposite.addRule(RuleTestHelper.falseRule);

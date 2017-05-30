@@ -20,19 +20,19 @@ public class Context {
         this.categoryService = categoryService;
     }
 
-    public final MetadataStore getMetadataStore() {
+    public MetadataStore getMetadataStore() {
         return metadataStore;
     }
 
-    public final ProgressTracker getProgressTracker() {
+    public ProgressTracker getProgressTracker() {
         return progressTracker;
     }
 
-    public final DataSource getDataSource() {
+    public DataSource getDataSource() {
         return dataSource;
     }
 
-    public final CategoryService getCategoryService() {
+    public CategoryService getCategoryService() {
         return categoryService;
     }
 }

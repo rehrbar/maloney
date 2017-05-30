@@ -13,9 +13,9 @@ public class CategoryService {
 
     public CategoryService(){
         categories = new HashMap<>();
-        categories.put(DefaultCategory.KNOWN_GOOD, new DefaultCategory(DefaultCategory.KNOWN_GOOD));
-        categories.put(DefaultCategory.KNOWN_BAD, new DefaultCategory(DefaultCategory.KNOWN_BAD));
-        categories.put(DefaultCategory.UNKNOWN, new DefaultCategory(DefaultCategory.UNKNOWN));
+        for(DefaultCategory defaultCategory : DefaultCategory.values()){
+            categories.put(defaultCategory.getName(),CategoryFactory.getCategory(defaultCategory.getName()));
+        }
     }
 
     Collection<Category> getCategories(){
@@ -44,7 +44,7 @@ public class CategoryService {
                 .filter(category -> category.getRuleSet().match(fileAttributes))
                 .collect(Collectors.toList());
         if(categories.isEmpty()){
-            categories.add(this.getCategory(DefaultCategory.UNKNOWN));
+            categories.add(this.getCategory(DefaultCategory.UNKNOWN.getName()));
         }
         return categories;
     }

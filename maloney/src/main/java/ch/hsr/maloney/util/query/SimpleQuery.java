@@ -16,109 +16,42 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 // TODO Extract common functionality shared with reporting feature.
+
+/**
+ * This class provides query capabilities
+ */
 public class SimpleQuery {
     private static final String FIELD_DELIMITER = "\t";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
-    private List<PropertyName> propertiesToDisplay;
     protected MetadataStore metadataStore;
+    private List<PropertyName> propertiesToDisplay;
 
-    public SimpleQuery(){
+    /**
+     * Creates an instance of {@link SimpleQuery} with the default filter.
+     * @param metadataStore Source used for this query.
+     */
+    public SimpleQuery(MetadataStore metadataStore) {
+        this.metadataStore = metadataStore;
         setFilter(null);
     }
 
-    public void setContext(MetadataStore metadataStore){
-        this.metadataStore = metadataStore;
-    }
-
-    public void setFilter(String filter){
-        propertiesToDisplay = new LinkedList<>();
-        if(filter != null) {
-            // Pattern matching all names separated by any non alphabetic character.
-            final String propertyGroupName = "property";
-            Pattern pattern = Pattern.compile("(?<" + propertyGroupName + ">[a-zA-Z]+)");
-            Matcher matcher = pattern.matcher(filter);
-
-            while (matcher.find()) {
-                PropertyName p = PropertyName.getByFieldName(matcher.group(propertyGroupName));
-                if (p != null) {
-                    propertiesToDisplay.add(p);
-                }
-            }
-        }
-
-        // Fallback: Adding all properties
-        if(propertiesToDisplay.isEmpty()) {
-            propertiesToDisplay.addAll(Arrays.asList(PropertyName.values()));
-        }
-    }
-
-    public void performQuery(OutputStream os, String query){
-        final PrintStream printStream = new PrintStream(os);
-        Category queryCategory = createQueryCategory(query);
-        int counter = 0;
-        Iterator<FileAttributes> iterator = metadataStore.iterator();
-        while (iterator.hasNext()){
-            FileAttributes fileAttributes = iterator.next();
-            List<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
-
-            if(isMatch(queryCategory, fileAttributes, artifacts)){
-                writeToOutput(printStream, fileAttributes, artifacts);
-                counter++;
-            }
-        }
-        printStream.println("Results: "+ counter);
-        printStream.close();
-    }
-
-    private void writeToOutput(PrintStream printStream, FileAttributes fileAttributes, List<Artifact> artifacts){
-        StringBuilder sb = new StringBuilder();
-        for(PropertyName prop : propertiesToDisplay){
-            switch (prop){
-                case FileId:
-                    sb.append(fileAttributes.getFileId());
-                    break;
-                case FileName:
-                    sb.append(fileAttributes.getFileName());
-                    break;
-                case FilePath:
-                    sb.append(fileAttributes.getFilePath());
-                    break;
-                case DateAccessed:
-                    sb.append(fileAttributes.getDateAccessed());
-                    break;
-                case DateChanged:
-                    sb.append(fileAttributes.getDateChanged());
-                    break;
-                case DateCreated:
-                    sb.append(fileAttributes.getDateCreated());
-                    break;
-                case Artifacts:
-                    for(Artifact artifact : artifacts){
-                        sb.append(artifact.getOriginator()).append(FIELD_DELIMITER);
-                        sb.append(artifact.getType()).append(FIELD_DELIMITER);
-                        sb.append(artifact.getValue());
-                    }
-                    break;
-            }
-            sb.append(FIELD_DELIMITER);
-        }
-
-        printStream.println(sb);
-    }
-
-    private boolean isMatch(Category query, FileAttributes fileAttributes, List<Artifact> artifacts) {
-        return query.getRules().match(fileAttributes);
-    }
-
-    static Category createQueryCategory(String query){
+    /**
+     * Creates an instance of {@link Category} based on the provided query.
+     *
+     * @param query Combination of property names and corresponding regular expressions, which are used to create the
+     *              rule set. If the query does not match the pattern, the default query on fileId and fileName is used.
+     *              For example: fileName="reg.?"
+     * @return A new instance matching the query.
+     */
+    static Category createQueryCategory(String query) {
         final String valueGroupName = "value";
         final String propertyGroupName = "property";
         final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");
         Matcher matcher = pattern.matcher(query);
         List<RuleComponent> components = new LinkedList<>();
-        while(matcher.find()){
+        while (matcher.find()) {
             final String value = matcher.group(valueGroupName);
-            switch (PropertyName.getByFieldName(matcher.group(propertyGroupName))){
+            switch (PropertyName.getByFieldName(matcher.group(propertyGroupName))) {
                 case FileId:
                     components.add(fileAttributes -> fileAttributes.getFileId().toString().matches(value));
                     break;
@@ -148,7 +81,8 @@ public class SimpleQuery {
                     break;
             }
         }
-        RuleComposite ruleComposite;
+
+        final RuleComposite ruleComposite;
         if (!components.isEmpty()) {
             ruleComposite = new AndRuleComposite();
             components.forEach(ruleComposite::addRule);
@@ -159,8 +93,6 @@ public class SimpleQuery {
             ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().contains(query));
         }
 
-        // Required final for inner class.
-        final RuleComposite finalComposite = ruleComposite;
         return new Category() {
             @Override
             public String getName() {
@@ -169,7 +101,7 @@ public class SimpleQuery {
 
             @Override
             public RuleComposite getRules() {
-                return finalComposite;
+                return ruleComposite;
             }
         };
     }
@@ -178,5 +110,116 @@ public class SimpleQuery {
     private static String formatDate(Date date) {
         LocalDateTime localDateTime = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
         return localDateTime.format(DATE_TIME_FORMATTER);
+    }
+
+    /**
+     * Sets the filter for the output. If not other specified, the default filter is used and all properties are printed.
+     *
+     * @param filter List of properties matching {@link PropertyName}. If there are no matches or null, all properties
+     *               are selected known to {@link PropertyName}. For example, use "fileName fileId".
+     */
+    public void setFilter(String filter) {
+        propertiesToDisplay = new LinkedList<>();
+        if (filter != null) {
+            // Pattern matching all names separated by any non alphabetic character.
+            final String propertyGroupName = "property";
+            Pattern pattern = Pattern.compile("(?<" + propertyGroupName + ">[a-zA-Z]+)");
+            Matcher matcher = pattern.matcher(filter);
+
+            while (matcher.find()) {
+                PropertyName p = PropertyName.getByFieldName(matcher.group(propertyGroupName));
+                if (p != null) {
+                    propertiesToDisplay.add(p);
+                }
+            }
+        }
+
+        // Fallback: Adding all properties
+        if (propertiesToDisplay.isEmpty()) {
+            propertiesToDisplay.addAll(Arrays.asList(PropertyName.values()));
+        }
+    }
+
+    /**
+     * Performs the query and prints everything to the output stream.
+     *
+     * @param os    Stream where the output is redirected.
+     * @param query Query to select which files should be printed to the stream.
+     */
+    public void performQuery(OutputStream os, String query) {
+        final PrintStream printStream = new PrintStream(os);
+        Category queryCategory = createQueryCategory(query);
+        int counter = 0;
+        Iterator<FileAttributes> iterator = metadataStore.iterator();
+        writeHeader(printStream);
+        while (iterator.hasNext()) {
+            FileAttributes fileAttributes = iterator.next();
+
+            if (isMatch(queryCategory, fileAttributes)) {
+                writeToOutput(printStream, fileAttributes);
+                counter++;
+            }
+        }
+        printStream.println("Results: " + counter);
+        printStream.close();
+    }
+
+    /**
+     * Writes a header for the given filter to the output stream.
+     *
+     * @param printStream The output stream.
+     */
+    private void writeHeader(PrintStream printStream) {
+        StringBuilder sb = new StringBuilder();
+        for (PropertyName prop : propertiesToDisplay) {
+            sb.append(prop.getFieldName()).append(FIELD_DELIMITER);
+        }
+        printStream.println(sb);
+    }
+
+    /**
+     * Writes {@link FileAttributes} to the output stream. Order and which attributes are printed is dependent on the filter.
+     *
+     * @param printStream    The output stream.
+     * @param fileAttributes Attributes which should be written.
+     */
+    private void writeToOutput(PrintStream printStream, FileAttributes fileAttributes) {
+        StringBuilder sb = new StringBuilder();
+        for (PropertyName prop : propertiesToDisplay) {
+            switch (prop) {
+                case FileId:
+                    sb.append(fileAttributes.getFileId());
+                    break;
+                case FileName:
+                    sb.append(fileAttributes.getFileName());
+                    break;
+                case FilePath:
+                    sb.append(fileAttributes.getFilePath());
+                    break;
+                case DateAccessed:
+                    sb.append(fileAttributes.getDateAccessed());
+                    break;
+                case DateChanged:
+                    sb.append(fileAttributes.getDateChanged());
+                    break;
+                case DateCreated:
+                    sb.append(fileAttributes.getDateCreated());
+                    break;
+                case Artifacts:
+                    for (Artifact artifact : fileAttributes.getArtifacts()) {
+                        sb.append(artifact.getOriginator()).append(FIELD_DELIMITER);
+                        sb.append(artifact.getType()).append(FIELD_DELIMITER);
+                        sb.append(artifact.getValue());
+                    }
+                    break;
+            }
+            sb.append(FIELD_DELIMITER);
+        }
+
+        printStream.println(sb);
+    }
+
+    private boolean isMatch(Category query, FileAttributes fileAttributes) {
+        return query.getRules().match(fileAttributes);
     }
 }

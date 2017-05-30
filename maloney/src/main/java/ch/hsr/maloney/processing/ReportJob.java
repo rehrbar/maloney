@@ -89,7 +89,7 @@ public class ReportJob implements Job {
 
                 //Categories
                 boolean moreThanOne = false;
-                for (Category category : ctx.getCategoryService().getCategorizer().match(fileAttributes)) {
+                for (Category category : ctx.getCategoryService().match(fileAttributes)) {
                     if (moreThanOne) {
                         stringBuilder.append(" ");
                     } else {

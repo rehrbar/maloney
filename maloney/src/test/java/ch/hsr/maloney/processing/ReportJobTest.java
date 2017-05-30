@@ -4,7 +4,7 @@ import ch.hsr.maloney.storage.*;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeProgressTracker;
-import ch.hsr.maloney.util.categorization.FakeCategoryService;
+import ch.hsr.maloney.util.categorization.CategoryService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,7 +27,7 @@ public class ReportJobTest {
     @Before
     public void setUp(){
         MetadataStore metadataStore = new SimpleMetadataStore();
-        ctx = new Context(metadataStore, new FakeProgressTracker(), new PlainSource(metadataStore), new FakeCategoryService());
+        ctx = new Context(metadataStore, new FakeProgressTracker(), new PlainSource(metadataStore), new CategoryService());
     }
 
     private void seedTestData(int entries) {

@@ -1,6 +1,9 @@
 package ch.hsr.maloney.util.categorization;
 
+import ch.hsr.maloney.storage.FileAttributes;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by oliver on 18.05.17.
@@ -10,9 +13,9 @@ public class CategoryService {
 
     public CategoryService(){
         categories = new HashMap<>();
-        categories.put(DefaultCategory.KNOWN_GOOD, new DefaultCategory(DefaultCategory.KNOWN_GOOD));
-        categories.put(DefaultCategory.KNOWN_BAD, new DefaultCategory(DefaultCategory.KNOWN_BAD));
-        categories.put(DefaultCategory.UNKNOWN, new DefaultCategory(DefaultCategory.UNKNOWN));
+        for(DefaultCategory defaultCategory : DefaultCategory.values()){
+            categories.put(defaultCategory.getName(),CategoryFactory.getCategory(defaultCategory.getName()));
+        }
     }
 
     Collection<Category> getCategories(){
@@ -32,11 +35,17 @@ public class CategoryService {
         if(storedCategory == null){
             categories.put(category.getName(), category);
         } else {
-            storedCategory.getRuleSet().addRule(category.getRuleSet());
+            storedCategory.getRules().addRule(category.getRules());
         }
     }
 
-    public Categorizer getCategorizer(){
-        return new Categorizer(this);
+    public List<Category> match(FileAttributes fileAttributes) {
+        List<Category> categories = this.getCategories().stream()
+                .filter(category -> category.getRules().match(fileAttributes))
+                .collect(Collectors.toList());
+        if(categories.isEmpty()){
+            categories.add(this.getCategory(DefaultCategory.UNKNOWN.getName()));
+        }
+        return categories;
     }
 }

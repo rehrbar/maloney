@@ -21,5 +21,5 @@ public interface Category {
      *
      * @return RuleComposite which represents a set of rules to which files this category applies to.
      */
-    RuleComposite getRuleSet();
+    RuleComposite getRules();
 }

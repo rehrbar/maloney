@@ -8,6 +8,7 @@ import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.*;
 import ch.hsr.maloney.util.categorization.Category;
 import ch.hsr.maloney.util.categorization.CategoryService;
+import ch.hsr.maloney.util.query.SimpleQuery;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -203,6 +204,13 @@ public class FrameworkController {
 
         framework.start();
         // TODO handle not finished executions
+    }
+
+    public void query(String query, String filter){
+        Context ctx = initializeContext(null, null, null, null);
+        SimpleQuery q = new SimpleQuery(ctx.getMetadataStore());
+        q.setFilter(filter);
+        q.performQuery(System.out, query);
     }
 
     public boolean hasEvents() {

@@ -3,8 +3,6 @@ package ch.hsr.maloney.storage;
 import java.util.*;
 
 public class FakeMetaDataStore implements MetadataStore {
-
-    Map<UUID, List<Artifact>> artifacts = new HashMap<>();
     Map<UUID, FileAttributes> fileAttributesMap = new HashMap<>();
 
     @Override
@@ -19,24 +17,19 @@ public class FakeMetaDataStore implements MetadataStore {
 
     @Override
     public List<Artifact> getArtifacts(UUID fileId) {
-        return artifacts.get(fileId);
+        return fileAttributesMap.get(fileId).getArtifacts();
     }
 
     @Override
     public void addArtifact(UUID fileId, Artifact artifact) {
-        List<Artifact> artifactList = artifacts.get(fileId);
-        if (artifactList == null) {
-            artifactList = new LinkedList<>();
-        }
+        List<Artifact> artifactList = fileAttributesMap.get(fileId).getArtifacts();
         artifactList.add(artifact);
-        artifacts.put(fileId, artifactList);
     }
 
     @Override
     public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
-        for (Artifact a : artifacts) {
-            addArtifact(fileId, a);
-        }
+        List<Artifact> artifactList = fileAttributesMap.get(fileId).getArtifacts();
+        artifactList.addAll(artifacts);
     }
 
     @Override

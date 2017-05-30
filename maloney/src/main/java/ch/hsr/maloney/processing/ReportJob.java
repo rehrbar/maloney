@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by oliver on 01.05.17.
@@ -31,6 +32,7 @@ public class ReportJob implements Job {
     private final Logger logger;
     private String jobConfig;
     private final char CELL_SEPARATOR = ',';
+    private final String CATEGORY_SEPARATOR = " ";
 
     public ReportJob(){
         logger = LogManager.getLogger();
@@ -88,15 +90,10 @@ public class ReportJob implements Job {
                         .append(fileAttributes.getDateCreated()).append(CELL_SEPARATOR);
 
                 //Categories
-                boolean moreThanOne = false;
-                for (Category category : ctx.getCategoryService().match(fileAttributes)) {
-                    if (moreThanOne) {
-                        stringBuilder.append(" ");
-                    } else {
-                        moreThanOne = true;
-                    }
-                    stringBuilder.append(category.getName());
-                }
+                stringBuilder.append(String.join(CATEGORY_SEPARATOR,
+                        ctx.getCategoryService().match(fileAttributes).stream()
+                        .map(Category::getName)
+                        .collect(Collectors.toSet())));
                 stringBuilder.append(CELL_SEPARATOR);
 
                 //Artifacts

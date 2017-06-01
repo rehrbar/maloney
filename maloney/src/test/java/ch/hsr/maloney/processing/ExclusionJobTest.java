@@ -6,6 +6,7 @@ import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.FakeProgressTracker;
+import ch.hsr.maloney.util.categorization.CategoryService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,9 +33,9 @@ public class ExclusionJobTest {
         FakeMetaDataStore metaDataStore = new FakeMetaDataStore();
         metaDataStore.addFileAttributes(new FileAttributes("testFile1.exe","/media/someFolder", uuid1, new Date(), new Date(), new Date(), null, null));
         metaDataStore.addFileAttributes(new FileAttributes("testFile2.exe","/media/someOtherFolder", uuid2, new Date(), new Date(), new Date(), null, null));
-        metaDataStore.addFileAttributes(new FileAttributes("testFile3.exe","/media/someFolder", uuid3, new Date(), new Date(), new Date(), null, null));
-        metaDataStore.addFileAttributes(new FileAttributes("testFile4.exe","/media/someFolder", uuid4, new Date(), new Date(), new Date(), null, null));
-        ctx = new Context(metaDataStore, new FakeProgressTracker(), new FakeDataSource());
+        metaDataStore.addFileAttributes(new FileAttributes("testFile3.txt","/media/someFolder", uuid3, new Date(), new Date(), new Date(), null, null));
+        metaDataStore.addFileAttributes(new FileAttributes("testFile4.txt","/media/someFolder", uuid4, new Date(), new Date(), new Date(), null, null));
+        ctx = new Context(metaDataStore, new FakeProgressTracker(), new FakeDataSource(), new CategoryService());
     }
 
     @Test
@@ -47,20 +48,34 @@ public class ExclusionJobTest {
     @Test
     public void simpleFilterRun() throws Exception {
         ExclusionJob exclusionJob = new ExclusionJob();
-        exclusionJob.setJobConfig("testFile1.exe;");
+        exclusionJob.setJobConfig("fileName=\"testFile1\\.exe\"");
         //exclusionJob.setJobConfig("FileName:\"testFile1.exe\"");
         List<Event> resultingEvents = exclusionJob.run(ctx, new Event("newFile","Test",uuid1));
-        Assert.assertTrue(resultingEvents.size() == 0);
+        resultingEvents.addAll(exclusionJob.run(ctx, new Event("newFile","Test",uuid2)));
+
+        Assert.assertEquals(1, resultingEvents.size());
     }
 
     @Test
     public void multipleFilterRun() throws Exception {
         ExclusionJob exclusionJob = new ExclusionJob();
-        exclusionJob.setJobConfig("testFile1.exe;testFile2.exe");
-        //TODO switch to pattern after RexEx matcher was added
-        //exclusionJob.setJobConfig("FileName:\"testFile1.exe\",FileName:\"testFile2.exe\"");
+        exclusionJob.setJobConfig("fileName=\"testFile1\\.exe\" fileName=\"testFile2\\.exe\"");
         List<Event> resultingEvents = exclusionJob.run(ctx, new Event("newFile","Test",uuid1));
         resultingEvents.addAll(exclusionJob.run(ctx, new Event("newFile","Test",uuid2)));
-        Assert.assertTrue(resultingEvents.size() == 0);
+        resultingEvents.addAll(exclusionJob.run(ctx, new Event("newFile","Test",uuid3)));
+
+        Assert.assertEquals(1, resultingEvents.size());
+    }
+
+    @Test
+    public void excludeAllTxts() throws Exception {
+        ExclusionJob exclusionJob = new ExclusionJob();
+        exclusionJob.setJobConfig("fileName=\".*\\.txt\"");
+        List<Event> resultingEvents = exclusionJob.run(ctx, new Event("newFile","Test",uuid1));
+        resultingEvents.addAll(exclusionJob.run(ctx, new Event("newFile","Test",uuid2)));
+        resultingEvents.addAll(exclusionJob.run(ctx, new Event("newFile","Test",uuid3)));
+        resultingEvents.addAll(exclusionJob.run(ctx, new Event("newFile","Test",uuid4)));
+
+        Assert.assertEquals(2, resultingEvents.size());
     }
 }

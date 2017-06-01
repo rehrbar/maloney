@@ -4,6 +4,9 @@ import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.categorization.Category;
+import ch.hsr.maloney.util.categorization.CategoryService;
+import ch.hsr.maloney.util.categorization.OrRuleComposite;
+import ch.hsr.maloney.util.categorization.RuleComposite;
 import ch.hsr.maloney.util.query.SimpleQuery;
 
 import java.util.*;
@@ -31,7 +34,7 @@ public class ExclusionJob implements Job {
     public List<Event> run(Context ctx, Event evt) throws JobCancelledException {
         FileAttributes fileAttributes = ctx.getMetadataStore().getFileAttributes(evt.getFileUuid());
         List<Event> result = new LinkedList<>();
-        if(filter.getRules().match(fileAttributes)){
+        if((filter == null) || !filter.getRules().match(fileAttributes)){
             result.add(new Event(EventNames.ADDED_FILE_EVENT_NAME,this.getJobName(),evt.getFileUuid()));
         }
         return result;
@@ -64,6 +67,6 @@ public class ExclusionJob implements Job {
     @Override
     public void setJobConfig(String config) {
         jobConfig = config;
-        filter = SimpleQuery.createQueryCategory(config);
+        filter = SimpleQuery.createQueryCategory(config, new OrRuleComposite(), new OrRuleComposite());
     }
 }

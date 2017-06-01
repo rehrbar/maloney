@@ -3,6 +3,8 @@ package ch.hsr.maloney.processing;
 import ch.hsr.maloney.storage.FileAttributes;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
+import ch.hsr.maloney.util.categorization.Category;
+import ch.hsr.maloney.util.query.SimpleQuery;
 
 import java.util.*;
 
@@ -13,8 +15,7 @@ public class ExclusionJob implements Job {
     private static final String JOB_NAME = "FileExclusionJob";
 
     private String jobConfig;
-    private final Set<String> filter = new HashSet<>();
-    private final String CONFIG_SEPARATOR = ";";
+    private Category filter;
 
     @Override
     public boolean shouldRun(Context ctx, Event evt) {
@@ -30,7 +31,7 @@ public class ExclusionJob implements Job {
     public List<Event> run(Context ctx, Event evt) throws JobCancelledException {
         FileAttributes fileAttributes = ctx.getMetadataStore().getFileAttributes(evt.getFileUuid());
         List<Event> result = new LinkedList<>();
-        if(!filter.contains(fileAttributes.getFileName())){
+        if(filter.getRules().match(fileAttributes)){
             result.add(new Event(EventNames.ADDED_FILE_EVENT_NAME,this.getJobName(),evt.getFileUuid()));
         }
         return result;
@@ -63,6 +64,6 @@ public class ExclusionJob implements Job {
     @Override
     public void setJobConfig(String config) {
         jobConfig = config;
-        Collections.addAll(filter, config.split(CONFIG_SEPARATOR));
+        filter = SimpleQuery.createQueryCategory(config);
     }
 }

@@ -28,10 +28,6 @@ class CertificateFileExtractor implements FileExtractor {
     private final Logger logger;
     private Collection<X509CertificateHolder> certs;
 
-    public CertificateFileExtractor(Path jobWorkingDir, Event evt, X509CertificateHolder certificateHolder) {
-        this(jobWorkingDir, evt, certificateHolder, null);
-    }
-
     public CertificateFileExtractor(Path jobWorkingDir, Event evt, X509CertificateHolder certificateHolder, Collection<X509CertificateHolder> certs) {
         this.certs = certs;
         logger = LogManager.getLogger();

@@ -11,6 +11,7 @@ import net.jsign.SignedHashInfo;
 import net.jsign.bouncycastle.cert.X509CertificateHolder;
 import net.jsign.bouncycastle.cms.CMSException;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.ByteArrayInputStream;
@@ -61,7 +62,6 @@ public class AuthenticodeCatalogJob implements Job {
         // Security Catalog does not contain a magic value like a PE.
         // ASN.1 DER format may often start with 0x30, but it is not guaranteed.
         // Checking the file ending is another good enough guess.
-        // TODO improve check and fix tests
         FileAttributes file = ctx.getMetadataStore().getFileAttributes(evt.getFileUuid());
         return file.getFileName().toLowerCase().endsWith(".cat");
     }
@@ -79,21 +79,7 @@ public class AuthenticodeCatalogJob implements Job {
         try {
             CatalogFile catalogFile = new CatalogFile(eventFile.getAbsolutePath());
 
-            CertificateStatus certificateStatus = CertificateStatus.BAD; // TODO introduce unknown
-            try {
-                X509Certificate main = convert(catalogFile.getCert());
-                Set<X509Certificate> certs = new HashSet<>();
-                for(X509CertificateHolder c: catalogFile.getCerts()){
-                    certs.add(convert(c));
-                }
-                CertificateVerifier.verifyCertificate(main, certs);
-                certificateStatus = CertificateStatus.GOOD;
-            } catch (CertificateException | NoSuchProviderException e) {
-                logger.warn("Could not verify certificate.", e);
-            } catch (CertificateVerificationException e) {
-                logger.warn("Certificate validation failed.", e);
-                certificateStatus = CertificateStatus.BAD;
-            }
+            CertificateStatus certificateStatus = CertificateVerifier.verifyCertificate(catalogFile.getCert(), catalogFile.getCerts());
 
             List<SignatureRecord> records = new LinkedList<>();
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
@@ -102,7 +88,6 @@ public class AuthenticodeCatalogJob implements Job {
                     e.setFileName(hashInfo.getFilename());
                     e.setSource(evt.getFileUuid());
                     e.setHash(hashInfo.getHashbytes());
-                    // TODO verify certificate and set status accordingly.
                     e.setStatus(certificateStatus);
                     records.add(e);
                 }
@@ -112,24 +97,17 @@ public class AuthenticodeCatalogJob implements Job {
 
             Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodeCatalogJob.class);
             UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, catalogFile.getCert(), catalogFile.getCerts()));
-            ctx.getMetadataStore().addArtifact(certUuid, new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
-            // TODO also set the status for the certificate itself.
+            // TODO remove duplicated code
+            List<Artifact> certArtifacts = new LinkedList<>();
+            certArtifacts.add(new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
+            certArtifacts.add(new Artifact(JOB_NAME, certificateStatus, "certificateStatus"));
+            ctx.getMetadataStore().addArtifacts(certUuid, certArtifacts);
         } catch (IOException | CMSException e) {
             logger.warn("Security catalog of file {} could not be inspected.", evt.getFileUuid());
         }
 
         ctx.getMetadataStore().addArtifacts(evt.getFileUuid(), artifacts);
         return null;
-    }
-
-    private X509Certificate convert(X509CertificateHolder cert) throws CertificateException, NoSuchProviderException, IOException {
-        // TODO move to CertificateVerifier
-        Security.addProvider(new BouncyCastleProvider());
-        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509",
-                BouncyCastleProvider.PROVIDER_NAME);
-
-        InputStream is = new ByteArrayInputStream(cert.getEncoded());
-        return (X509Certificate) certificateFactory.generateCertificate(is);
     }
 
     @Override

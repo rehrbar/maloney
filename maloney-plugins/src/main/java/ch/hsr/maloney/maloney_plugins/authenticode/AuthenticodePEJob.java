@@ -8,6 +8,7 @@ import ch.hsr.maloney.util.Event;
 import net.jsign.DigestAlgorithm;
 import net.jsign.PEVerifier;
 import net.jsign.bouncycastle.cert.X509CertificateHolder;
+import net.jsign.bouncycastle.cms.CMSException;
 import net.jsign.pe.PEFile;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
@@ -76,10 +77,18 @@ public class AuthenticodePEJob implements Job {
             X509CertificateHolder cert = verifier.getCert();
             Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodePEJob.class);
 
-            if(cert != null){
-                UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, cert));
-                ctx.getMetadataStore().addArtifact(certUuid, new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
-                artifacts.add(new Artifact(JOB_NAME, cert.getSubject(), "cert$subject"));
+            if (cert != null) {
+                try {
+                    CertificateStatus certificateStatus = CertificateVerifier.verifyCertificate(verifier.getCert(), verifier.getCerts());
+                    // TODO remove duplicated code
+                    UUID certUuid = ctx.getDataSource().addFile(evt.getFileUuid(), new CertificateFileExtractor(jobWorkingDir, evt, cert, verifier.getCerts()));
+                    List<Artifact> certArtifacts = new LinkedList<>();
+                    certArtifacts.add(new Artifact(JOB_NAME, "authenticode-cert", "filetype"));
+                    certArtifacts.add(new Artifact(JOB_NAME, certificateStatus, "certificateStatus"));
+                    ctx.getMetadataStore().addArtifacts(certUuid, certArtifacts);
+                } catch (CMSException e) {
+                    e.printStackTrace();
+                }
             }
 
             if(verifier.isCorrectlySigned()){

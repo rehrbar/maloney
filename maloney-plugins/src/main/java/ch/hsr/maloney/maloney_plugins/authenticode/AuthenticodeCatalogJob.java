@@ -8,16 +8,25 @@ import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import net.jsign.CatalogFile;
 import net.jsign.SignedHashInfo;
+import net.jsign.bouncycastle.cert.X509CertificateHolder;
 import net.jsign.bouncycastle.cms.CMSException;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.security.NoSuchProviderException;
+import java.security.Security;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation which examines Authenticode information of a portable executable.
@@ -69,6 +78,23 @@ public class AuthenticodeCatalogJob implements Job {
 
         try {
             CatalogFile catalogFile = new CatalogFile(eventFile.getAbsolutePath());
+
+            CertificateStatus certificateStatus = CertificateStatus.BAD; // TODO introduce unknown
+            try {
+                X509Certificate main = convert(catalogFile.getCert());
+                Set<X509Certificate> certs = new HashSet<>();
+                for(X509CertificateHolder c: catalogFile.getCerts()){
+                    certs.add(convert(c));
+                }
+                CertificateVerifier.verifyCertificate(main, certs);
+                certificateStatus = CertificateStatus.GOOD;
+            } catch (CertificateException | NoSuchProviderException e) {
+                logger.warn("Could not verify certificate.", e);
+            } catch (CertificateVerificationException e) {
+                logger.warn("Certificate validation failed.", e);
+                certificateStatus = CertificateStatus.BAD;
+            }
+
             List<SignatureRecord> records = new LinkedList<>();
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
                 if (hashInfo.getHashbytes() != null) {
@@ -77,7 +103,7 @@ public class AuthenticodeCatalogJob implements Job {
                     e.setSource(evt.getFileUuid());
                     e.setHash(hashInfo.getHashbytes());
                     // TODO verify certificate and set status accordingly.
-                    e.setStatus(CertificateStatus.GOOD);
+                    e.setStatus(certificateStatus);
                     records.add(e);
                 }
             }
@@ -94,6 +120,16 @@ public class AuthenticodeCatalogJob implements Job {
 
         ctx.getMetadataStore().addArtifacts(evt.getFileUuid(), artifacts);
         return null;
+    }
+
+    private X509Certificate convert(X509CertificateHolder cert) throws CertificateException, NoSuchProviderException, IOException {
+        // TODO move to CertificateVerifier
+        Security.addProvider(new BouncyCastleProvider());
+        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509",
+                BouncyCastleProvider.PROVIDER_NAME);
+
+        InputStream is = new ByteArrayInputStream(cert.getEncoded());
+        return (X509Certificate) certificateFactory.generateCertificate(is);
     }
 
     @Override

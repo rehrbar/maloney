@@ -88,6 +88,7 @@ public class CertificateVerifier {
             throws CertificateException, NoSuchAlgorithmException,
             NoSuchProviderException {
         try {
+            // TODO fix determination of self signed certificates
             // Try to verify certificate signature with its own public key
             PublicKey key = cert.getPublicKey();
             cert.verify(key);

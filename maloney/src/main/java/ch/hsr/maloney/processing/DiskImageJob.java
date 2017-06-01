@@ -18,14 +18,13 @@ import java.util.UUID;
  */
 public class DiskImageJob implements Job {
     private static final String JOB_NAME = "DiskImageJob";
-    private static final String NewDiskImageEventName = "newDiskImage";
     private LinkedList<String> producedEvents;
     private LinkedList<String> requiredEvents;
     private Path path;
 
     public DiskImageJob() {
         producedEvents = new LinkedList<String>() {{
-            add(NewDiskImageEventName);
+            add(EventNames.NEW_DISK_IMAGE_EVENT_NAME);
         }};
         requiredEvents = new LinkedList<String>(){{
             add(FrameworkEventNames.STARTUP);
@@ -70,7 +69,7 @@ public class DiskImageJob implements Job {
             }
         });
 
-        Event event = new Event(NewDiskImageEventName, JOB_NAME, uuid);
+        Event event = new Event(EventNames.NEW_DISK_IMAGE_EVENT_NAME, JOB_NAME, uuid);
         return new LinkedList<Event>() {{
             add(event);
         }};

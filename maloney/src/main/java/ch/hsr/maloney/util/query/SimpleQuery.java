@@ -43,7 +43,7 @@ public class SimpleQuery {
      *              For example: fileName="reg.?"
      * @return A new instance matching the query.
      */
-    static Category createQueryCategory(String query) {
+    public static Category createQueryCategory(String query) {
         final String valueGroupName = "value";
         final String propertyGroupName = "property";
         final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");

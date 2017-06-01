@@ -25,9 +25,6 @@ import java.util.UUID;
  */
 public class CalculateHashesJob implements Job {
     private static final String JOB_NAME = "CalculateHashesJob";
-    private static final String NEW_FILE_EVENT_NAME = "newFile";
-    private static final String MD_5_HASH_CALCULATED_EVENT_NAME = "MD5HashCalculated";
-    private static final String SHA_1_HASH_CALCULATED_EVENT_NAME = "SHA1HashCalculated";
     private static final String MD_5_HASH_TYPE = "MD5Hash";
     private static final String SHA_1_HASH_TYPE = "SHA1Hash";
 
@@ -39,9 +36,9 @@ public class CalculateHashesJob implements Job {
 
     public CalculateHashesJob() {
         logger = LogManager.getLogger();
-        requiredEvents.add(NEW_FILE_EVENT_NAME);
-        producedEvents.add(MD_5_HASH_CALCULATED_EVENT_NAME);
-        producedEvents.add(SHA_1_HASH_CALCULATED_EVENT_NAME);
+        requiredEvents.add(EventNames.NEW_FILE_EVENT_NAME);
+        producedEvents.add(EventNames.MD_5_HASH_CALCULATED_EVENT_NAME);
+        producedEvents.add(EventNames.SHA_1_HASH_CALCULATED_EVENT_NAME);
     }
 
     @Override
@@ -96,8 +93,8 @@ public class CalculateHashesJob implements Job {
 
             metadataStore.addArtifacts(fileUuid, artifacts);
 
-            events.add(new Event(MD_5_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
-            events.add(new Event(SHA_1_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
+            events.add(new Event(EventNames.MD_5_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
+            events.add(new Event(EventNames.SHA_1_HASH_CALCULATED_EVENT_NAME, getJobName(), fileUuid));
 
         } catch (IOException e) {
             logger.error("Could not read file with UUID: " + fileUuid.toString(), e);

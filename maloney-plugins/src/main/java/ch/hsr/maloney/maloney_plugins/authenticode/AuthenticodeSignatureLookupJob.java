@@ -62,13 +62,18 @@ public class AuthenticodeSignatureLookupJob implements Job {
             } else {
                 List<Artifact> results = new LinkedList<>();
                 for (Artifact a : artifacts) {
-                    if (a.getType().startsWith("authenticode")) {
-                        List<SignatureRecord> signatures = signatureStore.findSignatures(a.getValue().toString());
+                    if (a.getType().startsWith("authenticode-hash$")) {
+                        String hash = a.getValue().toString();
+                        // Artifact value contains quotes at the beginning and the end.
+                        // To match properly, they need to be removed.
+                        // TODO define artifact value as string for better serialization/deserialization.
+                        List<SignatureRecord> signatures = signatureStore.findSignatures(hash.replace("\"",""));
                         for (SignatureRecord record : signatures) {
                             results.add(new Artifact(JOB_NAME, record, SignatureRecord.class.getCanonicalName()));
                             results.add(new Artifact(JOB_NAME, record.getStatus(), "authenticode$status"));
-                            if(!record.getFileName().equalsIgnoreCase(fileAttributes.getFileName())){
-                                // TODO check file name and path?
+
+                            // Some catalogs contain file names in their signature.
+                            if(record.getFileName() != null && !record.getFileName().equalsIgnoreCase(fileAttributes.getFileName())){
                                 results.add(new Artifact(JOB_NAME, "filename-mismatch", "authenticode$fileName"));
                             }
                         }

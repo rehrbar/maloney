@@ -77,6 +77,8 @@ public class AuthenticodeCatalogJob implements Job {
         List<Artifact> artifacts = new LinkedList<>();
 
         try {
+            FileAttributes fileAttributes = ctx.getMetadataStore().getFileAttributes(evt.getFileUuid());
+
             CatalogFile catalogFile = new CatalogFile(eventFile.getAbsolutePath());
 
             CertificateStatus certificateStatus = CertificateVerifier.verifyCertificate(catalogFile.getCert(), catalogFile.getCerts());
@@ -84,8 +86,15 @@ public class AuthenticodeCatalogJob implements Job {
             List<SignatureRecord> records = new LinkedList<>();
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
                 if (hashInfo.getHashbytes() != null) {
+                    String signedFileName = hashInfo.getFilename();
+                    if(signedFileName != null){
+                        // File name contains ASCII 0 characters. Removing them helps later in matching.
+                        signedFileName= signedFileName.replace("\u0000","");
+                    }
+
                     SignatureRecord e = new SignatureRecord();
-                    e.setFileName(hashInfo.getFilename());
+                    e.setFileName(signedFileName);
+                    e.setFilePath(fileAttributes.getFilePath());
                     e.setSource(evt.getFileUuid());
                     e.setHash(hashInfo.getHashbytes());
                     e.setStatus(certificateStatus);

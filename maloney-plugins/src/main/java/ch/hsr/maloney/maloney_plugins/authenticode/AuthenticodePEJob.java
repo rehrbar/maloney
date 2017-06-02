@@ -70,8 +70,8 @@ public class AuthenticodePEJob implements Job {
             PEFile pef = new PEFile(eventFile);
             byte[] sha1 = pef.computeDigest(DigestAlgorithm.SHA1);
             byte[] sha256 = pef.computeDigest(DigestAlgorithm.SHA256);
-            artifacts.add(new Artifact(JOB_NAME, Hex.encodeHexString(sha1), "authenticode$"+ DigestAlgorithm.SHA1.id));
-            artifacts.add(new Artifact(JOB_NAME, Hex.encodeHexString(sha256), "authenticode$"+DigestAlgorithm.SHA256.id));
+            artifacts.add(new Artifact(JOB_NAME, Hex.encodeHexString(sha1), "authenticode-hash$"+ DigestAlgorithm.SHA1.id));
+            artifacts.add(new Artifact(JOB_NAME, Hex.encodeHexString(sha256), "authenticode-hash$"+DigestAlgorithm.SHA256.id));
 
             PEVerifier verifier = new PEVerifier(pef);
             X509CertificateHolder cert = verifier.getCert();

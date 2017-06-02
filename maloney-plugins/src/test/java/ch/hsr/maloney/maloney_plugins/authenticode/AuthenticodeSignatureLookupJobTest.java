@@ -40,7 +40,7 @@ public class AuthenticodeSignatureLookupJobTest {
         fakeMetaDataStore.addFileAttributes(new FileAttributes(
                 "some.ini", "C:\\windows\\", file2,null, null, null, null
         ));
-        fakeMetaDataStore.addArtifact(file1, new Artifact("AuthenticodePEJob", HASH,"authenticode$SHA-1"));
+        fakeMetaDataStore.addArtifact(file1, new Artifact("AuthenticodePEJob", HASH,"authenticode-hash$SHA-1"));
         ctx = new Context(fakeMetaDataStore, null, null, null);
         store = new FakeSignatureStore();
     }

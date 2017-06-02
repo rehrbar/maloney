@@ -73,7 +73,7 @@ public class ReportJob implements Job {
 
             while(iterator.hasNext()){
                 FileAttributes fileAttributes = iterator.next();
-                Collection<Artifact> artifacts = metadataStore.getArtifacts(fileAttributes.getFileId());
+                Collection<Artifact> artifacts = fileAttributes.getArtifacts();
                 if(artifacts == null){
                     logger.info("No artifact available for file {}", fileAttributes.getFileId());
                     artifacts = new LinkedList<>();

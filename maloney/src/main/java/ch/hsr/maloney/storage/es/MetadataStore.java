@@ -137,17 +137,10 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     }
 
     @Override
-    public List<Artifact> getArtifacts(UUID fileId) {
+    public Collection<Artifact> getArtifacts(UUID fileId) {
         // TODO Idea: Implement this method correctly with searchers to query for a specific type of an artifact.
-        // TODO restrict source only to provide artifacts. The entire document is not needed.
-        GetResponse response = client.prepareGet(indexName, fileAttributeTypeName, fileId.toString()).get();
-        try {
-            ArtifactsDto artifactsDto = mapper.readValue(response.getSourceAsBytes(), ArtifactsDto.class);
-            return artifactsDto.artifacts;
-        } catch (IOException e) {
-            logger.error("Could not parse Artifacts retrieved from elasticsearch.", e);
-        }
-        return null;
+        FileAttributes fileAttributes = getFileAttributes(fileId);
+        return fileAttributes != null ? fileAttributes.getArtifacts() : null;
     }
 
     @Override

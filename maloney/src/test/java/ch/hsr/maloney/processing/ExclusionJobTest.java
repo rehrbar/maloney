@@ -35,7 +35,7 @@ public class ExclusionJobTest {
         metaDataStore.addFileAttributes(new FileAttributes("testFile2.exe","/media/someOtherFolder", uuid2, new Date(), new Date(), new Date(), null, null));
         metaDataStore.addFileAttributes(new FileAttributes("testFile3.txt","/media/someFolder", uuid3, new Date(), new Date(), new Date(), null, null));
         metaDataStore.addFileAttributes(new FileAttributes("testFile4.txt","/media/someFolder", uuid4, new Date(), new Date(), new Date(), null, null));
-        ctx = new Context(metaDataStore, new FakeProgressTracker(), new FakeDataSource(), new CategoryService());
+        ctx = new Context(metaDataStore, new FakeProgressTracker(), new FakeDataSource(metaDataStore), new CategoryService());
     }
 
     @Test

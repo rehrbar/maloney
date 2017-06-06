@@ -2,3 +2,5 @@ ch.hsr.maloney.processing.DiskImageJob
 ch.hsr.maloney.processing.CalculateHashesJob
 ch.hsr.maloney.processing.ImportRdsHashSetJob
 ch.hsr.maloney.processing.TSKReadImageJob
+ch.hsr.maloney.processing.ExclusionJob
+ch.hsr.maloney.processing.ReportJob

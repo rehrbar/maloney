@@ -8,13 +8,16 @@ import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.Event;
 import ch.hsr.maloney.util.JobExecution;
 import ch.hsr.maloney.util.categorization.Category;
+import com.sun.nio.file.ExtendedOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,7 +30,6 @@ public class ReportJob implements Job {
     private static final String JOB_NAME = "ReportJob";
     private static final String FILE_NAME = "report.csv";
     private final Logger logger;
-    private String jobConfig;
     private final char CELL_SEPARATOR = ',';
     private final String CATEGORY_SEPARATOR = " ";
 
@@ -53,11 +55,7 @@ public class ReportJob implements Job {
         Path targetFile = ctx.getDataSource().getJobWorkingDir(this.getClass()).resolve(FILE_NAME);
 
         try {
-            if(targetFile.toFile().getParentFile().mkdirs() && targetFile.toFile().createNewFile()) {
-                logger.debug("Created File {}", targetFile.toString());
-            } else {
-                throw new IOException();
-            }
+            Files.createDirectories(targetFile.getParent());
         } catch (IOException e) {
             logger.error("Could not create report", e);
             throw new JobCancelledException(new JobExecution(this, evt),"Could not create report", e);
@@ -99,7 +97,7 @@ public class ReportJob implements Job {
 
                 //Artifacts
                 stringBuilder
-                        .append(artifacts.size());
+                        .append(artifacts.size()).append(CELL_SEPARATOR);
                 artifacts.forEach(artifact -> stringBuilder
                         .append(artifact.getOriginator()).append(CELL_SEPARATOR)
                         .append(artifact.getType()).append(CELL_SEPARATOR)

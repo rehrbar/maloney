@@ -27,7 +27,7 @@ import java.util.UUID;
  * Implementation which examines Authenticode information of a portable executable.
  */
 public class AuthenticodePEJob implements Job {
-    private static final String JOB_NAME = "AuthenticodePEJob";
+    static final String JOB_NAME = "AuthenticodePEJob";
     private final LinkedList<String> producedEvents;
     private final LinkedList<String> requiredEvents;
     private final Logger logger;

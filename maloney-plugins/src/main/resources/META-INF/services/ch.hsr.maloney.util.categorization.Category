@@ -1,2 +1,4 @@
 ch.hsr.maloney.maloney_plugins.KnownGoodHashCategory
 ch.hsr.maloney.maloney_plugins.KnownBadHashCategory
+ch.hsr.maloney.maloney_plugins.authenticode.AuthenticodeCategoryKnownBad
+ch.hsr.maloney.maloney_plugins.authenticode.AuthenticodeCategoryKnownGood

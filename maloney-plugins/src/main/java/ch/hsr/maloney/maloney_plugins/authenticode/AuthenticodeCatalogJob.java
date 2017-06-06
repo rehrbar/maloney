@@ -65,7 +65,6 @@ public class AuthenticodeCatalogJob implements Job {
     @Override
     public List<Event> run(Context ctx, Event evt) throws JobCancelledException {
         File eventFile = ctx.getDataSource().getFile(evt.getFileUuid());
-        List<Artifact> artifacts = new LinkedList<>();
 
         try {
             FileAttributes fileAttributes = ctx.getMetadataStore().getFileAttributes(evt.getFileUuid());
@@ -106,7 +105,6 @@ public class AuthenticodeCatalogJob implements Job {
             logger.warn("Security catalog of file {} could not be inspected.", evt.getFileUuid());
         }
 
-        ctx.getMetadataStore().addArtifacts(evt.getFileUuid(), artifacts);
         return null;
     }
 

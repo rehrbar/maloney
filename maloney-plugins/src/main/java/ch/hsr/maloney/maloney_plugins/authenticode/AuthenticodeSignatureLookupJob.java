@@ -20,7 +20,7 @@ import java.util.List;
  * Created by roman on 21.05.17.
  */
 public class AuthenticodeSignatureLookupJob implements Job {
-    private static final String JOB_NAME = "AuthenticodeSignatureLookupJob";
+    static final String JOB_NAME = "AuthenticodeSignatureLookupJob";
     private final Logger logger;
     private SignatureStore signatureStore;
 

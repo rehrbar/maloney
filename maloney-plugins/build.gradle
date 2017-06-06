@@ -17,6 +17,8 @@ test {
     systemProperty "java.library.path", file("..\\lib")
     exclude "TSK/**"
     exclude "ch/hsr/maloney/maloney_plugins/authenticode/ElasticSignatureStoreTest*"
+    exclude "ch/hsr/maloney/maloney_plugins/authenticode/AuthenticodePEJobTest*"
+    exclude "ch/hsr/maloney/maloney_plugins/authenticode/AuthenticodeCatalogJobTest*"
 }
 
 task installJsign(type:Exec) {

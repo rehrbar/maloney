@@ -33,9 +33,9 @@ public class CalculateHashesJobTest {
             e.printStackTrace();
         }
         fakeMetaDataStore = new FakeMetaDataStore();
-        fakeDataSource = new FakeDataSource();
+        fakeDataSource = new FakeDataSource(fakeMetaDataStore);
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource, null);
-        tempFileUuid = fakeDataSource.addFile(tempFilePath);
+        tempFileUuid = fakeDataSource.addFile(tempFilePath, null);
         fakeMetaDataStore.addFileAttributes(new FileAttributes(
                 tempFilePath.getFileName().toString(),
                 tempFilePath.getParent().toString(),
@@ -76,7 +76,7 @@ public class CalculateHashesJobTest {
 
         job.run(ctx, evt);
 
-        List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
+        Collection<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
         assertTrue(createdArtifacts.size() == 2);
     }
 
@@ -87,7 +87,7 @@ public class CalculateHashesJobTest {
 
         job.run(ctx, evt);
 
-        List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
+        Collection<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
         createdArtifacts.stream().filter(a -> a.getType().equals("MD5Hash")).forEach(a -> {
             assertEquals(ZERO_LENGTH_MD5_HASH, a.getValue().toString());
         });
@@ -100,7 +100,7 @@ public class CalculateHashesJobTest {
 
         job.run(ctx, evt);
 
-        List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
+        Collection<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
         createdArtifacts.stream().filter(a -> a.getType().equals("SHA1Hash")).forEach(a -> {
             assertEquals(ZERO_LENGTH_SHA_1_HASH, a.getValue().toString());
         });
@@ -117,7 +117,7 @@ public class CalculateHashesJobTest {
 
         job.run(ctx, evt);
 
-        List<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
+        Collection<Artifact> createdArtifacts = fakeMetaDataStore.getArtifacts(tempFileUuid);
         createdArtifacts.stream().filter(a -> a.getType().equals("SHA1Hash")).forEach(a -> {
             assertEquals("d3486ae9136e7856bc42212385ea797094475802", a.getValue().toString());
         });

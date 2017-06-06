@@ -3,6 +3,7 @@ package ch.hsr.maloney.core;
 import ch.hsr.maloney.storage.EventStore;
 import ch.hsr.maloney.storage.FakeDataSource;
 import ch.hsr.maloney.storage.FakeMetaDataStore;
+import ch.hsr.maloney.storage.MetadataStore;
 import ch.hsr.maloney.util.Context;
 import ch.hsr.maloney.util.FakeProgressTracker;
 import org.apache.commons.io.FileUtils;
@@ -14,7 +15,11 @@ import java.nio.file.Paths;
 
 public class FakeFramework extends Framework{
     public FakeFramework(boolean persistent){
-        super(new EventStore(getWorkingDir(), persistent), new Context(new FakeMetaDataStore(), new FakeProgressTracker(), new FakeDataSource(), null));
+        this(persistent, new FakeMetaDataStore());
+    }
+
+    public FakeFramework(boolean persistent, MetadataStore metadataStore){
+        super(new EventStore(getWorkingDir(), persistent), new Context(metadataStore, new FakeProgressTracker(), new FakeDataSource(metadataStore), null));
     }
 
     protected static Path getWorkingDir(){

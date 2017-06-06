@@ -1,9 +1,6 @@
 package ch.hsr.maloney.storage;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by olive_000 on 07.11.2016.
@@ -22,7 +19,11 @@ public class FileAttributes {
         // Keep for deserialization.
     }
 
-    public FileAttributes(String fileName, String filePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, List<Artifact> artifacts, UUID parentId) {
+    public FileAttributes(String fileName, String filePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, UUID parentId) {
+        this(fileName, filePath, fileId, dateChanged, dateCreated, dateAccessed, parentId, null);
+    }
+
+    public FileAttributes(String fileName, String filePath, UUID fileId, Date dateChanged, Date dateCreated, Date dateAccessed, UUID parentId, Collection<Artifact> artifacts) {
         this.fileName = fileName;
         this.filePath = filePath;
         this.fileId = fileId;
@@ -59,11 +60,7 @@ public class FileAttributes {
         return dateAccessed;
     }
 
-    public List<Artifact> getArtifacts() {
-        // TODO make list unmodifiable.
-        if(artifacts == null){
-            artifacts = new LinkedList<>();
-        }
+    public Collection<Artifact> getArtifacts() {
         return artifacts;
     }
 

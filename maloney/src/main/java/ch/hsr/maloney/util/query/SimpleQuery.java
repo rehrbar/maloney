@@ -63,38 +63,41 @@ public class SimpleQuery {
         final String valueGroupName = "value";
         final String propertyGroupName = "property";
         final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");
-        Matcher matcher = pattern.matcher(query);
         List<RuleComponent> components = new LinkedList<>();
-        while (matcher.find()) {
-            final String value = matcher.group(valueGroupName);
-            switch (PropertyName.getByFieldName(matcher.group(propertyGroupName))) {
-                case FileId:
-                    components.add(fileAttributes -> fileAttributes.getFileId().toString().matches(value));
-                    break;
-                case FileName:
-                    components.add(fileAttributes -> fileAttributes.getFileName().matches(value));
-                    break;
-                case FilePath:
-                    components.add(fileAttributes -> fileAttributes.getFilePath().matches(value));
-                    break;
-                case DateAccessed:
-                    components.add(fileAttributes -> formatDate(fileAttributes.getDateAccessed()).matches(value));
-                    break;
-                case DateChanged:
-                    components.add(fileAttributes -> formatDate(fileAttributes.getDateChanged()).matches(value));
-                    break;
-                case DateCreated:
-                    components.add(fileAttributes -> formatDate(fileAttributes.getDateCreated()).matches(value));
-                    break;
-                case ArtifactOriginator: // Matches in artifacts does not have to be in the same artifact.
-                    components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getOriginator().matches(value)));
-                    break;
-                case ArtifactType:
-                    components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getType().matches(value)));
-                    break;
-                case ArtifactValue:
-                    components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getValue().toString().matches(value)));
-                    break;
+
+        if (query != null) {
+            Matcher matcher = pattern.matcher(query);
+            while (matcher.find()) {
+                final String value = matcher.group(valueGroupName);
+                switch (PropertyName.getByFieldName(matcher.group(propertyGroupName))) {
+                    case FileId:
+                        components.add(fileAttributes -> fileAttributes.getFileId().toString().matches(value));
+                        break;
+                    case FileName:
+                        components.add(fileAttributes -> fileAttributes.getFileName().matches(value));
+                        break;
+                    case FilePath:
+                        components.add(fileAttributes -> fileAttributes.getFilePath().matches(value));
+                        break;
+                    case DateAccessed:
+                        components.add(fileAttributes -> formatDate(fileAttributes.getDateAccessed()).matches(value));
+                        break;
+                    case DateChanged:
+                        components.add(fileAttributes -> formatDate(fileAttributes.getDateChanged()).matches(value));
+                        break;
+                    case DateCreated:
+                        components.add(fileAttributes -> formatDate(fileAttributes.getDateCreated()).matches(value));
+                        break;
+                    case ArtifactOriginator: // Matches in artifacts does not have to be in the same artifact.
+                        components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getOriginator().matches(value)));
+                        break;
+                    case ArtifactType:
+                        components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getType().matches(value)));
+                        break;
+                    case ArtifactValue:
+                        components.add(fileAttributes -> fileAttributes.getArtifacts().stream().anyMatch(artifact -> artifact.getValue().toString().matches(value)));
+                        break;
+                }
             }
         }
 

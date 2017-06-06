@@ -2,6 +2,8 @@ package ch.hsr.maloney.storage.es;
 
 import ch.hsr.maloney.storage.Artifact;
 import ch.hsr.maloney.storage.FileAttributes;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -63,6 +65,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         updateMapping(false);
         mapper = new ObjectMapper();
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     void updateMapping(boolean force) {
@@ -104,6 +107,9 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public FileAttributes getFileAttributes(UUID fileID) {
+        if(fileID == null) {
+            throw new UnsupportedOperationException("File id cannot be null.");
+        }
         GetResponse response = client.prepareGet(indexName, fileAttributeTypeName, fileID.toString()).get();
         try {
             return mapper.readValue(response.getSourceAsBytes(), FileAttributes.class);
@@ -128,17 +134,16 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
             client.prepareIndex(this.indexName, fileAttributeTypeName, fileAttributes.getFileId().toString())
                     .setSource(builder)
                     .get();
-
-            addArtifacts(fileAttributes.getFileId(), fileAttributes.getArtifacts());
         } catch (IOException e) {
             logger.error("Could not index file attributes into ElasticSearch.", e);
         }
     }
 
     @Override
-    public List<Artifact> getArtifacts(UUID fileId) {
+    public Collection<Artifact> getArtifacts(UUID fileId) {
         // TODO Idea: Implement this method correctly with searchers to query for a specific type of an artifact.
-        return this.getFileAttributes(fileId).getArtifacts();
+        FileAttributes fileAttributes = getFileAttributes(fileId);
+        return fileAttributes != null ? fileAttributes.getArtifacts() : null;
     }
 
     @Override
@@ -149,7 +154,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
     }
 
     @Override
-    public void addArtifacts(UUID fileId, List<Artifact> artifacts) {
+    public void addArtifacts(UUID fileId, Collection<Artifact> artifacts) {
         if (artifacts == null || artifacts.size() == 0) {
             return;
         }
@@ -214,6 +219,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         ElasticsearchIterator(int expiryTimeMillis){
             this.expiry_time_millis = expiryTimeMillis;
             scrollResp = client.prepareSearch(indexName)
+                    .setTypes(fileAttributeTypeName)
                     .setScroll(new TimeValue(expiry_time_millis))
                     .setSize(HITS_PER_GET).get();
             extractResults();
@@ -256,4 +262,5 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
             return iterator.next();
         }
     }
+
 }

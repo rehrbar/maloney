@@ -44,7 +44,6 @@ public class EventStore {
                     .transactionEnable()
                     .allocateStartSize(128 * 1024 * 1024) // 128MB
                     .allocateIncrement(64 * 1024 * 1024)  // 64MB
-                    .closeOnJvmShutdown()
                     .make();
         } else {
             db = DBMaker.memoryDB().closeOnJvmShutdown().make();

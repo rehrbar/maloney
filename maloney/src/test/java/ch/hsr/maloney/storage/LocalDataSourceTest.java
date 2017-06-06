@@ -20,7 +20,7 @@ public class LocalDataSourceTest {
 
     @Before
     public void setup() throws IOException {
-        metadataStore = new SimpleMetadataStore();
+        metadataStore = new FakeMetaDataStore();
         workingDirectory = Files.createTempDirectory("maloney_test");
         dataSource = new LocalDataSource(metadataStore, workingDirectory);
     }

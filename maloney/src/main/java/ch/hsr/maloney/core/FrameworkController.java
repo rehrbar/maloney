@@ -133,12 +133,15 @@ public class FrameworkController {
             categoryService = new CategoryService();
         }
 
-        return new Context(
+        Context context = new Context(
                 metadataStore,
                 progressTracker,
                 dataSource,
                 categoryService
+
         );
+        context.setCaseIdentifier(caseIdentifier);
+        return context;
     }
 
     private static void scheduleProgressTracker(final ProgressTracker progressTracker) {
@@ -189,7 +192,7 @@ public class FrameworkController {
         while (iter.hasNext()) {
             // TODO only register jobs which are configured to run
             Job job = iter.next();
-            job.setJobConfig(this.configuration.getJobConfigurationMap().getOrDefault(job.getJobName(), ""));
+            job.setJobConfig(this.configuration.getJobConfigurationMap().getOrDefault(job.getJobName(), null));
             logger.debug("Registering job " + job.getJobName());
             framework.register(job);
         }

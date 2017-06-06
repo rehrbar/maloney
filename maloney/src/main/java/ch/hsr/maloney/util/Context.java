@@ -12,6 +12,7 @@ public class Context {
     private final ProgressTracker progressTracker;
     private final DataSource dataSource;
     private final CategoryService categoryService;
+    private String caseIdentifier;
 
     public Context(MetadataStore metadataStore, ProgressTracker progressTracker, DataSource dataSource, CategoryService categoryService) {
         this.metadataStore = metadataStore;
@@ -34,5 +35,13 @@ public class Context {
 
     public CategoryService getCategoryService() {
         return categoryService;
+    }
+
+    public String getCaseIdentifier() {
+        return caseIdentifier;
+    }
+
+    public void setCaseIdentifier(String caseIdentifier) {
+        this.caseIdentifier = caseIdentifier;
     }
 }

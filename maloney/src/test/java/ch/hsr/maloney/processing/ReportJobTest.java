@@ -26,7 +26,7 @@ public class ReportJobTest {
 
     @Before
     public void setUp(){
-        MetadataStore metadataStore = new SimpleMetadataStore();
+        MetadataStore metadataStore = new FakeMetaDataStore();
         ctx = new Context(metadataStore, new FakeProgressTracker(), new PlainSource(metadataStore), new CategoryService());
     }
 

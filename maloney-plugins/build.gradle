@@ -3,7 +3,29 @@ version '1.0-SNAPSHOT'
 
 dependencies {
     compile project(':maloney')
+    compile group: 'net.jsign', name: 'jsign', version:'1.3-SNAPSHOT'
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.7'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
+    compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.53'
+    testCompile group: 'commons-io', name: 'commons-io', version: '2.5'
     testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile project(':maloney').sourceSets.test.output
+}
+
+
+test {
+    systemProperty "java.library.path", file("..\\lib")
+    exclude "TSK/**"
+    exclude "ch/hsr/maloney/maloney_plugins/authenticode/ElasticSignatureStoreTest*"
+}
+
+task installJsign(type:Exec) {
+    // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.Exec.html
+    workingDir '../jsign/'
+
+    //on windows:
+    commandLine 'cmd', '/c', 'mvn install'
+
+    //on linux
+    commandLine 'mvn', 'install'
 }

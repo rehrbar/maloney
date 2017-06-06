@@ -1,1 +1,4 @@
 ch.hsr.maloney.maloney_plugins.IdentifyKnownFilesJob
+ch.hsr.maloney.maloney_plugins.authenticode.AuthenticodeCatalogJob
+ch.hsr.maloney.maloney_plugins.authenticode.AuthenticodePEJob
+ch.hsr.maloney.maloney_plugins.authenticode.AuthenticodeSignatureLookupJob

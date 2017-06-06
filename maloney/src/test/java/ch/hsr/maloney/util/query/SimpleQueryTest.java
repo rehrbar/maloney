@@ -34,7 +34,6 @@ public class SimpleQueryTest {
                 new Date(1436471820000L),
                 new Date(1473823035000L),
                 new Date(1473823035000L),
-                null,
                 UUID.fromString("dadec7c6-ad8c-4f80-b6da-379fceccd0fc")
         ));
         List<Artifact> artifacts = new LinkedList<Artifact>() {{
@@ -93,7 +92,7 @@ public class SimpleQueryTest {
     @Test
     public void createQueryCategory() {
         Category c = SimpleQuery.createQueryCategory("fileName=\"reg.*\"");
-        FileAttributes fileAttributes = new FileAttributes("regex.exe", null, null, null, null, null, null, null);
+        FileAttributes fileAttributes = new FileAttributes("regex.exe", null, null, null, null, null, null);
         Assert.assertTrue(c.getRules().match(fileAttributes));
     }
 
@@ -101,8 +100,8 @@ public class SimpleQueryTest {
     public void createDateQueryCategory() {
         Category c = SimpleQuery.createQueryCategory("dateCreated=\"2016.*\"");
         // File 1 contains 2016, File2 contains 2015
-        FileAttributes file1 = new FileAttributes(null, null, null, null, new Date(1473823035000L), null, null, null);
-        FileAttributes file2 = new FileAttributes(null, null, null, null, new Date(1433823035000L), null, null, null);
+        FileAttributes file1 = new FileAttributes(null, null, null, null, new Date(1473823035000L), null, null);
+        FileAttributes file2 = new FileAttributes(null, null, null, null, new Date(1433823035000L), null, null);
         Assert.assertTrue(c.getRules().match(file1));
         Assert.assertFalse(c.getRules().match(file2));
     }

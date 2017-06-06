@@ -28,7 +28,7 @@ public class DiskImageJobTest {
     @Before
     public void setup(){
         fakeMetaDataStore = new FakeMetaDataStore();
-        fakeDataSource = new FakeDataSource();
+        fakeDataSource = new FakeDataSource(fakeMetaDataStore);
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource, null);
     }
 

@@ -1,3 +1,6 @@
 [submodule "sleuthkit"]
 	path = sleuthkit
 	url = https://github.com/sleuthkit/sleuthkit
+[submodule "jsign"]
+	path = jsign
+	url = https://github.com/rehrbar/jsign.git

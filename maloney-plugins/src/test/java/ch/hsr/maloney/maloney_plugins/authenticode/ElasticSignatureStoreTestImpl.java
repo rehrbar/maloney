@@ -1,7 +1,5 @@
 package ch.hsr.maloney.maloney_plugins.authenticode;
 
-import ch.hsr.maloney.storage.hash.HashAlgorithm;
-import ch.hsr.maloney.storage.hash.HashType;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -23,14 +21,14 @@ public class ElasticSignatureStoreTestImpl extends ElasticSignatureStore {
      * @throws UnknownHostException If the hostname for elasticsearch could not be looked up.
      */
     public ElasticSignatureStoreTestImpl() throws UnknownHostException {
-        super();
+        super("test");
     }
 
 
     public void clearIndex() {
         try {
             logger.info("Deleting index...");
-            client.admin().indices().delete(new DeleteIndexRequest(INDEX_NAME)).actionGet();
+            client.admin().indices().delete(new DeleteIndexRequest(indexName)).actionGet();
             updateMapping(true);
         } catch (Exception e) {
             logger.warn("Could not delete index.", e);
@@ -42,18 +40,18 @@ public class ElasticSignatureStoreTestImpl extends ElasticSignatureStore {
         //   This refresh is required so that searches will perform correctly in the index.
         //   More info about refresh and flush see http://stackoverflow.com/a/19973721
         // ATTENTION! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        client.admin().indices().refresh(new RefreshRequest(INDEX_NAME)).actionGet();
+        client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
     }
 
     public Map<String, Object> dumpRecord(String id){
-        return client.prepareGet(INDEX_NAME, SIGNATURE_TYPE, id).get().getSourceAsMap();
+        return client.prepareGet(indexName, SIGNATURE_TYPE, id).get().getSourceAsMap();
     }
 
     public List<String> seedTestData() {
         List<String> generatedIds = new LinkedList<>();
         BulkRequestBuilder bulk = client.prepareBulk();
         try {
-            bulk.add(client.prepareIndex(INDEX_NAME, SIGNATURE_TYPE)
+            bulk.add(client.prepareIndex(indexName, SIGNATURE_TYPE)
                     .setSource(jsonBuilder().startObject()
                             .field("hash", "b207eaa72396b87a82db095ae73021973bece60a")
                             .field("fileName", "vboxnetlwf.sys")
@@ -63,7 +61,7 @@ public class ElasticSignatureStoreTestImpl extends ElasticSignatureStore {
                             .endObject()
                     )
             );
-            bulk.add(client.prepareIndex(INDEX_NAME, SIGNATURE_TYPE)
+            bulk.add(client.prepareIndex(indexName, SIGNATURE_TYPE)
                     .setSource(jsonBuilder().startObject()
                             .field("hash", "abc9556efe149dd31b171e84ce1c3974f49aac49")
                             .field("fileName", "vboxnetlwf.inf")

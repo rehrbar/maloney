@@ -31,6 +31,7 @@ public class AuthenticodeCatalogJobTest {
         fakeMetaDataStore = new FakeMetaDataStore();
         fakeDataSource = new FakeDataSource(fakeMetaDataStore);
         ctx = new Context(fakeMetaDataStore, null, fakeDataSource, null);
+        ctx.setCaseIdentifier("test");
         signatureStore = new FakeSignatureStore();
     }
 
@@ -45,6 +46,7 @@ public class AuthenticodeCatalogJobTest {
         UUID id = fakeDataSource.addFile(Paths.get(path), null);
         fakeMetaDataStore.addFileAttributes(new FileAttributes("VBoxNetLwf.cat", null, id, null, null, null, null));
         Job job = new AuthenticodeCatalogJob(signatureStore);
+        job.setJobConfig("");
         boolean result = job.shouldRun(ctx, new Event("newFile", "test", id));
         Assert.assertTrue("Job should be runnable", result);
     }
@@ -55,6 +57,7 @@ public class AuthenticodeCatalogJobTest {
         UUID id = fakeDataSource.addFile(Paths.get(path), null);
         fakeMetaDataStore.addFileAttributes(new FileAttributes("VBoxNetLwf.cat", null, id, null, null, null, null));
         Job job = new AuthenticodeCatalogJob(signatureStore);
+        job.setJobConfig("");
         List<Event> result = job.run(ctx, new Event("newFile", "test", id));
         Assert.assertFalse(signatureStore.getAllSignatures().isEmpty());
     }

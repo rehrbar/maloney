@@ -16,7 +16,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Implementation which examines Authenticode information of a portable executable.
@@ -27,29 +29,38 @@ public class AuthenticodeCatalogJob implements Job {
     private final LinkedList<String> requiredEvents;
     private final Logger logger;
     private SignatureStore signatureStore;
+    private String jobConfig;
 
     public AuthenticodeCatalogJob() {
         this(null);
     }
 
-    AuthenticodeCatalogJob(SignatureStore store){
+    AuthenticodeCatalogJob(SignatureStore store) {
         producedEvents = new LinkedList<>();
         requiredEvents = new LinkedList<>();
         requiredEvents.add(EventNames.ADDED_FILE_EVENT_NAME);
         logger = org.apache.logging.log4j.LogManager.getLogger();
-        if(store != null) {
-            signatureStore = store;
-        } else {
+        signatureStore = store;
+    }
+
+    private SignatureStore getSignatureStore(Context ctx) {
+        if (signatureStore == null) {
             try {
-                signatureStore= new ElasticSignatureStore();
+                signatureStore = new ElasticSignatureStore(ctx.getCaseIdentifier());
             } catch (UnknownHostException e) {
                 logger.error("Could not connect to signature store.", e);
             }
         }
+        return signatureStore;
     }
 
     @Override
     public boolean shouldRun(Context ctx, Event evt) {
+        if(ctx.getCaseIdentifier() == null || ctx.getCaseIdentifier().length() < 1){
+            logger.info("No case identifier provided. Job will not run.");
+            return false;
+        }
+
         // Security Catalog does not contain a magic value like a PE.
         // ASN.1 DER format may often start with 0x30, but it is not guaranteed.
         // Checking the file ending is another good enough guess.
@@ -59,7 +70,7 @@ public class AuthenticodeCatalogJob implements Job {
 
     @Override
     public boolean canRun(Context ctx, Event evt) {
-        return signatureStore != null;
+        return getSignatureStore(ctx) != null;
     }
 
     @Override
@@ -77,9 +88,9 @@ public class AuthenticodeCatalogJob implements Job {
             for (SignedHashInfo hashInfo : catalogFile.getHashInfos()) {
                 if (hashInfo.getHashbytes() != null) {
                     String signedFileName = hashInfo.getFilename();
-                    if(signedFileName != null){
+                    if (signedFileName != null) {
                         // File name contains ASCII 0 characters. Removing them helps later in matching.
-                        signedFileName= signedFileName.replace("\u0000","");
+                        signedFileName = signedFileName.replace("\u0000", "");
                     }
 
                     SignatureRecord e = new SignatureRecord();
@@ -91,7 +102,7 @@ public class AuthenticodeCatalogJob implements Job {
                     records.add(e);
                 }
             }
-            signatureStore.addSignatures(records);
+            getSignatureStore(ctx).addSignatures(records);
             logger.info("Found {} signatures in {}", records.size(), evt.getFileUuid());
 
             Path jobWorkingDir = ctx.getDataSource().getJobWorkingDir(AuthenticodeCatalogJob.class);
@@ -125,12 +136,12 @@ public class AuthenticodeCatalogJob implements Job {
 
     @Override
     public String getJobConfig() {
-        return null;
+        return jobConfig;
     }
 
     @Override
     public void setJobConfig(String config) {
-
+        jobConfig = config;
     }
 
 }

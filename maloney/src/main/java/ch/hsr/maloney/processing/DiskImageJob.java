@@ -33,7 +33,7 @@ public class DiskImageJob implements Job {
 
     @Override
     public boolean shouldRun(Context ctx, Event evt) {
-        return Files.exists(path);
+        return path != null && Files.exists(path);
     }
 
     @Override
@@ -97,6 +97,8 @@ public class DiskImageJob implements Job {
 
     @Override
     public void setJobConfig(String config) {
-        path = Paths.get(config);
+        if(config != null) {
+            path = Paths.get(config);
+        }
     }
 }

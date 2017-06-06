@@ -107,6 +107,9 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
 
     @Override
     public FileAttributes getFileAttributes(UUID fileID) {
+        if(fileID == null) {
+            throw new UnsupportedOperationException("File id cannot be null.");
+        }
         GetResponse response = client.prepareGet(indexName, fileAttributeTypeName, fileID.toString()).get();
         try {
             return mapper.readValue(response.getSourceAsBytes(), FileAttributes.class);
@@ -216,6 +219,7 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         ElasticsearchIterator(int expiryTimeMillis){
             this.expiry_time_millis = expiryTimeMillis;
             scrollResp = client.prepareSearch(indexName)
+                    .setTypes(fileAttributeTypeName)
                     .setScroll(new TimeValue(expiry_time_millis))
                     .setSize(HITS_PER_GET).get();
             extractResults();
@@ -259,11 +263,4 @@ public class MetadataStore implements ch.hsr.maloney.storage.MetadataStore {
         }
     }
 
-}
-//@JsonIgnoreProperties(ignoreUnknown = true)
-class ArtifactsDto {
-    public List<Artifact> artifacts;
-    public ArtifactsDto(){
-        // keep for serialization
-    }
 }

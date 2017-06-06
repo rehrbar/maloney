@@ -1,8 +1,6 @@
 package ch.hsr.maloney.maloney_plugins.authenticode;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -38,16 +36,21 @@ public class ElasticSignatureStore implements SignatureStore {
     final ObjectMapper mapper;
     final Logger logger;
     TransportClient client;
-    static final String INDEX_NAME = "maloney-signatures";
+    final String indexName;
     static final String SIGNATURE_TYPE = "code-signature";
 
     /**
      * Creates a new Instance of {@link ElasticSignatureStore} with ElasticSearch as backend.
      *
      * @throws UnknownHostException If the hostname for elasticsearch could not be looked up.
+     * @param caseIdentifier
      */
-    public ElasticSignatureStore() throws UnknownHostException {
+    public ElasticSignatureStore(String caseIdentifier) throws UnknownHostException {
         this.logger = LogManager.getLogger();
+
+        // Elasticsearch only works with lower case indices
+        this.indexName = "maloney-" + caseIdentifier.toLowerCase();
+
         // TODO pass configuration to transportclient for cluster name and node.
         Settings settings = Settings.builder()
                 .put("cluster.name", "maloney").build();
@@ -68,9 +71,9 @@ public class ElasticSignatureStore implements SignatureStore {
     void updateMapping(boolean force) {
         // https://www.elastic.co/guide/en/elasticsearch/guide/current/_finding_exact_values.html
         boolean wasCreated = false;
-        IndicesExistsResponse existsResponse = client.admin().indices().prepareExists(INDEX_NAME).get();
+        IndicesExistsResponse existsResponse = client.admin().indices().prepareExists(indexName).get();
         if (!existsResponse.isExists()) {
-            wasCreated = client.admin().indices().prepareCreate(INDEX_NAME).get().isAcknowledged();
+            wasCreated = client.admin().indices().prepareCreate(indexName).get().isAcknowledged();
         }
         if (wasCreated || force) {
             // Index has to be created to work.
@@ -90,7 +93,7 @@ public class ElasticSignatureStore implements SignatureStore {
                         .endObject();
 
                 logger.debug(mapping.string());
-                PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(INDEX_NAME)
+                PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName)
                         .setType(SIGNATURE_TYPE)
                         .setSource(mapping).get();
                 logger.debug("Update mapping ack? {}", putMappingResponse.isAcknowledged());
@@ -109,7 +112,7 @@ public class ElasticSignatureStore implements SignatureStore {
         records.forEach(record -> {
             try {
                 byte[] data = mapper.writeValueAsBytes(record);
-                bulkRequestBuilder.add(client.prepareIndex(INDEX_NAME, SIGNATURE_TYPE).setSource(data));
+                bulkRequestBuilder.add(client.prepareIndex(indexName, SIGNATURE_TYPE).setSource(data));
             } catch (JsonProcessingException e) {
                 logger.error("Could not serialize HashRecord.", e);
             }
@@ -125,13 +128,13 @@ public class ElasticSignatureStore implements SignatureStore {
 
     @Override
     public void removeSignature(String id){
-        DeleteResponse deleteResponse = client.prepareDelete(INDEX_NAME, SIGNATURE_TYPE, id).get();
+        DeleteResponse deleteResponse = client.prepareDelete(indexName, SIGNATURE_TYPE, id).get();
         logger.debug("Performed delete action for SignatureRecord with result {}", deleteResponse.status());
     }
 
     @Override
     public SignatureRecord getSignature(String id){
-        GetResponse response = client.prepareGet(INDEX_NAME, SIGNATURE_TYPE, id).get();
+        GetResponse response = client.prepareGet(indexName, SIGNATURE_TYPE, id).get();
         try {
             return mapper.readValue(response.getSourceAsBytes(), SignatureRecord.class);
         } catch (IOException e) {
@@ -149,7 +152,7 @@ public class ElasticSignatureStore implements SignatureStore {
      */
     @Override
     public List<SignatureRecord> findSignatures(String hash){
-        SearchResponse searchResponse = client.prepareSearch(INDEX_NAME)
+        SearchResponse searchResponse = client.prepareSearch(indexName)
                 .setTypes(SIGNATURE_TYPE)
                 .setQuery(QueryBuilders.termQuery("hash", hash)).get();
         if (searchResponse.getHits().getTotalHits() == 0) {

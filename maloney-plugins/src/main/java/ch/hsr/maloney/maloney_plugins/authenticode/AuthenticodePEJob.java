@@ -1,5 +1,6 @@
 package ch.hsr.maloney.maloney_plugins.authenticode;
 
+import ch.hsr.maloney.processing.EventNames;
 import ch.hsr.maloney.processing.Job;
 import ch.hsr.maloney.processing.JobCancelledException;
 import ch.hsr.maloney.storage.Artifact;
@@ -27,7 +28,6 @@ import java.util.UUID;
  */
 public class AuthenticodePEJob implements Job {
     private static final String JOB_NAME = "AuthenticodePEJob";
-    private static final String NEW_FILE_EVENT_NAME = "newFile";
     private final LinkedList<String> producedEvents;
     private final LinkedList<String> requiredEvents;
     private final Logger logger;
@@ -35,7 +35,7 @@ public class AuthenticodePEJob implements Job {
     public AuthenticodePEJob() {
         producedEvents = new LinkedList<>();
         requiredEvents = new LinkedList<>();
-        requiredEvents.add(NEW_FILE_EVENT_NAME);
+        requiredEvents.add(EventNames.ADDED_FILE_EVENT_NAME);
         logger = org.apache.logging.log4j.LogManager.getLogger();
     }
 

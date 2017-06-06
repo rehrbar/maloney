@@ -44,6 +44,22 @@ public class SimpleQuery {
      * @return A new instance matching the query.
      */
     static Category createQueryCategory(String query) {
+        RuleComposite fallbackComposite = new OrRuleComposite();
+        fallbackComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().contains(query));
+        fallbackComposite.addRule(fileAttributes -> fileAttributes.getFileName().contains(query));
+        return createQueryCategory(query, new AndRuleComposite(),fallbackComposite);
+    }
+
+    /**
+     * Creates an instance of {@link Category} based on the provided query.
+     *
+     * @param query Combination of property names and corresponding regular expressions, which are used to create the
+     *              rule set. If the query does not match the pattern, the default query on fileId and fileName is used.
+     *              For example: fileName="reg.?"
+     * @param baseComposite
+     *@param fallbackComposite @return A new instance matching the query.
+     */
+    public static Category createQueryCategory(String query, RuleComposite baseComposite, RuleComposite fallbackComposite) {
         final String valueGroupName = "value";
         final String propertyGroupName = "property";
         final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");
@@ -84,13 +100,11 @@ public class SimpleQuery {
 
         final RuleComposite ruleComposite;
         if (!components.isEmpty()) {
-            ruleComposite = new AndRuleComposite();
+            ruleComposite = baseComposite;
             components.forEach(ruleComposite::addRule);
         } else {
             // Fallback rule
-            ruleComposite = new OrRuleComposite();
-            ruleComposite.addRule(fileAttributes -> fileAttributes.getFileId().toString().contains(query));
-            ruleComposite.addRule(fileAttributes -> fileAttributes.getFileName().contains(query));
+            ruleComposite = fallbackComposite;
         }
 
         return new Category() {

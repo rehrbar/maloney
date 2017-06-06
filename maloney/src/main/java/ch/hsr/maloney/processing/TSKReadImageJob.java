@@ -25,11 +25,6 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class TSKReadImageJob implements Job {
     private static final String TSK_DB_FILE_EXTENSION = ".db";
 
-    private static final String NEW_FILE_EVENT_NAME = "newFile";
-    private static final String NEW_DISK_IMAGE_EVENT_NAME = "newDiskImage";
-    private static final String NEW_UNALLOCATED_SPACE_EVENT_NAME = "newUnallocatedSpace";
-    private static final String NEW_DIRECTORY_EVENT_NAME = "newDirectory";
-
     private static final String TSK_READ_IMAGE_JOB_NAME = "TSKReadImageJob";
 
     private LinkedList<String> producedEvents = new LinkedList<>();
@@ -38,10 +33,10 @@ public class TSKReadImageJob implements Job {
     private Path working_dir;
 
     public TSKReadImageJob() {
-        this.producedEvents.add(NEW_FILE_EVENT_NAME);
-        this.producedEvents.add(NEW_UNALLOCATED_SPACE_EVENT_NAME);
-        this.producedEvents.add(NEW_DIRECTORY_EVENT_NAME);
-        this.requiredEvents.add(NEW_DISK_IMAGE_EVENT_NAME);
+        this.producedEvents.add(EventNames.NEW_FILE_EVENT_NAME);
+        this.producedEvents.add(EventNames.NEW_UNALLOCATED_SPACE_EVENT_NAME);
+        this.producedEvents.add(EventNames.NEW_DIRECTORY_EVENT_NAME);
+        this.requiredEvents.add(EventNames.NEW_DISK_IMAGE_EVENT_NAME);
         this.logger = LogManager.getLogger();
     }
 
@@ -188,13 +183,13 @@ public class TSKReadImageJob implements Job {
         Event event = null;
         if(abstractFile.isMetaFlagSet(TskData.TSK_FS_META_FLAG_ENUM.UNALLOC)){
             logger.debug("Creating Event for Unallocated SPAAAACCEEE");
-            event = new Event(NEW_UNALLOCATED_SPACE_EVENT_NAME, getJobName(), uuid);
+            event = new Event(EventNames.NEW_UNALLOCATED_SPACE_EVENT_NAME, getJobName(), uuid);
         } else if (abstractFile.isFile()) {
             logger.debug("Creating Event for new File");
-            event = new Event(NEW_FILE_EVENT_NAME, getJobName(), uuid);
+            event = new Event(EventNames.NEW_FILE_EVENT_NAME, getJobName(), uuid);
         } else if(abstractFile.isDir()){
             logger.debug("Creating Event for new Directory");
-            event = new Event(NEW_DIRECTORY_EVENT_NAME, getJobName(), uuid);
+            event = new Event(EventNames.NEW_DIRECTORY_EVENT_NAME, getJobName(), uuid);
         }
         if(event != null){
             ctx.getProgressTracker().processInfo(event);

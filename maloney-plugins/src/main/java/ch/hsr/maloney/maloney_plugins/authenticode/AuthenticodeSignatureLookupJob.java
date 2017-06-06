@@ -26,16 +26,19 @@ public class AuthenticodeSignatureLookupJob implements Job {
 
     public AuthenticodeSignatureLookupJob() {
         this(null);
-        try {
-            signatureStore = new ElasticSignatureStore();
-        } catch (UnknownHostException e) {
-            logger.error("Could not connect to store.", e);
-        }
     }
 
     AuthenticodeSignatureLookupJob(SignatureStore store){
         logger = LogManager.getLogger();
-        signatureStore = store;
+        if(store != null) {
+            signatureStore = store;
+        } else {
+            try {
+                signatureStore= new ElasticSignatureStore();
+            } catch (UnknownHostException e) {
+                logger.error("Could not connect to signature store.", e);
+            }
+        }
     }
 
     @Override

@@ -42,11 +42,6 @@ public class AuthenticodeCatalogJob implements Job {
 
     public AuthenticodeCatalogJob() {
         this(null);
-        try {
-            signatureStore= new ElasticSignatureStore();
-        } catch (UnknownHostException e) {
-            logger.error("Could not connect to signature store.", e);
-        }
     }
 
     AuthenticodeCatalogJob(SignatureStore store){
@@ -54,7 +49,15 @@ public class AuthenticodeCatalogJob implements Job {
         requiredEvents = new LinkedList<>();
         requiredEvents.add(NEW_FILE_EVENT_NAME);
         logger = org.apache.logging.log4j.LogManager.getLogger();
-        signatureStore = store;
+        if(store != null) {
+            signatureStore = store;
+        } else {
+            try {
+                signatureStore= new ElasticSignatureStore();
+            } catch (UnknownHostException e) {
+                logger.error("Could not connect to signature store.", e);
+            }
+        }
     }
 
     @Override

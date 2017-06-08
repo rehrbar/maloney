@@ -33,6 +33,7 @@ public class FrameworkControllerTest {
     @Test
     public void GetInitialCaseIdentifier(){
         String identifier = controller.getCaseIdentifier();
+        Assert.assertTrue(identifier.matches("[a-zA-Z0-9-]+"));
         Assert.assertNotNull(identifier);
         Assert.assertTrue(identifier.length() > 0);
     }
@@ -57,12 +58,13 @@ public class FrameworkControllerTest {
         controller = new FrameworkController(config, invalidIdentifier);
         String caseIdentifier = controller.getCaseIdentifier();
         Assert.assertNotNull(caseIdentifier);
+        Assert.assertTrue(caseIdentifier.matches("[a-zA-Z0-9-]+"));
         Assert.assertTrue(caseIdentifier.length() > 0);
     }
 
     @Test
     public void GeneratedIdentifierExistingDirectory() throws IOException {
-        String counterPrefix = ZonedDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String counterPrefix = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         Files.createDirectories(workingDirectory.resolve(counterPrefix+"-1"));
         Files.createDirectories(workingDirectory.resolve(counterPrefix+"-2"));
         controller = new FrameworkController(config);

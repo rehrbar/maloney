@@ -259,7 +259,7 @@ public class FrameworkController {
                 }
 
                 int i = 0;
-                String counterPrefix = ZonedDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE) + "-";
+                String counterPrefix = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-";
                 do{
                     // Testing identifiers: 20170503-1, 20170503-2, and so on.
                     i += 1;

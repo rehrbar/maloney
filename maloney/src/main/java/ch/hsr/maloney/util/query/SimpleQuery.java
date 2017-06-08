@@ -62,7 +62,7 @@ public class SimpleQuery {
     public static Category createQueryCategory(String query, RuleComposite baseComposite, RuleComposite fallbackComposite) {
         final String valueGroupName = "value";
         final String propertyGroupName = "property";
-        final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+))+\"");
+        final Pattern pattern = Pattern.compile("((?<" + propertyGroupName + ">[a-zA-Z]+)=\"(?<" + valueGroupName + ">[^\"]+)\")+");
         List<RuleComponent> components = new LinkedList<>();
 
         if (query != null) {

@@ -74,7 +74,7 @@ public class SimpleQueryTest {
     public void performQueryWithArtifactExpression() throws Exception {
         SimpleQuery q = new SimpleQuery(metadataStore);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        q.performQuery(os, "artifactType=\"md5|MD5\" artifactValue=\"86fb269d190d2c85f6e0468ceca42a20\"");
+        q.performQuery(os, "artifactType=\"(?i)MD5\" artifactValue=\"86fb269d190d2c85f6e0468ceca42a20\"");
         System.out.println(os.toString());
         assertTrue(os.size() > 10);
         assertTrue(os.toString().contains("Results: 1"));
@@ -91,8 +91,8 @@ public class SimpleQueryTest {
 
     @Test
     public void createQueryCategory() {
-        Category c = SimpleQuery.createQueryCategory("fileName=\"reg.*\"");
-        FileAttributes fileAttributes = new FileAttributes("regex.exe", null, null, null, null, null, null);
+        Category c = SimpleQuery.createQueryCategory("fileName=\"reg.*\" filePath=\"(?i).*windows.*\"");
+        FileAttributes fileAttributes = new FileAttributes("regex.exe", "C:\\windows\\", null, null, null, null, null);
         Assert.assertTrue(c.getRules().match(fileAttributes));
     }
 

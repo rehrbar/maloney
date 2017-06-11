@@ -1,5 +1,5 @@
 group 'ch.hsr.maloney'
-version '1.0-SNAPSHOT'
+version '2.0-SNAPSHOT'
 
 // Allows to setup gradle wrapper with gradle itself. Run: gradle wrapper
 // Files added should be committed to source control (seems to be best practice).

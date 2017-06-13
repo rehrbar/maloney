@@ -36,7 +36,7 @@ public class CalculateHashesJob implements Job {
 
     public CalculateHashesJob() {
         logger = LogManager.getLogger();
-        requiredEvents.add(EventNames.NEW_FILE_EVENT_NAME);
+        requiredEvents.add(EventNames.ADDED_FILE_EVENT_NAME);
         producedEvents.add(EventNames.MD_5_HASH_CALCULATED_EVENT_NAME);
         producedEvents.add(EventNames.SHA_1_HASH_CALCULATED_EVENT_NAME);
     }

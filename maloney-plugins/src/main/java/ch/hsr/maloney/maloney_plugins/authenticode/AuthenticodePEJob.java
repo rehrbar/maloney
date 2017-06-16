@@ -100,6 +100,7 @@ public class AuthenticodePEJob implements Job {
                 logger.debug("PE file has no valid signature.");
             }
 
+            pef.close();
         } catch (IOException e) {
             logger.warn("Could not identify portable executable.", e);
         }

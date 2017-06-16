@@ -8,6 +8,7 @@ task wrapper(type: Wrapper) {
 apply plugin: 'application'
 
 mainClassName = "ch.hsr.maloney.maloney_cli.Start"
+applicationDefaultJvmArgs = ["-Xmx4g", "-Xms4g"]
 
 dependencies {
     compile project(':maloney')
